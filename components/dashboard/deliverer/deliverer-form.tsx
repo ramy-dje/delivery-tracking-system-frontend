@@ -19,8 +19,8 @@ interface DelivererFormProps {
   initialData?: Deliverer
   onSubmit: (data: Deliverer) => void
   isLoading?: boolean
-  companies: Array<{ id: string; name: string }>
-  branches: Array<{ id: string; name: string; companyId: string }>
+  companies: Array<any>
+  branches: Array<any>
 }
 
 export function DelivererForm({

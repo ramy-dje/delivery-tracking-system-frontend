@@ -1,64 +1,66 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/dashboard/data-table'
 import { FormDialog } from '@/components/dashboard/form-dialog'
 import { DeleteDialog } from '@/components/dashboard/delete-dialog'
 import { ClientForm } from '@/components/dashboard/client/client-form'
-import { useData } from '@/hooks/use-data'
 import { Client } from '@/lib/schemas'
 import { Plus } from 'lucide-react'
-
-const defaultClients: Client[] = [
-  {
-    id: '1',
-    email: 'sarah@example.com',
-    firstName: 'Sarah',
-    lastName: 'Ahmed',
-    phone: '+966501234567',
-    addresses: [
-      {
-        label: 'Home',
-        street: '123 Elm Street',
-        city: 'Riyadh',
-        state: 'Riyadh',
-        zipCode: '11111',
-        isDefault: true,
-      },
-    ],
-    status: 'active',
-  },
-  {
-    id: '2',
-    email: 'mohammed@example.com',
-    firstName: 'Mohammed',
-    lastName: 'Hassan',
-    phone: '+966502345678',
-    addresses: [
-      {
-        label: 'Office',
-        street: '456 Business Ave',
-        city: 'Jeddah',
-        state: 'Makkah',
-        zipCode: '22222',
-        isDefault: true,
-      },
-    ],
-    status: 'active',
-  },
-]
+import {
+  getClients,
+  createClient,
+  updateClient,
+  toggleBlockClient,
+} from '@/lib/api/crud/client'
+import { toast } from 'sonner'
 
 export default function ClientPage() {
-  const { data: clients, add, update, remove } = useData<Client>('clients', defaultClients)
+  const [clients, setClients] = useState<Client[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const editingClient = editingId ? clients.find((c) => c.id === editingId) : null
-  const deletingClient = deletingId ? clients.find((c) => c.id === deletingId) : null
+  const editingClient = editingId
+    ? clients.find((c) => c.id === editingId)
+    : null
+  const deletingClient = deletingId
+    ? clients.find((c) => c.id === deletingId)
+    : null
+
+  const fetchClients = useCallback(async () => {
+    try {
+      setIsFetching(true)
+      const res = await getClients()
+      if (res.success) {
+        setClients(
+          res.data.map((c: any) => ({
+            id: c._id,
+            email: c.email || '',
+            firstName: c.firstName || '',
+            lastName: c.lastName || '',
+            phone: c.phone || '',
+            addresses: c.deliveryAddresses || [],
+            status: c.status || 'active',
+          }))
+        )
+      }
+    } catch (error: any) {
+      // If the endpoint doesn't exist yet, gracefully handle it
+      console.error('Failed to fetch clients:', error)
+      setClients([])
+    } finally {
+      setIsFetching(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchClients()
+  }, [fetchClients])
 
   const handleOpen = () => {
     setEditingId(null)
@@ -75,29 +77,49 @@ export default function ClientPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleSubmit = async (data: Client) => {
+  const handleSubmit: any = async (data: Client) => {
     setIsLoading(true)
     try {
       if (editingId) {
-        update(editingId, data)
+        await updateClient(editingId, {
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        })
+        toast.success('Client updated successfully')
       } else {
-        add(data)
+        await createClient({
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        })
+        toast.success('Client created successfully')
       }
       setIsFormOpen(false)
       setEditingId(null)
+      fetchClients()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to save client')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleConfirmDelete = async () => {
+    if (!deletingId) return
     setIsLoading(true)
     try {
-      if (deletingId) {
-        remove(deletingId)
-      }
+      await toggleBlockClient(deletingId)
+      toast.success('Client status toggled successfully')
       setIsDeleteOpen(false)
       setDeletingId(null)
+      fetchClients()
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || 'Failed to toggle client status'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -149,11 +171,10 @@ export default function ClientPage() {
             label: 'Status',
             render: (value) => (
               <span
-                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                  value === 'active'
-                    ? 'bg-green-500/20 text-green-500'
-                    : 'bg-red-500/20 text-red-500'
-                }`}
+                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${value === 'active'
+                  ? 'bg-green-500/20 text-green-500'
+                  : 'bg-red-500/20 text-red-500'
+                  }`}
               >
                 {String(value).charAt(0).toUpperCase() + String(value).slice(1)}
               </span>
@@ -164,7 +185,7 @@ export default function ClientPage() {
         idKey="id"
         onEdit={handleEdit}
         onDelete={handleDelete}
-        emptyMessage="No clients found. Create one to get started."
+        emptyMessage={isFetching ? 'Loading...' : 'No clients found. Create one to get started.'}
       />
 
       <FormDialog

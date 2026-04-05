@@ -19,7 +19,7 @@ interface FreelancerFormProps {
   initialData?: Freelancer
   onSubmit: (data: Freelancer) => void
   isLoading?: boolean
-  companies: Array<{ id: string; name: string }>
+  companies: Array<any>
 }
 
 export function FreelancerForm({ initialData, onSubmit, isLoading = false, companies }: FreelancerFormProps) {

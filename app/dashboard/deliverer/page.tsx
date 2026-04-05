@@ -1,77 +1,41 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/dashboard/data-table'
 import { FormDialog } from '@/components/dashboard/form-dialog'
 import { DeleteDialog } from '@/components/dashboard/delete-dialog'
 import { DelivererForm } from '@/components/dashboard/deliverer/deliverer-form'
-import { useData } from '@/hooks/use-data'
 import { Deliverer, Company, Branch } from '@/lib/schemas'
 import { Plus } from 'lucide-react'
-
-const defaultDeliverers: Deliverer[] = [
-  {
-    id: '1',
-    userId: 'user_1',
-    companyId: '1',
-    branchId: '1',
-    email: 'driver1@fastdeliver.sa',
-    firstName: 'Abdullah',
-    lastName: 'Khan',
-    phone: '+966501234567',
-    vehicle: {
-      type: 'Bike',
-      registrationNumber: 'ABC-1234',
-      capacity: 20,
-    },
-    licenseNumber: 'DL-12345',
-    status: 'active',
-    performance: {
-      totalDeliveries: 500,
-      successfulDeliveries: 498,
-      rating: 4.9,
-    },
-  },
-  {
-    id: '2',
-    userId: 'user_2',
-    companyId: '1',
-    branchId: '2',
-    email: 'driver2@fastdeliver.sa',
-    firstName: 'Hassan',
-    lastName: 'Ahmed',
-    phone: '+966502345678',
-    vehicle: {
-      type: 'Van',
-      registrationNumber: 'XYZ-5678',
-      capacity: 100,
-    },
-    licenseNumber: 'DL-67890',
-    status: 'active',
-    performance: {
-      totalDeliveries: 380,
-      successfulDeliveries: 375,
-      rating: 4.7,
-    },
-  },
-]
+import {
+  getMyDeliverers,
+  createDeliverer,
+  updateDeliverer,
+  toggleBlockDeliverer,
+} from '@/lib/api/crud/deliverer'
+import { getMyBranches } from '@/lib/api/crud/branch'
+import { getMyCompany } from '@/lib/api/crud/company'
+import { toast } from 'sonner'
 
 export default function DelivererPage() {
-  const { data: deliverers, add, update, remove } = useData<Deliverer>(
-    'deliverers',
-    defaultDeliverers
-  )
-  const { data: companies } = useData<Company>('companies', [])
-  const { data: branches } = useData<Branch>('branches', [])
+  const [deliverers, setDeliverers] = useState<Deliverer[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
+  const [branchId, setBranchId] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const editingDeliverer = editingId ? deliverers.find((d) => d.id === editingId) : null
-  const deletingDeliverer = deletingId ? deliverers.find((d) => d.id === deletingId) : null
+  const editingDeliverer = editingId
+    ? deliverers.find((d) => d.id === editingId)
+    : null
+  const deletingDeliverer = deletingId
+    ? deliverers.find((d) => d.id === deletingId)
+    : null
 
   const companyMap = useMemo(
     () => new Map(companies.map((c) => [c.id, c.name])),
@@ -82,6 +46,69 @@ export default function DelivererPage() {
     () => new Map(branches.map((b) => [b.id, b.name])),
     [branches]
   )
+
+  const fetchData = useCallback(async () => {
+    try {
+      setIsFetching(true)
+      const companyRes = await getMyCompany()
+      if (companyRes.success && companyRes.data?.company) {
+        const c = companyRes.data.company
+        const cId = c._id
+        setCompanies([
+          {
+            id: cId,
+            name: c.name,
+            businessType: c.businessType,
+            status: c.status,
+          },
+        ])
+
+        const branchRes = await getMyBranches(cId)
+        if (branchRes.success && branchRes.data.length > 0) {
+          const mappedBranches = branchRes.data.map((b: any) => ({
+            id: b._id,
+            companyId: b.companyId,
+            name: b.name,
+            address: b.address?.street || '',
+            city: b.address?.city || '',
+            state: b.address?.state || '',
+            zipCode: '',
+            status: b.status,
+          }))
+          setBranches(mappedBranches)
+
+          // Use first branch by default for supervisor view
+          const bId = mappedBranches[0].id
+          setBranchId(bId)
+
+          const delivererRes = await getMyDeliverers(bId)
+          if (delivererRes.success) {
+            setDeliverers(
+              delivererRes.data.map((d: any) => ({
+                id: d._id,
+                userId: d.userId?._id || d.userId,
+                companyId: d.companyId?._id || d.companyId,
+                branchId: d.branchId?._id || d.branchId,
+                email: d.userId?.email || '',
+                firstName: d.userId?.firstName || '',
+                lastName: d.userId?.lastName || '',
+                phone: d.userId?.phone || '',
+                status: d.isActive ? 'active' : 'inactive',
+              }))
+            )
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch deliverers:', error)
+    } finally {
+      setIsFetching(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleOpen = () => {
     setEditingId(null)
@@ -98,29 +125,55 @@ export default function DelivererPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleSubmit = async (data: Deliverer) => {
+  const handleSubmit: any = async (data: Deliverer) => {
+    if (!branchId) {
+      toast.error('No branch found')
+      return
+    }
     setIsLoading(true)
     try {
       if (editingId) {
-        update(editingId, data)
+        await updateDeliverer(branchId, editingId, {
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        })
+        toast.success('Deliverer updated successfully')
       } else {
-        add(data)
+        await createDeliverer(branchId, {
+          email: data.email,
+          phone: data.phone,
+          username: data.email.split('@')[0],
+          password: 'TempPass123!',
+          firstName: data.firstName,
+          lastName: data.lastName,
+        })
+        toast.success('Deliverer created successfully')
       }
       setIsFormOpen(false)
       setEditingId(null)
+      fetchData()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to save deliverer')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleConfirmDelete = async () => {
+    if (!branchId || !deletingId) return
     setIsLoading(true)
     try {
-      if (deletingId) {
-        remove(deletingId)
-      }
+      await toggleBlockDeliverer(branchId, deletingId)
+      toast.success('Deliverer status toggled successfully')
       setIsDeleteOpen(false)
       setDeletingId(null)
+      fetchData()
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || 'Failed to toggle deliverer status'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -206,7 +259,7 @@ export default function DelivererPage() {
         idKey="id"
         onEdit={handleEdit}
         onDelete={handleDelete}
-        emptyMessage="No deliverers found. Create one to get started."
+        emptyMessage={isFetching ? 'Loading...' : 'No deliverers found. Create one to get started.'}
       />
 
       <FormDialog

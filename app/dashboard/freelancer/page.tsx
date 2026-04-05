@@ -1,75 +1,98 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/dashboard/data-table'
 import { FormDialog } from '@/components/dashboard/form-dialog'
 import { DeleteDialog } from '@/components/dashboard/delete-dialog'
 import { FreelancerForm } from '@/components/dashboard/freelancer/freelancer-form'
-import { useData } from '@/hooks/use-data'
 import { Freelancer, Company } from '@/lib/schemas'
 import { Plus, Star } from 'lucide-react'
-
-const defaultFreelancers: Freelancer[] = [
-  {
-    id: '1',
-    userId: 'user_1',
-    companyId: '1',
-    email: 'courier1@example.com',
-    firstName: 'Ali',
-    lastName: 'Mohammed',
-    phone: '+966501234567',
-    businessName: 'Swift Courier',
-    businessType: 'individual',
-    status: 'active',
-    statistics: {
-      totalDeliveries: 250,
-      successfulDeliveries: 248,
-      rating: 4.8,
-      avgDeliveryTime: 45,
-    },
-    preferredDeliveryType: 'home',
-  },
-  {
-    id: '2',
-    userId: 'user_2',
-    companyId: '1',
-    email: 'courier2@example.com',
-    firstName: 'Fatima',
-    lastName: 'Ahmed',
-    phone: '+966502345678',
-    businessName: 'Express Delivery Service',
-    businessType: 'small_business',
-    status: 'active',
-    statistics: {
-      totalDeliveries: 180,
-      successfulDeliveries: 175,
-      rating: 4.6,
-      avgDeliveryTime: 50,
-    },
-    preferredDeliveryType: 'branch_pickup',
-  },
-]
+import {
+  getMyFreelancers,
+  createFreelancer,
+  updateFreelancer,
+  toggleBlockFreelancer,
+} from '@/lib/api/crud/freelancer'
+import { getMyBranches } from '@/lib/api/crud/branch'
+import { getMyCompany } from '@/lib/api/crud/company'
+import { toast } from 'sonner'
 
 export default function FreelancerPage() {
-  const { data: freelancers, add, update, remove } = useData<Freelancer>(
-    'freelancers',
-    defaultFreelancers
-  )
-  const { data: companies } = useData<Company>('companies', [])
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [branchId, setBranchId] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const editingFreelancer = editingId ? freelancers.find((f) => f.id === editingId) : null
-  const deletingFreelancer = deletingId ? freelancers.find((f) => f.id === deletingId) : null
+  const editingFreelancer = editingId
+    ? freelancers.find((f) => f.id === editingId)
+    : null
+  const deletingFreelancer = deletingId
+    ? freelancers.find((f) => f.id === deletingId)
+    : null
 
   const companyMap = useMemo(
     () => new Map(companies.map((c) => [c.id, c.name])),
     [companies]
   )
+
+  const fetchData = useCallback(async () => {
+    try {
+      setIsFetching(true)
+      const companyRes = await getMyCompany()
+      if (companyRes.success && companyRes.data?.company) {
+        const c = companyRes.data.company
+        const cId = c._id
+        setCompanies([
+          {
+            id: cId,
+            name: c.name,
+            businessType: c.businessType,
+            status: c.status,
+          },
+        ])
+
+        const branchRes = await getMyBranches(cId)
+        if (branchRes.success && branchRes.data.length > 0) {
+          const bId = branchRes.data[0]._id
+          setBranchId(bId)
+
+          const freelancerRes = await getMyFreelancers(bId)
+          if (freelancerRes.success) {
+            setFreelancers(
+              freelancerRes.data.map((f: any) => ({
+                id: f._id,
+                userId: f.userId?._id || f.userId,
+                companyId: f.companyId?._id || f.companyId,
+                email: f.userId?.email || '',
+                firstName: f.userId?.firstName || '',
+                lastName: f.userId?.lastName || '',
+                phone: f.userId?.phone || '',
+                businessName: f.businessName,
+                businessType: f.businessType || 'individual',
+                status: f.status === 'active' ? 'active' : f.status === 'suspended' ? 'suspended' : 'pending',
+                statistics: f.statistics,
+                preferredDeliveryType: f.preferredDeliveryType,
+              }))
+            )
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch freelancers:', error)
+    } finally {
+      setIsFetching(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleOpen = () => {
     setEditingId(null)
@@ -86,29 +109,61 @@ export default function FreelancerPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleSubmit = async (data: Freelancer) => {
+  const handleSubmit: any = async (data: Freelancer) => {
+    if (!branchId) {
+      toast.error('No branch found')
+      return
+    }
     setIsLoading(true)
     try {
       if (editingId) {
-        update(editingId, data)
+        await updateFreelancer(branchId, editingId, {
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          businessName: data.businessName,
+          businessType: data.businessType as any,
+          preferredDeliveryType: data.preferredDeliveryType as any,
+        })
+        toast.success('Freelancer updated successfully')
       } else {
-        add(data)
+        await createFreelancer(branchId, {
+          email: data.email,
+          phone: data.phone,
+          username: data.email.split('@')[0],
+          password: 'TempPass123!',
+          firstName: data.firstName,
+          lastName: data.lastName,
+          businessName: data.businessName,
+          businessType: data.businessType as any,
+          preferredDeliveryType: data.preferredDeliveryType as any,
+        })
+        toast.success('Freelancer created successfully')
       }
       setIsFormOpen(false)
       setEditingId(null)
+      fetchData()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to save freelancer')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleConfirmDelete = async () => {
+    if (!branchId || !deletingId) return
     setIsLoading(true)
     try {
-      if (deletingId) {
-        remove(deletingId)
-      }
+      await toggleBlockFreelancer(branchId, deletingId)
+      toast.success('Freelancer status toggled successfully')
       setIsDeleteOpen(false)
       setDeletingId(null)
+      fetchData()
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || 'Failed to toggle freelancer status'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -179,13 +234,12 @@ export default function FreelancerPage() {
             label: 'Status',
             render: (value) => (
               <span
-                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                  value === 'active'
+                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${value === 'active'
                     ? 'bg-green-500/20 text-green-500'
                     : value === 'pending'
                       ? 'bg-yellow-500/20 text-yellow-500'
                       : 'bg-red-500/20 text-red-500'
-                }`}
+                  }`}
               >
                 {String(value).charAt(0).toUpperCase() + String(value).slice(1)}
               </span>
@@ -196,7 +250,7 @@ export default function FreelancerPage() {
         idKey="id"
         onEdit={handleEdit}
         onDelete={handleDelete}
-        emptyMessage="No freelancers found. Create one to get started."
+        emptyMessage={isFetching ? 'Loading...' : 'No freelancers found. Create one to get started.'}
       />
 
       <FormDialog
