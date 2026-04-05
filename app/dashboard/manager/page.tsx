@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 
 export default function ManagerPage() {
   const [managers, setManagers] = useState<Manager[]>([])
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<Array<{ id: string; name: string; businessType: string; status: string }>>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

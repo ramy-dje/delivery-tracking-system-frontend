@@ -106,8 +106,7 @@ export default function VehiclePage() {
     setIsLoading(true)
     try {
       await createVehicle(companyId, {
-        companyId,
-        type: data.type,
+        type: data.type as any,
         registrationNumber: data.registrationNumber,
         brand: data.brand,
         modelName: data.modelName,
@@ -134,7 +133,7 @@ export default function VehiclePage() {
     setIsLoading(true)
     try {
       await updateVehicle(companyId, selectedVehicle.id, {
-        type: data.type,
+        type: data.type as any,
         registrationNumber: data.registrationNumber,
         brand: data.brand,
         modelName: data.modelName,
@@ -144,8 +143,7 @@ export default function VehiclePage() {
         maxVolume: data.maxVolume,
         supportsFragile: data.supportsFragile,
         currentBranchId: data.currentBranchId,
-        status: data.status,
-        isAvailable: data.isAvailable,
+        status: data.status as any,
         notes: data.notes,
       })
       toast.success('Vehicle updated successfully')

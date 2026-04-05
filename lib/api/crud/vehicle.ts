@@ -2,8 +2,7 @@ import api from "../axios";
 
 // ── Types ──
 export interface CreateVehiclePayload {
-  companyId: string;
-  type: "bike" | "car" | "van" | "truck" | "bus";
+  type: "motorcycle" | "car" | "van" | "small_truck" | "large_truck";
   registrationNumber: string;
   brand?: string;
   modelName?: string;
@@ -12,12 +11,19 @@ export interface CreateVehiclePayload {
   maxWeight: number;
   maxVolume: number;
   supportsFragile?: boolean;
+  documents?: {
+    registrationCard?: string;
+    insurance?: string;
+    insuranceExpiry?: Date;
+    technicalInspection?: string;
+    inspectionExpiry?: Date;
+  };
   currentBranchId?: string;
   notes?: string;
 }
 
 export interface UpdateVehiclePayload {
-  type?: "bike" | "car" | "van" | "truck" | "bus";
+  type?: "motorcycle" | "car" | "van" | "small_truck" | "large_truck";
   registrationNumber?: string;
   brand?: string;
   modelName?: string;
@@ -27,13 +33,9 @@ export interface UpdateVehiclePayload {
   maxVolume?: number;
   supportsFragile?: boolean;
   currentBranchId?: string;
-  status?: "available" | "in_use" | "maintenance" | "inactive";
-  isAvailable?: boolean;
+  status?: "available" | "in_use" | "maintenance" | "out_of_service" | "retired";
   notes?: string;
 }
-
-// TODO: No backend vehicle routes exist yet.
-// These functions are prepared for when vehicle CRUD endpoints are added to the backend.
 
 // ── Create vehicle ──
 export const createVehicle = async (
@@ -41,7 +43,7 @@ export const createVehicle = async (
   data: CreateVehiclePayload
 ) => {
   const res = await api.post(
-    `/api/manager/company/${companyId}/vehicle`,
+    `/api/vehicle/company/${companyId}/vehicle`,
     data
   );
   return res.data;
@@ -54,19 +56,19 @@ export const updateVehicle = async (
   data: UpdateVehiclePayload
 ) => {
   const res = await api.put(
-    `/api/manager/company/${companyId}/vehicle/${vehicleId}`,
+    `/api/vehicle/company/${companyId}/vehicle/${vehicleId}`,
     data
   );
   return res.data;
 };
 
-// ── Toggle block/activate vehicle ──
+// ── Toggle vehicle status (available ↔ out_of_service) ──
 export const toggleBlockVehicle = async (
   companyId: string,
   vehicleId: string
 ) => {
   const res = await api.patch(
-    `/api/manager/company/${companyId}/vehicle/${vehicleId}/toggle-block`
+    `/api/vehicle/company/${companyId}/vehicle/${vehicleId}/toggle-status`
   );
   return res.data;
 };
@@ -74,7 +76,7 @@ export const toggleBlockVehicle = async (
 // ── Get vehicle by ID ──
 export const getVehicle = async (companyId: string, vehicleId: string) => {
   const res = await api.get(
-    `/api/manager/company/${companyId}/vehicle/${vehicleId}`
+    `/api/vehicle/company/${companyId}/vehicle/${vehicleId}`
   );
   return res.data;
 };
@@ -85,13 +87,38 @@ export const getMyVehicles = async (
   params?: {
     status?: string;
     type?: string;
+    currentBranchId?: string;
     isAvailable?: string;
     search?: string;
   }
 ) => {
   const res = await api.get(
-    `/api/manager/company/${companyId}/vehicles`,
+    `/api/vehicle/company/${companyId}/vehicles`,
     { params }
+  );
+  return res.data;
+};
+
+// ── Assign vehicle to a user ──
+export const assignVehicle = async (
+  companyId: string,
+  vehicleId: string,
+  data: { assignedUserId: string; assignedUserRole?: string; branchId: string }
+) => {
+  const res = await api.patch(
+    `/api/vehicle/company/${companyId}/vehicle/${vehicleId}/assign`,
+    data
+  );
+  return res.data;
+};
+
+// ── Release vehicle (unassign) ──
+export const releaseVehicle = async (
+  companyId: string,
+  vehicleId: string
+) => {
+  const res = await api.patch(
+    `/api/vehicle/company/${companyId}/vehicle/${vehicleId}/release`
   );
   return res.data;
 };
