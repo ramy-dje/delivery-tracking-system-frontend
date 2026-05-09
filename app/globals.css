@@ -1,34 +1,256 @@
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@import "tailwindcss";
+
+/* Import your animation plugin if needed */
+@plugin "tailwindcss-animate";
 
 @theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(0 0% 10%);
-  --color-card: hsl(0 0% 98%);
-  --color-card-foreground: hsl(0 0% 10%);
-  --color-popover: hsl(0 0% 98%);
-  --color-popover-foreground: hsl(0 0% 10%);
-  --color-primary: hsl(268 100% 50%);
-  --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(0 0% 92%);
-  --color-secondary-foreground: hsl(0 0% 10%);
-  --color-muted: hsl(0 0% 85%);
-  --color-muted-foreground: hsl(0 0% 40%);
-  --color-accent: hsl(268 100% 50%);
-  --color-accent-foreground: hsl(0 0% 100%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(0 0% 92%);
-  --color-input: hsl(0 0% 95%);
-  --color-ring: hsl(268 100% 50%);
-  --radius: 0.5rem;
+  /* --- Fonts --- */
+  --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* --- Colors --- */
+  
+  /* Primary Brand - Amber */
+  --color-primary: #fbbf24;
+  --color-primary-dark: #f59e0b;
+  --color-primary-darker: #d97706;
+  --color-primary-glow: rgba(251, 191, 36, 0.4);
+  --color-primary-soft: rgba(251, 191, 36, 0.1);
+
+  /* Secondary - Cyan */
+  --color-secondary: #22d3ee;
+  --color-secondary-dark: #06b6d4;
+  --color-secondary-soft: rgba(34, 211, 238, 0.08);
+
+  /* Success */
+  --color-success: #34d399;
+  --color-success-soft: rgba(52, 211, 153, 0.1);
+
+  /* Backgrounds */
+  --color-background-main: #030712;
+  --color-background-surface: #06090f;
+  --color-background-alt: #0d1117;
+  --color-background-elevated: #111827;
+
+  /* Borders */
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-default: rgba(255, 255, 255, 0.1);
+  --color-border-primary: rgba(251, 191, 36, 0.25);
+
+  /* Text */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #90a1b9;
+  --color-text-muted: #64748b;
+  --color-text-brand: #fbbf24;
+
+  /* --- Background Images --- */
+  --background-image-grid-pattern: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  --background-image-gradient-primary: linear-gradient(135deg, #fbbf24, #f59e0b);
+  --background-image-gradient-dark: linear-gradient(135deg, #0f172a, #020617);
+
+  /* --- Background Sizes --- */
+  --background-size-grid: 60px 60px;
+
+  /* --- Animations --- */
+  --animate-ping2: ping2 2s ease-out infinite;
+  --animate-blink: blink 1s step-end infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-spin-slow: spin 8s linear infinite;
+
+  /* --- Keyframes --- */
+  @keyframes ping2 {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    75% { transform: scale(2); opacity: 0; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
-  body {
-    @apply bg-background text-foreground;
-  }
+button {
+  cursor: pointer !important;
+}
+
+body {
+  background-color: #030712;
+  color: #e2e8f0;
+  font-family: "DM Sans", sans-serif;
+  overflow-x: hidden;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+:root {
+  /* Primary Brand - Amber */
+  --primary: #fbbf24;
+  --primary-dark: #f59e0b;
+  --primary-darker: #d97706;
+  --primary-glow: rgba(251, 191, 36, 0.4);
+  --primary-soft: rgba(251, 191, 36, 0.1);
+  --primary-border: rgba(251, 191, 36, 0.25);
+  
+  /* Secondary - Cyan (use sparingly for secondary accents) */
+  --secondary: #22d3ee;
+  --secondary-soft: rgba(34, 211, 238, 0.08);
+  --secondary-glow: rgba(34, 211, 238, 0.2);
+  
+  /* Success */
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.1);
+  
+  /* Backgrounds - Unified dark slate theme */
+  --bg-main: #030712;
+  --bg-surface: #06090f;
+  --bg-surface-alt: #0d1117;
+  --bg-elevated: #111827;
+  
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-brand: #fbbf24;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  --gradient-dark: linear-gradient(135deg, #0f172a, #020617);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Gradient Text */
+.gradient-amber {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-cyan {
+  background: linear-gradient(135deg, var(--secondary), #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--gradient-primary);
+  color: #030712;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px var(--primary-glow);
+}
+
+.btn-outline {
+  border: 1px solid var(--primary-border);
+  color: var(--primary);
+  background: transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.btn-outline:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* Glass effects */
+.glass {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+}
+
+.glass-amber {
+  background: var(--primary-soft);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--primary-border);
+}
+
+/* Section divider */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary-border), var(--primary-border), transparent);
+}
+
+/* Cards */
+.card {
+  background: linear-gradient(145deg, var(--bg-surface), var(--bg-surface-alt));
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+.card:hover {
+  border-color: var(--primary-border);
+  box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Stats */
+.stat-value {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Animations */
+@keyframes ping2 {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  75% { transform: scale(2); opacity: 0; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }

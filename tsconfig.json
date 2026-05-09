@@ -1,5 +1,12 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0", // 👈 add this
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "lib": [
       "dom",
       "dom.iterable",
@@ -22,11 +29,6 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
   },
   "include": [
     "next-env.d.ts",
