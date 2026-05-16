@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import userStore from "@/stores/userStore";
 
 const navLinks = [
@@ -13,7 +14,7 @@ const navLinks = [
 ];
 
 export default function NavBar() {
-  const { user } = userStore();
+  const { user } : any = userStore();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -35,20 +36,16 @@ export default function NavBar() {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2 group">
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 bg-amber-400 rounded-lg rotate-12 group-hover:rotate-45 transition-transform duration-300" />
-            <div className="absolute inset-1 bg-ink-950 rounded-md flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 10L7 2L12 10" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 7.5H10" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </div>
-          </div>
-          <span className="font-display font-700 text-lg text-white tracking-tight">
-            Flash<span className="gradient-amber">Ship</span>
-          </span>
-        </a>
+        <Link href="/" className="flex items-center gap-2 group">
+          <Image 
+            src="/logo/logolight .png" 
+            alt="FlashShip Logo" 
+            width={140} 
+            height={40} 
+            className="object-contain" 
+            priority
+          />
+        </Link>
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-8">

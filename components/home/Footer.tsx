@@ -22,7 +22,7 @@
 //                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
 //                 </svg>
 //               </div>
-//               <span className="text-lg font-bold">FlashShip</span>
+//               <span className="text-lg font-bold">WaselGo</span>
 //             </div>
 //             <p className="text-sm text-[#71717A] leading-relaxed mb-6">
 //               The intelligent delivery management platform for modern logistics teams across North Africa.
@@ -76,7 +76,7 @@
 //         {/* Bottom */}
 //         <div className="mt-16 pt-8 border-t border-[#1E1E2E]/50 flex flex-col sm:flex-row items-center justify-between gap-4">
 //           <p className="text-xs text-[#71717A]">
-//             © {new Date().getFullYear()} FlashShip. All rights reserved.
+//             © {new Date().getFullYear()} WaselGo. All rights reserved.
 //           </p>
 //           <div className="flex items-center gap-2 text-xs text-[#71717A]">
 //             <span className="relative flex h-2 w-2">
@@ -93,6 +93,9 @@
 
 
 "use client";
+
+import Image from "next/image";
+import Link from "next/link";
 
 const footerLinks = {
     Product: ["Features", "Pricing", "API Docs", "Changelog", "Status"],
@@ -116,20 +119,15 @@ export default function Footer() {
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-10 mb-14">
                     {/* Brand */}
                     <div className="col-span-2">
-                        <a href="#" className="flex items-center gap-2 group mb-5">
-                            <div className="relative w-8 h-8">
-                                <div className="absolute inset-0 bg-amber-400 rounded-lg rotate-12" />
-                                <div className="absolute inset-1 bg-ink-950 rounded-md flex items-center justify-center" style={{ backgroundColor: "#030712" }}>
-                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                        <path d="M2 10L7 2L12 10" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M4 7.5H10" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <span className="font-display font-700 text-lg text-white tracking-tight">
-                                Flash<span className="gradient-amber">Ship</span>
-                            </span>
-                        </a>
+                        <Link href="/" className="flex items-center gap-2 group mb-5">
+                            <Image 
+                                src="/logo/logolight .png" 
+                                alt="FlashShip Logo" 
+                                width={140} 
+                                height={40} 
+                                className="object-contain" 
+                            />
+                        </Link>
 
                         <p className="text-sm text-slate-500 leading-relaxed mb-6 max-w-[220px]">
                             Algeria&apos;s leading delivery management platform. Built for speed, designed for scale.
@@ -176,7 +174,7 @@ export default function Footer() {
 
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-xs text-slate-600 font-mono">
-                        © 2025 FlashShip Technologies SARL. Alger, Algérie.
+                        © 2025 WaselGo Technologies SARL. Alger, Algérie.
                     </p>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ animation: "ping2 2s ease-out infinite" }} />
