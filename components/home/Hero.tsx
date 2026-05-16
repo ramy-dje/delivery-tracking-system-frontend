@@ -74,7 +74,7 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="text-lg text-slate-400 leading-relaxed mb-10 max-w-lg"
             >
-              FlashShip is Algeria&apos;s most advanced delivery management platform.
+              WaselGo is Algeria&apos;s most advanced delivery management platform.
               Intelligent routing, real-time tracking, and automated dispatch —
               all in one dashboard.
             </motion.p>

@@ -18,7 +18,7 @@ type Testimonial = {
 const testimonials: Testimonial[] = [
     {
         quote:
-            "FlashShip cut our average delivery time from 3 days to same-day across Alger. The route AI is genuinely impressive — it adapts better than our veteran dispatchers.",
+            "WaselGo cut our average delivery time from 3 days to same-day across Alger. The route AI is genuinely impressive — it adapts better than our veteran dispatchers.",
         author: "Nassim Belouizdad",
         role: "Head of Operations",
         company: "AlgeriaMart",
@@ -30,7 +30,7 @@ const testimonials: Testimonial[] = [
     },
     {
         quote:
-            "We integrated FlashShip via API in an afternoon. The webhooks are solid and the analytics dashboard surfaced problems we didn't even know we had.",
+            "We integrated WaselGo via API in an afternoon. The webhooks are solid and the analytics dashboard surfaced problems we didn't even know we had.",
         author: "Dina Ferhat",
         role: "CTO",
         company: "QuickDeliver DZ",
@@ -42,7 +42,7 @@ const testimonials: Testimonial[] = [
     },
     {
         quote:
-            "Before FlashShip, managing 60 drivers was chaos. Now dispatch is fully automated, driver accountability is through the roof, and our customers love the live tracking.",
+            "Before WaselGo, managing 60 drivers was chaos. Now dispatch is fully automated, driver accountability is through the roof, and our customers love the live tracking.",
         author: "Amine Zerrouk",
         role: "Founder",
         company: "ZipCourier",
@@ -66,7 +66,7 @@ const testimonials: Testimonial[] = [
     },
     {
         quote:
-            "Scaled from 200 to 3,000 deliveries/day on the same plan. FlashShip didn't even flinch. Rock-solid infrastructure.",
+            "Scaled from 200 to 3,000 deliveries/day on the same plan. WaselGo didn't even flinch. Rock-solid infrastructure.",
         author: "Yacine Hadjadj",
         role: "CEO",
         company: "ExpressBox",
@@ -78,7 +78,7 @@ const testimonials: Testimonial[] = [
     },
     {
         quote:
-            "Support team responds in under 10 minutes. Every. Single. Time. That alone sets FlashShip apart from every other logistics SaaS in the region.",
+            "Support team responds in under 10 minutes. Every. Single. Time. That alone sets WaselGo apart from every other logistics SaaS in the region.",
         author: "Samira Boudjelal",
         role: "E-commerce Manager",
         company: "Style.dz",
@@ -509,7 +509,7 @@ export default function Testimonials() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-slate-500 text-lg max-w-lg mx-auto leading-relaxed"
                     >
-                        Join 500+ businesses across Algeria that trust FlashShip
+                        Join 500+ businesses across Algeria that trust WaselGo
                         <br className="hidden sm:block" /> for their delivery operations.
                     </motion.p>
                 </div>
@@ -619,7 +619,7 @@ export default function Testimonials() {
                                 Ready to join them?
                             </h3>
                             <p className="text-slate-500 text-sm md:text-base mb-8 max-w-sm mx-auto leading-relaxed">
-                                Start your 14-day free trial and see why teams choose FlashShip.
+                                Start your 14-day free trial and see why teams choose WaselGo.
                             </p>
 
                             <motion.a

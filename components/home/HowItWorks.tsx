@@ -28,7 +28,7 @@ const steps: Step[] = [
         number: "02",
         title: "AI Assigns Drivers",
         description:
-            "FlashShip analyzes real-time traffic, driver proximity, and delivery zones to auto-dispatch the best available courier.",
+            "WaselGo analyzes real-time traffic, driver proximity, and delivery zones to auto-dispatch the best available courier.",
         detail: "~3 sec average dispatch time",
         side: "right",
     },

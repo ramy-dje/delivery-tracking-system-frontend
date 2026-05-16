@@ -43,7 +43,7 @@
 //               transition={{ delay: 0.3, duration: 0.7 }}
 //               className="text-lg lg:text-xl text-white/80 max-w-2xl mx-auto mb-10"
 //             >
-//               Join 500+ businesses across Algeria that ship smarter with FlashShip.
+//               Join 500+ businesses across Algeria that ship smarter with WaselGo.
 //               Start your free 14-day trial today — no credit card required.
 //             </motion.p>
 
@@ -193,7 +193,7 @@ export default function CTA() {
                             transition={{ duration: 0.5, delay: 0.3 }}
                             className="text-slate-400 text-lg mb-10 max-w-lg mx-auto"
                         >
-                            Join 500+ Algerian businesses already running on FlashShip.
+                            Join 500+ Algerian businesses already running on WaselGo.
                             Set up in minutes. Deliver in hours.
                         </motion.p>
 
