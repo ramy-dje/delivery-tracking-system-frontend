@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getWilayas as svcGetWilayas, getCommunes as svcGetCommunes } from "@/services/LocationService";
+import { getWilayas as svcGetWilayas, getAllCommunes as svcGetCommunes } from "@/services/LocationService";
 
 export interface MapCoords {
     latitude: number;
@@ -133,7 +133,7 @@ function MapPickerInner({ value, onChange, centerOn, disabled, onLocationDetecte
 
                 if (wilayaId) {
                     try {
-                        const communes = await svcGetCommunes(wilayaId);
+                        const communes = await svcGetCommunes({ wilayaId, pageNumber: 1, pageSize: 50 });
                         const placeNames = [addr.city, addr.town, addr.village, addr.hamlet, addr.municipality, addr.suburb, addr.county].filter(Boolean).map((s: any) => String(s).toLowerCase());
                         for (const c of communes) {
                             const cnames = [c.nameFr, c.nameAr].filter(Boolean).map((s: any) => String(s).toLowerCase());

@@ -1,8 +1,12 @@
-
-
-// ── Enums ─────────────────────────────────────────────────────────────────────
-
+import api from "@/lib/api";
+import { IBaseFilter, IPaginatedResponse } from "@/types/paginate";
 import { ICommune } from "./common";
+import { DeliveryType } from "./deliveryFee";
+import { string } from "zod";
+
+const BASE = "/api/shipments";
+
+// ── Enums (matching .NET Domain.Enums) ──────────────────────────────────────
 
 export enum ShipmentOrigin {
     PickupRequested = 1,
@@ -10,24 +14,22 @@ export enum ShipmentOrigin {
 }
 
 export enum ShipmentStatus {
-    Pending = 1,
-    PickupRequested = 2,
-    DroppedOffAtBranch = 3,
-    Collected = 4,
-    ReceivedAtHub = 5,
-    ReadyForTransfer = 6,
-    InTransit = 7,
-    ReceivedAtDestinationHub = 8,
-    ReadyForDelivery = 9,
-    OutForDelivery = 10,
-    Delivered = 11,
-    DeliveryFailed = 12,
-    Refused = 13,
-    PendingSwap = 14,
-    RtoPreparing = 15,
-    InTransitReturn = 16,
-    ReturnedToMerchant = 17,
-    Cancelled = 18,
+    Pending = "Pending",
+    ReceivedAtBranch = "ReceivedAtBranch",
+    ReceivedAtHub = "ReceivedAtHub",
+    ReadyForTransfer = "ReadyForTransfer",
+    InTransit = "InTransit",
+    ReceivedAtDestinationHub = "ReceivedAtDestinationHub",
+    ReadyForDelivery = "ReadyForDelivery",
+    OutForDelivery = "OutForDelivery",
+    Delivered = "Delivered",
+    DeliveryFailed = "DeliveryFailed",
+    Refused = "Refused",
+    PendingSwap = "PendingSwap",
+    RtoPreparing = "RtoPreparing",
+    InTransitReturn = "InTransitReturn",
+    ReturnedToMerchant = "ReturnedToMerchant",
+    Cancelled = "Cancelled",
 }
 
 export enum FailureReason {
@@ -44,13 +46,51 @@ export enum SwapType {
     FullReroute = 1,
 }
 
-// ── Sub-types ─────────────────────────────────────────────────────────────────
+export enum ShipmentEventType {
+    StatusChanged = 1,
+    PickupRequested = 2,
+    Collected = 3,
+    ReceivedAtHub = 4,
+    TransferStarted = 5,
+    TransferCompleted = 6,
+    OutForDelivery = 7,
+    Delivered = 8,
+    DeliveryFailed = 9,
+    Refused = 10,
+    RtoInitiated = 11,
+    Returned = 12,
+    Cancelled = 13,
+    SwapInitiated = 14,
+    SwapConfirmed = 15,
+}
+
+export enum EventTriggerSource {
+    System = 1,
+    Merchant = 2,
+    Driver = 3,
+    HubWorker = 4,
+    Customer = 5,
+}
+
+// ── Sub-types (camelCase JSON from .NET PascalCase records) ─────────────────
 
 export interface ICustomer {
     fullName: string;
     phoneNumber: string;
-    communeId: string;
+    communeId: string; // Guid as string
     commune?: ICommune;
+}
+
+export interface IShipmentEvent {
+    id: string; // Guid
+    status: ShipmentStatus;
+    eventType: ShipmentEventType;
+    notes: string | null;
+    triggeredByUserId: string | null; // Guid?
+    triggerSource: EventTriggerSource;
+    hubId: string | null; // Guid?
+    manifestId: string | null; // Guid?
+    createdAt: string; // ISO DateTime
 }
 
 export interface IShipmentSwap {
@@ -65,43 +105,40 @@ export interface IShipmentSwap {
     isConfirmed: boolean;
 }
 
-export interface IShipmentEvent {
-    id: string;
-    status: ShipmentStatus;
-    eventType: number;
-    notes: string | null;
-    triggeredByUserId: string | null;
-    triggerSource: number;
-    hubId: string | null;
-    manifestId: string | null;
-    createdAt: string;
-}
-
-// ── Responses ─────────────────────────────────────────────────────────────────
+// ── Responses ───────────────────────────────────────────────────────────────
 
 export interface IShipmentSummary {
-    id: string;
+    id: string; // Guid
     trackingCode: string;
     origin: ShipmentOrigin;
     status: ShipmentStatus;
+    deliveryType: DeliveryType;
     merchantId: string;
+    merchantBusinessName: string;
+    merchantPhoneNumber: string;
     customer: ICustomer;
     destinationHubId: string;
-    codAmount: number;
+    finalDestinationNodeId: string;
+    finalDestinationNodeName: string;
+    finalDestinationWilayaName: string;
+    finalDestinationWilayaCode: number;
+    finalDestinationCommuneName: string;
+    codAmount: number; // decimal → number
     deliveryFee: number;
     totalAmount: number;
     deliveryAttempts: number;
     isRto: boolean;
+    weightKg: number | null; // decimal? → number?
     hasBeenSwapped: boolean;
-    createdAt: string;
+    createdAt: string; // ISO DateTime
 }
 
 export interface IShipmentDetail extends IShipmentSummary {
-    companyId: string;
-    assignedDriverId: string | null;
-    currentHubId: string | null;
+    companyId: string; // Guid
+    assignedDriverId: string | null; // Guid?
+    currentHubId: string | null; // Guid?
     description: string | null;
-    weightKg: number | null;
+    weightKg: number | null; // decimal? → number?
     failureReason: FailureReason;
     failureNotes: string | null;
     rtoInitiatedAt: string | null;
@@ -112,33 +149,20 @@ export interface IShipmentDetail extends IShipmentSummary {
     events: IShipmentEvent[];
 }
 
-// ── Request payloads ──────────────────────────────────────────────────────────
+// ── Request payloads ────────────────────────────────────────────────────────
 
 export interface ICustomerPayload {
     fullName: string;
     phoneNumber: string;
-    communeId: string;
+    communeId: string; // Guid as string
 }
 
-export interface ICreatePickupShipment {
-    merchantId: string;
+export interface ICreateShipment {
     customer: ICustomerPayload;
-    destinationHubId: string;
     codAmount: number;
-    deliveryFee: number;
     description?: string;
-    weightKg?: number;
-}
-
-export interface ICreateWalkInShipment {
-    merchantId: string;
-    customer: ICustomerPayload;
-    destinationHubId: string;
-    dropOffHubId: string;
-    codAmount: number;
-    deliveryFee: number;
-    description?: string;
-    weightKg?: number;
+    deliveryType: DeliveryType;
+    weightKg: number; // Now required per backend CreateShipmentRequestDto
 }
 
 export interface IMarkDeliveryFailed {
@@ -146,20 +170,26 @@ export interface IMarkDeliveryFailed {
     notes?: string;
 }
 
-export interface IInitiateSwap {
-    swapType: SwapType;
-    newCustomer: ICustomerPayload;
-    requestedByMerchantId: string;
-    newDestinationHubId?: string;
+// ── Filter for ListShipments ────────────────────────────────────────────────
+
+export interface IShipmentFilter extends IBaseFilter {
+    merchantId?: string; // Guid?
+    nodeId?: string;     // Guid? (hub/branch)
+    status?: ShipmentStatus;
 }
 
-// ── Display helpers ───────────────────────────────────────────────────────────
+// ── Queries ─────────────────────────────────────────────────────────────────
+
+
+// ── Swap (V2 - excluded per request) ───────────────────────────────────────
+// Functions like initiateSwap/confirmSwap are intentionally omitted.
+// Uncomment and implement when backend swap endpoints are stable.
+
+// ── Display helpers ────────────────────────────────────────────────────────
 
 export const STATUS_LABEL: Record<ShipmentStatus, string> = {
     [ShipmentStatus.Pending]: "Pending",
-    [ShipmentStatus.PickupRequested]: "Pickup Requested",
-    [ShipmentStatus.DroppedOffAtBranch]: "Dropped Off",
-    [ShipmentStatus.Collected]: "Collected",
+    [ShipmentStatus.ReceivedAtBranch]: "Received At Branch",
     [ShipmentStatus.ReceivedAtHub]: "At Hub",
     [ShipmentStatus.ReadyForTransfer]: "Ready for Transfer",
     [ShipmentStatus.InTransit]: "In Transit",
@@ -178,9 +208,7 @@ export const STATUS_LABEL: Record<ShipmentStatus, string> = {
 
 export const STATUS_COLOR: Record<ShipmentStatus, { bg: string; text: string; dot: string }> = {
     [ShipmentStatus.Pending]: { bg: "rgba(148,163,184,0.12)", text: "#94a3b8", dot: "#94a3b8" },
-    [ShipmentStatus.PickupRequested]: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", dot: "#fbbf24" },
-    [ShipmentStatus.DroppedOffAtBranch]: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", dot: "#fbbf24" },
-    [ShipmentStatus.Collected]: { bg: "rgba(167,139,250,0.12)", text: "#a78bfa", dot: "#a78bfa" },
+    [ShipmentStatus.ReceivedAtBranch]: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", dot: "#fbbf24" },
     [ShipmentStatus.ReceivedAtHub]: { bg: "rgba(167,139,250,0.12)", text: "#a78bfa", dot: "#a78bfa" },
     [ShipmentStatus.ReadyForTransfer]: { bg: "rgba(96,165,250,0.12)", text: "#60a5fa", dot: "#60a5fa" },
     [ShipmentStatus.InTransit]: { bg: "rgba(96,165,250,0.12)", text: "#60a5fa", dot: "#60a5fa" },

@@ -2,7 +2,7 @@ import { LucideIcon } from "lucide-react";
 
 interface InputFieldProps {
     label: string;
-    type: string;
+    type?: string;
     placeholder: string;
     icon?: LucideIcon;
     value: string;
@@ -11,7 +11,7 @@ interface InputFieldProps {
     step?: string;
 }
 
-export default function InputField({ label, type, placeholder, icon: Icon, value, onChange, error, step }: InputFieldProps) {
+export default function InputField({ label, type = "text", placeholder, icon: Icon, value, onChange, error, step }: InputFieldProps) {
     return (
         <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">{label}</label>

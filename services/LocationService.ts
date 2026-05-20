@@ -1,20 +1,13 @@
 import api from "@/lib/api";
-import { ICommune, IWilaya } from "@/types/common";
+import { ICommune, ICommuneFilter, IWilaya, IWilayaFilter } from "@/types/common";
 
-export const getWilayas = async (): Promise<IWilaya[]> => {
-    const res = await api.get("/locations/wilayas");
+export const getWilayas = async (params?: IWilayaFilter): Promise<IWilaya[]> => {
+    const res = await api.get("/locations/wilayas", { params });
     return res.data;
 };
 
-export const getCommunes = async (wilayaId: string): Promise<ICommune[]> => {
-    const res = await api.get(`/locations/wilayas/${wilayaId}/communes`);
-    return res.data;
-};
 
-export const getAllCommunes = async (params?: {
-    wilayaId?: string;
-    wilayaCode?: number;
-}): Promise<ICommune[]> => {
+export const getAllCommunes = async (params: ICommuneFilter): Promise<ICommune[]> => {
     const res = await api.get("/locations/communes", { params });
     return res.data;
 };

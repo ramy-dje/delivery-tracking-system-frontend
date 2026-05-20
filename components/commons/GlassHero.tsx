@@ -4,14 +4,14 @@ import { ReactNode } from "react";
 export interface GlassHeroProps {
     title: string;
     subtitle?: string;
-    statusLabel?: string;
+    statusLabel?: string | ReactNode;
     isActive?: boolean;
     metaItems?: Array<{
         icon: ReactNode;
         value: string;
         muted?: boolean;
     }>;
-    accentColor?: "amber" | "emerald" | "violet" | "rose" | "cyan";
+    accentColor?: "amber" | "emerald" | "violet" | "rose" | "cyan" | "red";
     children?: ReactNode;
 }
 
@@ -50,6 +50,11 @@ export function GlassHero({
             heroBorder: "rgba(34,211,238,0.11)",
             pulse: "#22d3ee",
         },
+        red: {
+            heroBg: "linear-gradient(135deg, rgba(239,68,68,0.065) 0%, rgba(255,255,255,0.018) 100%)",
+            heroBorder: "rgba(239,68,68,0.11)",
+            pulse: "#ef4444",
+        },
     }[accentColor];
 
     return (
@@ -76,24 +81,41 @@ export function GlassHero({
                 </div>
 
                 {statusLabel && (
-                    <div
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0"
-                        style={{
-                            background: isActive ? "rgba(52,211,153,0.08)" : "rgba(100,116,139,0.08)",
-                            border: `1px solid ${isActive ? "rgba(52,211,153,0.2)" : "rgba(100,116,139,0.14)"}`,
-                        }}
-                    >
-                        <span
-                            className={`w-1.5 h-1.5 rounded-full ${isActive ? "gef-pulse" : ""}`}
-                            style={{ background: isActive ? accent.pulse : "#475569" }}
-                        />
-                        <span
-                            className="text-[10px] font-bold uppercase tracking-widest"
-                            style={{ color: isActive ? accent.pulse : "#64748b" }}
+                    typeof statusLabel === "string" ? (
+                        <div
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0"
+                            style={{
+                                background: isActive
+                                    ? "rgba(52,211,153,0.08)"
+                                    : "rgba(100,116,139,0.08)",
+                                border: `1px solid ${isActive
+                                    ? "rgba(52,211,153,0.2)"
+                                    : "rgba(100,116,139,0.14)"
+                                    }`,
+                            }}
                         >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${isActive ? "gef-pulse" : ""
+                                    }`}
+                                style={{
+                                    background: isActive ? accent.pulse : "#475569",
+                                }}
+                            />
+
+                            <span
+                                className="text-[10px] font-bold uppercase tracking-widest"
+                                style={{
+                                    color: isActive ? accent.pulse : "#64748b",
+                                }}
+                            >
+                                {statusLabel}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="shrink-0">
                             {statusLabel}
-                        </span>
-                    </div>
+                        </div>
+                    )
                 )}
             </div>
 

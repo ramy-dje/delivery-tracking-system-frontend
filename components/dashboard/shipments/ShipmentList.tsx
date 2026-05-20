@@ -1,5 +1,4 @@
 "use client";
-
 import { SkeletonList } from "@/components/commons/Skeleton";
 import EmptyState from "@/components/commons/EmptyState";
 import { Package } from "lucide-react";
@@ -35,7 +34,7 @@ export default function ShipmentList({
             <div className="flex justify-center items-center" style={tableStyle}>
                 <EmptyState
                     title="No Shipments yet"
-                    description="Create your first shipment (pickup or walk-in) to get started."
+                    description="Create your first shipment to get started."
                     icon={Package}
                     actionLabel="+ Create Shipment"
                     tone="warning"
@@ -48,11 +47,13 @@ export default function ShipmentList({
     return (
         <div style={tableStyle}>
             <div
-                className="hidden md:grid grid-cols-[140px_1fr_120px_100px_auto] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="group grid grid-cols-[1fr_auto] md:grid-cols-[240px_1fr_180px_150px_100px]
+        gap-4 px-5 py-4 items-center transition-all duration-150
+        hover:bg-white/2.5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Tracking", "Details", "Status", "Activity", ""].map((h, i) => (
-                    <div key={i} className="text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold">
+                {["Tracking", "Details", "Status", "Attempts & RTO", "Activity"].map((h, i) => (
+                    <div key={i} className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold ${i >= 2 ? "text-center" : "text-start"}  `}>
                         {h}
                     </div>
                 ))}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ICommune, IWilaya } from "@/types/common";
-import { getCommunes, getWilayas } from "@/services/LocationService";
+import { getAllCommunes, getWilayas } from "@/services/LocationService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -275,7 +275,7 @@ export default function LocationPicker({
             return;
         }
         setLoadingCommunes(true);
-        getCommunes(selectedWilayaId)
+        getAllCommunes({ wilayaId: selectedWilayaId, pageNumber: 1, pageSize: 50 })
             .then(setCommunes)
             .catch(console.error)
             .finally(() => setLoadingCommunes(false));

@@ -36,7 +36,9 @@ export interface ICreateBranchPayload extends ILocation {
     name: string;
     type: number;
     wilayaId: string;
+    parentNodeId?: string;
     communeId: string;
+    coverageCommuneIds: string[];
 }
 
 export interface IUpdateBranchPayload {
@@ -44,7 +46,7 @@ export interface IUpdateBranchPayload {
     type?: number;
     wilayaId?: string;
     wilaya?: string;
-    ParentNodeId?: string;
+    parentNodeId?: string;
     longitude?: number;
     latitude?: number;
 }
@@ -55,4 +57,44 @@ export interface IBranchFilter extends IBaseFilter {
     type?: number;
     search?: string;
     parentNodeId?: string;
+}
+
+export interface IBranchDetails {
+    id: string;
+    name: string;
+    type: NodeType;
+    wilayaId: string;
+    wilayaName: string;
+    communeId: string;
+    communeName: string;
+    longitude: number;
+    latitude: number;
+    companyId: string;
+    companyName: string;
+    parentNodeId: string | null;
+    parentNodeName: string | null;
+    coverages: ICoverageCommune[];
+    childNodes: IChildNode[];
+    managerId: string | null;
+    managerName: string | null;
+    vehiclesCount: number;
+    staffCount: number;
+    driverShiftsCount: number;
+    isDeleted: boolean;
+    deletedAt: string | null;
+    createdAt: string;
+    updatedAt: string | null;
+}
+
+export interface ICoverageCommune {
+    wilayaId: string;
+    communeId: string;
+    wilayaName: string;
+    communeName: string;
+}
+
+export interface IChildNode {
+    id: string;
+    name: string;
+    type: NodeType;
 }

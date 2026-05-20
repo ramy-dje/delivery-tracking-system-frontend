@@ -2,7 +2,7 @@ import React from "react";
 import RoleGuard from "@/lib/RoleGuard";
 import { ROLES } from "@/lib/roles";
 import TopNav from "@/components/dashboard/TopNav";
-import Sidebar from "@/components/dashboard/sidebar";
+import Sidebar from "@/components/dashboard/Sidebar";
 
 export const metadata = {
     title: "Dashboard",

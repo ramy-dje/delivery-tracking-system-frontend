@@ -3,6 +3,7 @@ import { TYPE_META } from './TypeMeta';
 import TypeBadge from './TypeBadge';
 import { Edit, LocateIcon, Trash, Undo2 } from 'lucide-react';
 import ActionBtn from '@/components/commons/ActionButton';
+import Link from 'next/link';
 
 const BranchRow = ({
     branch,
@@ -31,7 +32,7 @@ const BranchRow = ({
             `}
         >
             {/* Name */}
-            <div className="flex items-center gap-3 min-w-0">
+            <Link href={`/dashboard/branches/${branch.id}`} className="flex items-center gap-3 min-w-0">
                 <div
                     className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-[13px] font-bold transition-all duration-200 group-hover:scale-105"
                     style={{
@@ -51,7 +52,7 @@ const BranchRow = ({
                         {branch.code}
                     </div>
                 </div>
-            </div>
+            </Link>
 
             {/* Type */}
             <div className="hidden md:flex items-center justify-center">

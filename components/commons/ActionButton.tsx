@@ -72,8 +72,8 @@ export default function ActionBtn({
                 ? "w-10 h-10"
                 : "w-9 h-9"
             : variant === "primary"
-                ? "px-6 py-3 gap-2 text-[14px] font-semibold"
-                : "px-4 py-2 gap-2 text-[12px] font-semibold";
+                ? "px-4 py-2 gap-2 text-[14px] font-semibold"
+                : "px-4 py-2.5 gap-2 text-[12px] font-semibold";
 
     const variantStyles = variants[variant];
 

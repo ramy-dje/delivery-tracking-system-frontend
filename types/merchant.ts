@@ -54,7 +54,7 @@ export interface IMerchantDetails {
 }
 
 export interface IMerchantFilter extends IBaseFilter {
-    businessName?: string;
+    search?: string;
     email?: string;
     wilayaId?: string;
     logisticsNodeId?: string;

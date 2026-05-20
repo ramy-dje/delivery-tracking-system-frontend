@@ -120,12 +120,12 @@ export default function Footer() {
                     {/* Brand */}
                     <div className="col-span-2">
                         <Link href="/" className="flex items-center gap-2 group mb-5">
-                            <Image 
-                                src="/logo/logolight .png" 
-                                alt="FlashShip Logo" 
-                                width={140} 
-                                height={40} 
-                                className="object-contain" 
+                            <Image
+                                src="/logo/logolight .png"
+                                alt="FlashShip Logo"
+                                width={140}
+                                height={40}
+                                className="object-contain"
                             />
                         </Link>
 

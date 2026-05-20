@@ -6,6 +6,7 @@ import { useState } from "react";
 import userStore from "@/stores/userStore";
 import { ROLES, ROLE_ROUTES } from "@/lib/roles";
 import { Building2, FileLineChart, FileLineChartIcon, KeySquare, LayoutDashboard, PenLine, Truck, UserCog } from "lucide-react";
+import Image from "next/image";
 
 const NAV_GROUPS = [
     {
@@ -150,23 +151,30 @@ export default function Sidebar() {
             <div className="flex items-center justify-between px-4 py-5 border-b border-white/5 shrink-0">
                 {!collapsed && (
                     <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)" }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                                    stroke="#030712" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </div>
-                        <span className="font-display font-bold text-[15px] text-white tracking-tight">NEXUS</span>
+                        <Link href="/" className="flex items-center gap-2 group">
+                            <Image
+                                src="/logo/logolight .png"
+                                alt="FlashShip Logo"
+                                width={150}
+                                height={30}
+                                className="object-contain"
+                                priority
+                            />
+                        </Link>
+
                     </div>
                 )}
                 {collapsed && (
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mx-auto"
+                    <div className="w-20 h-10 p-1 rounded-lg flex items-center justify-center mx-auto"
                         style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                                stroke="#030712" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        <Image
+                            src="/logo/logolight .png"
+                            alt="FlashShip Logo"
+                            width={150}
+                            height={30}
+                            className="object-contain"
+                            priority
+                        />
                     </div>
                 )}
                 {!collapsed && (

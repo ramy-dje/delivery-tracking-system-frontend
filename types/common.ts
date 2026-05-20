@@ -1,3 +1,4 @@
+import { IBaseFilter } from "./paginate";
 
 
 export interface ILocation {
@@ -18,4 +19,14 @@ export interface ICommune extends ILocation {
     nameAr: string,
     nameFr: string,
     wilayaId: string,
+}
+
+export interface ICommuneFilter extends IBaseFilter {
+    search?: string;
+    wilayaId?: string;
+    wilayaCode?: number;
+}
+
+export interface IWilayaFilter extends IBaseFilter {
+    search?: string;
 }

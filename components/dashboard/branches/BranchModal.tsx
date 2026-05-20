@@ -1,7 +1,6 @@
-// components/dashboard/branches/BranchModal.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     IBranchResponse,
     ICreateBranchPayload,
@@ -9,8 +8,18 @@ import {
     NodeType,
     NodeTypeToNumber,
 } from "@/types/branch";
-import LocationPicker, { LocationPickerValue } from "@/components/commons/LocationPicker";
 import MapPicker, { MapCoords } from "@/components/commons/MapPicker";
+import EntityPicker from "@/components/commons/EntityPicker";
+import MultiEntityPicker from "@/components/commons/MultiEntityPicker";
+import { GitBranch, Map, MapPin, Network, X } from "lucide-react";
+import ActionBtn from "@/components/commons/ActionButton";
+import InputField from "@/components/commons/InputField";
+import SelectField from "@/components/commons/SelectField";
+import { listBranches } from "@/services/BranchService";
+import { ICommune } from "@/types/common";
+import { getAllCommunes } from "@/services/LocationService";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BranchModalProps {
     branch?: IBranchResponse | null;
@@ -19,27 +28,24 @@ interface BranchModalProps {
     loading?: boolean;
 }
 
-const NODE_TYPES: NodeType[] = [NodeType.Hub, NodeType.Branch, NodeType.MainHub];
+const NODE_TYPES = [
+    { label: NodeType.MainHub, value: NodeType.MainHub },
+    { label: NodeType.Hub, value: NodeType.Hub },
+    { label: NodeType.Branch, value: NodeType.Branch },
+];
 
-const FIELD =
-    "px-3 py-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500/40 focus:bg-white/[0.06] transition-all w-full";
-const LABEL =
-    "block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-1.5";
+function parentTypesFor(type: NodeType): NodeType[] {
+    if (type === NodeType.MainHub) return [];
+    if (type === NodeType.Hub) return [NodeType.MainHub];
+    if (type === NodeType.Branch) return [NodeType.Hub, NodeType.MainHub];
+    return [];
+}
 
-// Approximate center coords per wilaya code (01–58) for auto-zoom
-// Extend this map as needed
-const WILAYA_CENTERS: Record<string, MapCoords> = {
-    "1": { latitude: 36.7372, longitude: 3.0869 },  // Alger
-    "2": { latitude: 36.2638, longitude: 6.6023 },  // Chlef
-    "3": { latitude: 36.4667, longitude: 5.1000 },  // Laghouat — placeholder
-    "16": { latitude: 36.3650, longitude: 6.6147 },  // Alger center alt
-    "25": { latitude: 36.4500, longitude: 5.1167 },  // Constantine alt
-    "31": { latitude: 35.6944, longitude: -0.6178 }, // Oran
-};
+// ─── Section header ───────────────────────────────────────────────────────────
 
 function SectionHeader({ icon, label, note }: { icon: React.ReactNode; label: string; note?: string }) {
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-3">
             <span className="text-slate-600">{icon}</span>
             <span className="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">{label}</span>
             {note && <span className="text-[10px] text-slate-700 normal-case font-normal">— {note}</span>}
@@ -47,102 +53,105 @@ function SectionHeader({ icon, label, note }: { icon: React.ReactNode; label: st
     );
 }
 
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
 export default function BranchModal({ branch, onClose, onSubmit, loading }: BranchModalProps) {
     const isEdit = !!branch;
 
-    const [form, setForm] = useState({
-        name: branch?.name ?? "",
-        type: (branch?.type ?? NodeType.Branch) as NodeType,
-        parentNodeId: branch?.parentNodeId ?? "",
-    });
-
-    const [location, setLocation] = useState<LocationPickerValue>({
-        wilayaId: branch?.wilayaId ?? "",
-        communeId: branch?.communeId ?? "",
-        wilaya: branch?.wilaya,
-        commune: branch?.commune,
-    });
-
+    // ── Core form state ───────────────────────────────────────────────────────
+    const [name, setName] = useState(branch?.name ?? "");
+    const [nodeType, setNodeType] = useState<NodeType>((branch?.type ?? NodeType.Branch) as NodeType);
+    const [parentNodeId, setParentNodeId] = useState<string>(branch?.parentNodeId ?? "");
+    const [communeId, setCommuneId] = useState<string>(branch?.communeId ?? "");
+    const [coverageIds, setCoverageIds] = useState<string[]>([]);
     const [coords, setCoords] = useState<MapCoords | undefined>(
         branch?.latitude && branch?.longitude
             ? { latitude: branch.latitude, longitude: branch.longitude }
             : undefined
     );
-
-    // When wilaya changes → auto-pan map to that wilaya's area
-    const [mapCenter, setMapCenter] = useState<MapCoords | undefined>(undefined);
-
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [locationErrors, setLocationErrors] = useState<{ wilaya?: string; commune?: string }>({});
 
+    // ── Server-search state — one per commune picker ──────────────────────────
+    // Each picker gets its own search term so they don't interfere with each other
+    const [primarySearch, setPrimarySearch] = useState("");
+    const [coverageSearch, setCoverageSearch] = useState("");
+
+    // ── Keyboard close ────────────────────────────────────────────────────────
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        window.addEventListener("keydown", h);
+        return () => window.removeEventListener("keydown", h);
     }, [onClose]);
 
-    const set = (k: string, v: string) => {
-        setForm((f) => ({ ...f, [k]: v }));
-        setErrors((e) => ({ ...e, [k]: "" }));
-    };
+    // ── Reset parent when type changes ────────────────────────────────────────
+    useEffect(() => { setParentNodeId(""); }, [nodeType]);
 
-    const handleLocationChange = (val: LocationPickerValue) => {
-        setLocation(val);
-        setLocationErrors({
-            wilaya: val.wilayaId ? undefined : locationErrors.wilaya,
-            commune: val.communeId ? undefined : locationErrors.commune,
-        });
+    // ── If primary commune changes, evict it from coverage ────────────────────
+    useEffect(() => {
+        if (communeId) setCoverageIds((prev) => prev.filter((id) => id !== communeId));
+    }, [communeId]);
 
-        // Auto-pan map when wilaya changes
-        if (val.wilaya?.code) {
-            const center = WILAYA_CENTERS[String(val.wilaya.code)];
-            if (center) setMapCenter(center);
-        }
-    };
+    const canHaveParent = parentTypesFor(nodeType).length > 0;
 
-    const handleCoordsChange = (c: MapCoords | null) => {
-        setCoords(c ?? undefined);
-    };
+    // ── Fetchers ──────────────────────────────────────────────────────────────
+    const fetchParentNodes = useCallback(async (): Promise<IBranchResponse[]> => {
+        const results = await Promise.all(
+            parentTypesFor(nodeType).map((t) =>
+                listBranches({ type: NodeTypeToNumber[t], pageNumber: 1, pageSize: 20 }).then((r) => r.items)
+            )
+        );
+        return results.flat();
+    }, [nodeType]);
 
+    // Rebuilds whenever the search term changes → EntityPicker / MultiEntityPicker
+    // detect the new reference and re-call fetchData automatically.
+    const fetchPrimaryCommunes = useCallback(
+        () => getAllCommunes({ search: primarySearch, pageNumber: 1, pageSize: 30 }),
+        [primarySearch]
+    );
+
+    const fetchCoverageCommunes = useCallback(
+        () => getAllCommunes({ search: coverageSearch, pageNumber: 1, pageSize: 30 }),
+        [coverageSearch]
+    );
+
+    // ── Validation ────────────────────────────────────────────────────────────
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
-        const locErrs: { wilaya?: string; commune?: string } = {};
-
-        if (!form.name.trim()) errs.name = "Name is required";
-        if (!location.wilayaId) locErrs.wilaya = "Wilaya is required";
-        if (!isEdit && !location.communeId) locErrs.commune = "Commune is required";
-
+        if (!name.trim()) errs.name = "Name is required";
+        if (!isEdit && !communeId) errs.communeId = "Primary commune is required";
         setErrors(errs);
-        setLocationErrors(locErrs);
-        return Object.keys(errs).length === 0 && Object.keys(locErrs).length === 0;
+        return Object.keys(errs).length === 0;
     };
 
+    // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
 
         if (isEdit) {
-            const payload: IUpdateBranchPayload = {
-                name: form.name || undefined,
-                type: NodeTypeToNumber[form.type],
-                wilayaId: location.wilayaId || undefined,
-                ParentNodeId: form.parentNodeId || undefined,
+            await onSubmit({
+                name: name || undefined,
+                type: NodeTypeToNumber[nodeType],
+                parentNodeId: parentNodeId || undefined,
                 longitude: coords?.longitude,
                 latitude: coords?.latitude,
-            };
-            await onSubmit(payload);
+            } satisfies IUpdateBranchPayload);
         } else {
-            const payload: ICreateBranchPayload = {
-                name: form.name,
-                type: NodeTypeToNumber[form.type],
-                wilayaId: location.wilayaId,
-                communeId: location.communeId,
-                longitude: Number(coords?.longitude),
-                latitude: Number(coords?.latitude),
-            };
-            await onSubmit(payload);
+            await onSubmit({
+                name,
+                type: NodeTypeToNumber[nodeType],
+                parentNodeId: parentNodeId || undefined,
+                wilayaId: "",   // derived server-side from communeId
+                communeId,
+                longitude: Number(coords?.longitude ?? 0),
+                latitude: Number(coords?.latitude ?? 0),
+                coverageCommuneIds: coverageIds,
+            } satisfies ICreateBranchPayload);
         }
     };
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     return (
         <div
@@ -157,18 +166,15 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
                     boxShadow: "0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)",
                 }}
             >
-                {/* ── Header ────────────────────────────────────────────── */}
+                {/* ── Header ──────────────────────────────────────────── */}
                 <div
-                    className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/[0.06]"
+                    className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/6"
                     style={{ background: "#0d1117" }}
                 >
                     <div className="flex items-center gap-3">
                         <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-[14px]"
-                            style={{
-                                background: "rgba(251,191,36,0.08)",
-                                border: "1px solid rgba(251,191,36,0.15)",
-                            }}
+                            style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)" }}
                         >
                             {isEdit ? "✎" : "+"}
                         </div>
@@ -183,158 +189,147 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/[0.05] transition-all"
+                        className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all"
                     >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <X size={14} />
                     </button>
                 </div>
 
-                {/* ── Form ──────────────────────────────────────────────── */}
+                {/* ── Form ────────────────────────────────────────────── */}
                 <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
 
-                    {/* Name + Type */}
+                    {/* 1 · Name + Type */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className={LABEL}>Name</label>
-                            <input
-                                className={FIELD}
-                                placeholder="e.g. Algiers North Hub"
-                                value={form.name}
-                                onChange={(e) => set("name", e.target.value)}
-                            />
-                            {errors.name && (
-                                <p className="text-[11px] text-red-400 mt-1.5 flex items-center gap-1">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
-                                        <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
-                                    {errors.name}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label className={LABEL}>Type</label>
-                            <select
-                                className={FIELD}
-                                value={form.type}
-                                onChange={(e) => set("type", e.target.value)}
-                                style={{ appearance: "none" }}
-                            >
-                                {NODE_TYPES.map((t) => (
-                                    <option key={t} value={t} style={{ background: "#0d1117" }}>{t}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* ── Location picker ─────────────────────────────── */}
-                    <div className="space-y-3">
-                        <SectionHeader
-                            icon={
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-                                        stroke="currentColor" strokeWidth="1.5" />
-                                    <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-                                </svg>
-                            }
-                            label="Location"
+                        <InputField
+                            label="Name"
+                            value={name}
+                            onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
+                            placeholder="e.g. Algiers North Hub"
+                            error={errors.name}
                         />
-                        <LocationPicker
-                            value={location}
-                            onChange={handleLocationChange}
-                            error={locationErrors}
-                        />
-                        {isEdit && (
-                            <p className="text-[11px] text-slate-600 flex items-center gap-1.5">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                                    <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                                    <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
-                                Commune cannot be changed after creation.
-                            </p>
-                        )}
-                    </div>
-
-                    {/* ── Map picker ──────────────────────────────────── */}
-                    <div className="space-y-3">
-                        <SectionHeader
-                            icon={
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                    <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"
-                                        stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
-                                    <line x1="9" y1="3" x2="9" y2="18" stroke="currentColor" strokeWidth="1.5" />
-                                    <line x1="15" y1="6" x2="15" y2="21" stroke="currentColor" strokeWidth="1.5" />
-                                </svg>
-                            }
-                            label="Pin on Map"
-                            note="click to place · drag to adjust"
-                        />
-
-                        {/* Coordinate readout pills — above the map */}
-                        <div className="flex items-center gap-2">
-                            <CoordPill label="Lat" value={coords?.latitude} />
-                            <CoordPill label="Lng" value={coords?.longitude} />
-                            {coords && (
-                                <span className="text-[10px] text-slate-700 ml-auto">
-                                    Drag marker to fine-tune
-                                </span>
-                            )}
-                        </div>
-
-                        <MapPicker
-                            value={coords}
-                            onChange={handleCoordsChange}
-                            centerOn={mapCenter}
+                        <SelectField
+                            label="Type"
+                            value={nodeType}
+                            onChange={(v) => setNodeType(v as NodeType)}
+                            options={NODE_TYPES}
                         />
                     </div>
 
-                    {/* Parent node — edit only */}
-                    {isEdit && (
-                        <div className="space-y-3">
-                            <div className="border-t border-white/[0.05]" />
+                    {/* 2 · Parent Node */}
+                    {canHaveParent && (
+                        <>
+                            <div className="border-t border-white/4" />
                             <div>
-                                <label className={LABEL}>
-                                    Parent Node ID{" "}
-                                    <span className="text-slate-700 normal-case tracking-normal font-normal">(optional)</span>
-                                </label>
-                                <input
-                                    className={FIELD}
-                                    placeholder="Parent node UUID"
-                                    value={form.parentNodeId}
-                                    onChange={(e) => set("parentNodeId", e.target.value)}
+                                <SectionHeader icon={<Network size={14} />} label="Parent Node" note="optional" />
+                                <EntityPicker<IBranchResponse>
+                                    value={parentNodeId || null}
+                                    onChange={(id) => setParentNodeId(id ?? "")}
+                                    fetchData={fetchParentNodes}
+                                    getId={(n) => n.id}
+                                    getLabel={(n) => n.name}
+                                    getSubLabel={(n) => n.type}
+                                    renderIcon={() => (
+                                        <div className="w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                            <GitBranch className="w-3.5 h-3.5 text-amber-400" />
+                                        </div>
+                                    )}
+                                    label={`Parent — ${parentTypesFor(nodeType).join(" / ")}`}
+                                    placeholder={`Search ${parentTypesFor(nodeType).join(" or ")} nodes…`}
+                                    searchFn={(n, q) => n.name.toLowerCase().includes(q.toLowerCase())}
                                 />
                             </div>
-                        </div>
+                        </>
                     )}
 
-                    {/* ── Actions ─────────────────────────────────────── */}
-                    <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.05]">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white border border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] hover:bg-white/[0.05] transition-all"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="px-5 py-2.5 rounded-lg text-[13px] font-semibold text-background-main transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            style={{
-                                background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-                                boxShadow: loading ? "none" : "0 4px 16px rgba(251,191,36,0.25)",
-                            }}
-                        >
-                            {loading && (
-                                <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
-                                        strokeDasharray="60" strokeDashoffset="20" />
-                                </svg>
+                    {/* 3 · Primary Commune */}
+                    <>
+                        <div className="border-t border-white/4" />
+                        <div>
+                            <SectionHeader icon={<MapPin size={14} />} label="Primary Commune" />
+                            {isEdit ? (
+                                <div
+                                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-[13px]"
+                                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+                                >
+                                    <MapPin size={12} className="text-slate-600" />
+                                    <span className="text-slate-400">{branch.commune?.nameFr ?? branch.communeId}</span>
+                                    <span className="text-[10px] text-slate-700 ml-auto flex items-center gap-1">
+                                        <Map size={11} /> Cannot change after creation
+                                    </span>
+                                </div>
+                            ) : (
+                                <EntityPicker<ICommune>
+                                    value={communeId || null}
+                                    onChange={(id) => { setCommuneId(id ?? ""); setErrors((p) => ({ ...p, communeId: "" })); }}
+                                    fetchData={fetchPrimaryCommunes}
+                                    onSearchChange={setPrimarySearch}
+                                    getId={(c) => c.id}
+                                    getLabel={(c) => c.nameFr}
+                                    getSubLabel={(c) => c.nameAr}
+                                    renderIcon={() => (
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                                        </div>
+                                    )}
+                                    label="Commune *"
+                                    placeholder="Type to search communes…"
+                                    required
+                                    error={errors.communeId}
+                                />
                             )}
-                            {isEdit ? "Save Changes" : "Create Node"}
-                        </button>
+                        </div>
+                    </>
+
+                    {/* 4 · Coverage Communes — create only */}
+                    {!isEdit && (
+                        <>
+                            <div className="border-t border-white/4" />
+                            <div>
+                                <SectionHeader
+                                    icon={<MapPin size={14} />}
+                                    label="Coverage Communes"
+                                    note="optional · additional areas this node serves"
+                                />
+                                <MultiEntityPicker<ICommune>
+                                    value={coverageIds}
+                                    onChange={(ids) => setCoverageIds(ids)}
+                                    fetchData={fetchCoverageCommunes}
+                                    onSearchChange={setCoverageSearch}
+                                    getId={(c) => c.id}
+                                    getLabel={(c) => c.nameFr}
+                                    getSubLabel={(c) => c.nameAr}
+                                    renderIcon={() => (
+                                        <div className="w-6 h-6 rounded-full bg-violet-500/10 flex items-center justify-center">
+                                            <MapPin className="w-3.5 h-3.5 text-violet-400" />
+                                        </div>
+                                    )}
+                                    placeholder="Type to search and add communes…"
+                                    filterFn={(item) => item.id !== communeId}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {/* 5 · Map Pin */}
+                    <>
+                        <div className="border-t border-white/4" />
+                        <div>
+                            <SectionHeader icon={<Map size={14} />} label="Pin on Map" note="click to place · drag to adjust" />
+                            <div className="flex items-center gap-2 mb-3">
+                                <CoordPill label="Lat" value={coords?.latitude} />
+                                <CoordPill label="Lng" value={coords?.longitude} />
+                                {coords && (
+                                    <span className="text-[10px] text-slate-700 ml-auto">Drag marker to fine-tune</span>
+                                )}
+                            </div>
+                            <MapPicker value={coords} onChange={(c) => setCoords(c ?? undefined)} />
+                        </div>
+                    </>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/5">
+                        <ActionBtn type="button" onClick={onClose} disabled={loading} label="Cancel" variant="slate" size="action" />
+                        <ActionBtn onClick={handleSubmit} disabled={loading} label={isEdit ? "Save Changes" : "Create Node"} variant="amber" type="button" size="action" />
                     </div>
                 </form>
             </div>
@@ -342,7 +337,7 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
     );
 }
 
-// ─── Coord pill ───────────────────────────────────────────────────────────────
+// ─── Coord Pill ───────────────────────────────────────────────────────────────
 
 function CoordPill({ label, value }: { label: string; value?: number }) {
     return (

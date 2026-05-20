@@ -1,6 +1,6 @@
 import api from "@/lib/api";
 import { getCompanyId } from "@/hooks/useAuth";
-import { IBranchFilter, IBranchResponse, ICreateBranchPayload, IUpdateBranchPayload } from "@/types/branch";
+import { IBranchDetails, IBranchFilter, IBranchResponse, ICreateBranchPayload, IUpdateBranchPayload } from "@/types/branch";
 import { IPaginatedResponse } from "@/types/paginate";
 
 const baseForCompany = (companyId: string) => `/companies/${companyId}/logistics-nodes`;
@@ -20,7 +20,7 @@ export const getDeletedBranches = async (): Promise<IBranchResponse[]> => {
     return res.data;
 };
 
-export const getBranch = async (id: string): Promise<IBranchResponse> => {
+export const getBranch = async (id: string): Promise<IBranchDetails> => {
     const companyId = getCompanyId();
     if (!companyId) throw new Error("No company id");
     const res = await api.get(`${baseForCompany(companyId)}/${id}`);

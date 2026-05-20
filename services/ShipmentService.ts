@@ -1,19 +1,10 @@
 
 import api from "@/lib/api";
-import { IPaginatedResponse } from "@/types/paginate";
-import {
-    IShipmentSummary,
-    IShipmentDetail,
-    IShipmentSwap,
-    ICreatePickupShipment,
-    ICreateWalkInShipment,
-    IMarkDeliveryFailed,
-    IInitiateSwap,
-} from "@/types/shipment";
+import { IBaseFilter, IPaginatedResponse } from "@/types/paginate";
+import { ICreateShipment, IMarkDeliveryFailed, IShipmentDetail, IShipmentFilter, IShipmentSummary } from "@/types/shipment";
 
 const BASE = "/shipments";
 
-// ── Queries ───────────────────────────────────────────────────────────────────
 
 export async function getShipmentById(id: string): Promise<IShipmentDetail> {
     const { data } = await api.get<IShipmentDetail>(`${BASE}/${id}`);
@@ -25,40 +16,42 @@ export async function getShipmentByTrackingCode(code: string): Promise<IShipment
     return data;
 }
 
-export async function getShipmentsByMerchant(merchantId: string): Promise<IPaginatedResponse<IShipmentSummary>> {
-    const { data } = await api.get(`${BASE}/by-merchant/${merchantId}`);
+// Unified list endpoint with filters (replaces by-merchant / by-hub)
+export async function listShipments(filter: IShipmentFilter): Promise<IPaginatedResponse<IShipmentSummary>> {
+    const { data } = await api.get<IPaginatedResponse<IShipmentSummary>>(BASE, { params: filter });
     return data;
 }
 
-export async function getShipmentsByHub(hubId: string): Promise<IPaginatedResponse<IShipmentSummary>> {
-    const { data } = await api.get(`${BASE}/by-hub/${hubId}`);
+// Convenience wrappers for common filter scenarios
+export async function getShipmentsByMerchant(merchantId: string, pagination: IBaseFilter): Promise<IPaginatedResponse<IShipmentSummary>> {
+    return listShipments({ merchantId, ...pagination });
+}
+
+export async function getShipmentsByHub(hubId: string, pagination: IBaseFilter): Promise<IPaginatedResponse<IShipmentSummary>> {
+    return listShipments({ nodeId: hubId, ...pagination });
+}
+
+// ── Creation ────────────────────────────────────────────────────────────────
+
+export async function createShipmentByMerchant(payload: ICreateShipment): Promise<IShipmentDetail> {
+    const { data } = await api.post<IShipmentDetail>(BASE, payload);
     return data;
 }
 
-// ── Creation ──────────────────────────────────────────────────────────────────
-
-export async function createPickupShipment(payload: ICreatePickupShipment): Promise<IShipmentDetail> {
-    const { data } = await api.post<IShipmentDetail>(`${BASE}/pickup`, payload);
+// Walk-in / drop-at-node: merchantId in URL, not body
+export async function createShipmentAtNode(merchantId: string, payload: ICreateShipment): Promise<IShipmentDetail> {
+    const { data } = await api.post<IShipmentDetail>(`${BASE}/walk-in/${merchantId}`, payload);
     return data;
 }
 
-export async function createWalkInShipment(payload: ICreateWalkInShipment): Promise<IShipmentDetail> {
-    const { data } = await api.post<IShipmentDetail>(`${BASE}/walk-in`, payload);
-    return data;
-}
+// Alias for clarity (same backend endpoint)
+export const createWalkInShipment = createShipmentAtNode;
 
-// ── Status transitions ────────────────────────────────────────────────────────
+// ── Status transitions ─────────────────────────────────────────────────────
 
-export async function requestPickup(id: string): Promise<void> {
-    await api.post(`${BASE}/${id}/request-pickup`);
-}
-
-export async function markCollected(id: string, driverId: string): Promise<void> {
-    await api.post(`${BASE}/${id}/collect`, null, { params: { driverId } });
-}
-
-export async function markReceivedAtHub(id: string, hubId: string): Promise<void> {
-    await api.post(`${BASE}/${id}/receive-at-hub`, null, { params: { hubId } });
+// Pickup flow: merchant drops package at branch
+export async function markDroppedAtBranch(id: string): Promise<void> {
+    await api.post(`${BASE}/${id}/drop-at-branch`);
 }
 
 export async function markReadyForTransfer(id: string): Promise<void> {
@@ -95,15 +88,4 @@ export async function markReturnedToMerchant(id: string): Promise<void> {
 
 export async function cancelShipment(id: string): Promise<void> {
     await api.post(`${BASE}/${id}/cancel`);
-}
-
-// ── Swap ──────────────────────────────────────────────────────────────────────
-
-export async function initiateSwap(id: string, payload: IInitiateSwap): Promise<IShipmentSwap> {
-    const { data } = await api.post<IShipmentSwap>(`${BASE}/${id}/swap`, payload);
-    return data;
-}
-
-export async function confirmSwap(id: string): Promise<void> {
-    await api.post(`${BASE}/${id}/swap/confirm`);
 }

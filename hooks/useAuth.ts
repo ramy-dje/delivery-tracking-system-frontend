@@ -3,6 +3,14 @@ import { IUser } from "@/types/user";
 
 export const useAuth = () => userStore();
 
+export const getUser = () => {
+  return userStore.getState().user;
+};
+
+export const getUserRole = () => {
+  return userStore.getState().user?.role;
+}
+
 export const getAccessToken = () => {
   return userStore.getState().accessToken;
 };

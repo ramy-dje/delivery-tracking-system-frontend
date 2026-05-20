@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { showToast } from "nextjs-toast-notify";
 import { login } from "@/hooks/useAuth";
 import ActionBtn from "@/components/commons/ActionButton";
+import { ApiError } from "next/dist/server/api-utils";
+import { parseApiError } from "@/utils/apiErrorHandler";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -63,15 +65,9 @@ export default function LoginPage() {
             setTimeout(() => {
                 router.push("/dashboard");
             }, 3000);
-        } catch (error) {
-            showToast.error("Login Failed!", {
-                duration: 3000,
-                position: "top-right",
-                transition: "bounceIn",
-                icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
-                sound: true,
-                progress: true
-            });
+        } catch (err) {
+            const error = parseApiError(err)
+            showToast.error("Login Failed!" + (error.message ? `: ${error.message}` : ""));
             console.log("Login error:", error);
         } finally {
             setIsLoading(false);
