@@ -1,14 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Phone, FileText, Weight, X, DollarSign, Package, Truck } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import EntityPicker from "@/components/commons/EntityPicker";
 import { ICreateShipment } from "@/types/shipment";
 import { ICommune } from "@/types/common";
-import { getAllCommunes } from "@/services/LocationService";
 import { DeliveryType } from "@/types/deliveryFee";
 import { IMerchant } from "@/types/merchant";
 import { listMerchants } from "@/services/MerchantService";
+import { listDisponibleCommunes } from "@/services/LocationService";
+import { parseApiError } from "@/utils/apiErrorHandler";
 
 interface Props {
     isOpen: boolean;
@@ -67,6 +68,9 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
 
     const isReceptionist = mode === "receptionist";
 
+
+
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
             <div className="w-full max-w-xl rounded-2xl overflow-hidden" style={{ background: "#070c15", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(251,191,36,0.05)" }}>
@@ -117,7 +121,7 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                     <EntityPicker<ICommune>
                         value={communeId}
                         onChange={setCommuneId}
-                        fetchData={() => getAllCommunes({ search: communeSearch, pageNumber: 1, pageSize: 30 })}
+                        fetchData={() => listDisponibleCommunes({ search: communeSearch, pageNumber: 1, pageSize: 30 })}
                         getId={(c) => c.id}
                         getLabel={(c) => c.nameFr}
                         onSearchChange={setCommuneSearch}

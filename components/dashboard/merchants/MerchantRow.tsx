@@ -1,11 +1,11 @@
 "use client";
 
-import { IMerchantDetails, PaymentMethod } from "@/types/merchant";
+import { IMerchant, IMerchantDetails, PaymentMethod } from "@/types/merchant";
 import { Eye, Mail, Phone, MapPin, CreditCard } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
 
 interface MerchantRowProps {
-    merchant: IMerchantDetails;
+    merchant: IMerchant;
     isLast?: boolean;
     onViewDetail?: () => void;
 }
@@ -23,7 +23,7 @@ export default function MerchantRow({ merchant, isLast = false, onViewDetail }: 
 
     return (
         <div
-            className="group grid grid-cols-[220px_1fr_160px_160px_auto] gap-4 px-5 py-3 items-center border-b border-white/5 hover:bg-white/2 transition-colors"
+            className="group grid grid-cols-[1fr_300px_160px_160px] gap-4 px-5 py-3 items-center border-b border-white/5 hover:bg-white/2 transition-colors"
             style={!isLast ? {} : { borderBottom: "none" }}
         >
             {/* ─── Column 1: Merchant (Name + ID) ─── */}
@@ -72,18 +72,9 @@ export default function MerchantRow({ merchant, isLast = false, onViewDetail }: 
                 </span>
             </div>
 
-            {/* ─── Column 4: Location (Wilaya + Address preview) ─── */}
-            <div className="flex flex-col gap-1 min-w-0">
-                <div className="flex items-center gap-1.5 text-[12px] text-slate-300">
-                    <MapPin size={10} className="text-slate-600 shrink-0" />
-                    <span className="truncate">{merchant.wilaya?.nameFr || "—"}</span>
-                </div>
-                <p className="text-[10px] text-slate-600 truncate">
-                    {merchant.storeLocation?.latitude?.toFixed(4)}, {merchant.storeLocation?.longitude?.toFixed(4)}
-                </p>
-            </div>
 
-            {/* ─── Column 5: Actions ─── */}
+
+            {/* ─── Column 4: Actions ─── */}
             <div className="flex justify-end">
                 <ActionBtn
                     onClick={onViewDetail}

@@ -27,7 +27,6 @@ export interface IDriverDetails {
 export interface IDriverFilter extends IBaseFilter {
     search?: string;
     isOnDuty?: boolean;
-    logisticNodeId?: string;
 }
 
 export type DriverRole =

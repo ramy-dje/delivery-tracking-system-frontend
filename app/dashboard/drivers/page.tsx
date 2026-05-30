@@ -57,13 +57,13 @@ export default function DriversPage() {
         setError(null);
         try {
             console.log("Search :", search);
-            const res = await listDrivers({ search, pageNumber: page, pageSize: PAGE_SIZE, logisticNodeId: managerNodeId });
+            const res = await listDrivers({ search, pageNumber: page, pageSize: PAGE_SIZE });
             console.log("Fetched drivers", res);
             setPagination(res);
         } catch (e: any) {
-            console.log("Fetch drivers error", e);
-            const msg = e?.message ?? "Failed to load drivers";
-            setError(msg);
+            const error = parseApiError(e);
+            console.error("Fetch Drivers error", error);
+            const msg = error.message ?? "Failed to fetch drivers";
             showToast.error(msg);
         } finally {
             setLoading(false);

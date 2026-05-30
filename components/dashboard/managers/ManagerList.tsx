@@ -31,7 +31,7 @@ function ManagerRow({
     return (
         <div
             className={`
-                group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_320px_200px_100px_auto]
+                group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_300px_200px_120px_120px]
                 gap-4 px-5 py-3.5 items-center transition-all duration-150
                 hover:bg-white/[0.018]
                 ${!isLast ? "border-b border-white/4" : ""}
@@ -202,7 +202,7 @@ export default function ManagerList({
         <div className="flex-1 overflow-y-auto" style={tableStyle}>
             {/* Column headers */}
             <div
-                className="hidden md:grid grid-cols-[1fr_320px_200px_100px_auto] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid grid-cols-[1fr_300px_200px_120px_120px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
                 {["Manager", "Contact", "Node", "Status", "Actions"].map((h, i) => (

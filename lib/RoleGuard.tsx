@@ -11,7 +11,6 @@ interface RoleGuardProps {
     allowedRoles: Role[];
     fallbackPath?: string; // Redirect if unauthorized (default: /unauthorized)
 }
-
 export default function RoleGuard({
     children,
     allowedRoles,
@@ -22,36 +21,22 @@ export default function RoleGuard({
     const pathname = usePathname();
 
     useEffect(() => {
-        if (!hasHydrated) {
-            return;
-        }
+        if (!hasHydrated) return;
 
         if (!user) {
-            router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+            router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
             return;
         }
 
-        const hasAccess = allowedRoles.includes(user.role as Role);
-
-        if (!hasAccess) {
-            router.push(fallbackPath);
+        if (!allowedRoles.includes(user.role as Role)) {
+            router.replace(fallbackPath);
         }
     }, [user, hasHydrated, allowedRoles, router, pathname, fallbackPath]);
 
-    // Show loading while checking
-    if (!hasHydrated || !user) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <LoadingSpinner />
-            </div>
-        );
-    }
+    if (!hasHydrated) return null;
+    if (!user) return null;
 
-    // Check access before rendering
-    const hasAccess = allowedRoles.includes(user.role as Role);
-    if (!hasAccess) {
-        return null; // Prevent flash of content
-    }
+    if (!allowedRoles.includes(user.role as Role)) return null;
 
     return <>{children}</>;
 }

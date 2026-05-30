@@ -5,6 +5,13 @@ export enum DeliveryType {
     StopDesk = 2
 }
 
+export const DELIVERY_TYPE_MAP: Record<string, DeliveryType> = {
+    home: DeliveryType.Home,
+    stopdesk: DeliveryType.StopDesk,
+};
+
+export const DELIVERY_TYPE_VALUES = Object.keys(DELIVERY_TYPE_MAP);
+
 export interface IDeliveryFeeSummary {
     id: string;
     companyId: string;

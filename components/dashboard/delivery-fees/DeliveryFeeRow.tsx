@@ -7,9 +7,9 @@ import ActionBtn from "@/components/commons/ActionButton";
 export const DELIVERY_TYPE_META: Record<DeliveryType, { label: string; color: string; bg: string; border: string }> = {
     [DeliveryType.Home]: {
         label: "Home",
-        color: "#34d399",
-        bg: "rgba(52,211,153,0.08)",
-        border: "rgba(52,211,153,0.22)",
+        color: "#fbbf24",
+        bg: "rgba(251, 191, 36, 0.1)",
+        border: "rgba(251, 191, 36, 0.3)",
     },
     [DeliveryType.StopDesk]: {
         label: "Stop Desk",
@@ -62,7 +62,7 @@ const DeliveryFeeRow = ({
     return (
         <div
             className={`
-                group grid grid-cols-[1fr_auto] md:grid-cols-[200px_1fr_130px_120px_auto]
+                group grid grid-cols-[1fr_auto] md:grid-cols-[200px_1fr_130px_120px_140px]
                 gap-4 px-5 py-4 items-center transition-all duration-150
                 hover:bg-white/2.5
                 ${!isActive ? "bg-red-500/2" : ""}

@@ -105,7 +105,7 @@ export default function BranchDropScannerPage() {
                     </div>
 
                     {/* SCANNER CARD */}
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
+                    <div className="rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl overflow-hidden">
 
                         <div className="p-5 border-b border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function BranchDropScannerPage() {
                             {/* CAMERA */}
                             <div
                                 id="shipment-scanner"
-                                className="overflow-hidden rounded-2xl border border-white/10 bg-black min-h-[280px]"
+                                className="overflow-hidden rounded-2xl border border-white/10 bg-black min-h-70"
                             />
 
                             {/* MANUAL INPUT */}

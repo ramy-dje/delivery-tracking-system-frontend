@@ -8,17 +8,18 @@ import Pagination from "@/components/commons/Pagination";
 import { Plus, Search, X } from "lucide-react";
 import RoleGuard from "@/lib/RoleGuard";
 import StatCard from "@/components/commons/StatCard";
-import { IMerchantDetails, IRegisterMerchant } from "@/types/merchant";
+import { IMerchant, IMerchantDetails, IRegisterMerchant } from "@/types/merchant";
 import { createMerchant, listMerchants } from "@/services/MerchantService";
 import MerchantList from "@/components/dashboard/merchants/MerchantList";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import CreateMerchantModal from "@/components/dashboard/merchants/CreateMerchantModal";
 import MerchantDetailModal from "@/components/dashboard/merchants/MerchantDetailModal";
+import ActionBtn from "@/components/commons/ActionButton";
 
 const PAGE_SIZE = 10;
 
 export default function MerchantsPage() {
-    const [pagination, setPagination] = useState<IPaginatedResponse<IMerchantDetails> | null>(null);
+    const [pagination, setPagination] = useState<IPaginatedResponse<IMerchant> | null>(null);
     const merchants = pagination?.items ?? [];
 
     const [loading, setLoading] = useState(true);
@@ -38,8 +39,9 @@ export default function MerchantsPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await listMerchants({ businessName: search, pageNumber: page, pageSize: PAGE_SIZE });
+            const res = await listMerchants({ search, pageNumber: page, pageSize: PAGE_SIZE });
             setPagination(res as any);
+            console.log("Fetched merchants", res);
         } catch (e: any) {
             console.log("Failed to fetch merchants", e);
             const msg = e?.message ?? "Failed to load merchants";
@@ -58,7 +60,7 @@ export default function MerchantsPage() {
     }, [fetchMerchants]);
 
     const totalCount = pagination?.totalCount ?? 0;
-    const uniqueWilayaCount = Array.from(new Set(merchants.map((m) => m.wilaya.id))).length;
+    const uniqueWilayaCount = Array.from(new Set(merchants.map((m) => m.wilayaId))).length;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
 
@@ -87,7 +89,7 @@ export default function MerchantsPage() {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER]}>
+        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.OWNER, ROLES.RECEPTIONIST]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}
@@ -95,8 +97,8 @@ export default function MerchantsPage() {
                     <div>
                         <div className="flex items-center gap-2.5 mb-1">
                             <div
+                                style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b66)" }}
                                 className="w-1 h-6 rounded-full"
-                                style={{ background: "linear-gradient(180deg,#a78bfa,#7c3aed66)" }}
                             />
                             <h1 className="text-[22px] font-bold text-white tracking-tight">Merchants</h1>
                         </div>
@@ -104,17 +106,9 @@ export default function MerchantsPage() {
                             Manage merchants registered in your logistics network.
                         </p>
                     </div>
-                    <button
-                        onClick={() => setCreateOpen(true)}
-                        className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-                        style={{
-                            background: "linear-gradient(135deg,#a78bfa,#7c3aed)",
-                            boxShadow: "0 4px 16px rgba(167,139,250,0.2)",
-                        }}
-                    >
-                        <Plus size={13} />
-                        New Merchant
-                    </button>
+                    <ActionBtn onClick={() => setCreateOpen(true)} variant="primary" size="action" label="New Merchant" title="Create new merchant">
+                        <Plus className="w-4 h-4" />
+                    </ActionBtn>
                 </div>
 
                 {/* Stats */}

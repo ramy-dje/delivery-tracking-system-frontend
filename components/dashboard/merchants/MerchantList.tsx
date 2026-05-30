@@ -4,10 +4,10 @@ import { SkeletonList } from "@/components/commons/Skeleton";
 import EmptyState from "@/components/commons/EmptyState";
 import { Store } from "lucide-react";
 import MerchantRow from "./MerchantRow";
-import { IMerchantDetails } from "@/types/merchant";
+import { IMerchant } from "@/types/merchant";
 
 interface MerchantListProps {
-    merchants: IMerchantDetails[];
+    merchants: IMerchant[];
     loading?: boolean;
     onViewDetail?: (merchantId: string) => void;
     onAddClick?: () => void;
@@ -43,23 +43,25 @@ export default function MerchantList({ merchants, loading, onAddClick, onViewDet
     return (
         <div style={tableStyle}>
             <div
-                className="hidden md:grid grid-cols-[220px_1fr_160px_160px_auto] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid grid-cols-[1fr_300px_160px_160px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Merchant", "Contact", "Business", "Location", ""].map((h, i) => (
-                    <div key={i} className="text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold">
+                {["Merchant", "Contact", "Business", "Actions"].map((h, i) => (
+                    <div key={i} className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold ${i === 3 ? "text-end" : "text - start"} `}>
                         {h}
                     </div>
                 ))}
             </div>
-            {merchants.map((m, idx) => (
-                <MerchantRow
-                    key={m.id}
-                    merchant={m}
-                    isLast={idx === merchants.length - 1}
-                    onViewDetail={onViewDetail ? () => onViewDetail(m.id) : undefined}
-                />
-            ))}
-        </div>
+            {
+                merchants.map((m, idx) => (
+                    <MerchantRow
+                        key={m.id}
+                        merchant={m}
+                        isLast={idx === merchants.length - 1}
+                        onViewDetail={onViewDetail ? () => onViewDetail(m.id) : undefined}
+                    />
+                ))
+            }
+        </div >
     );
 }

@@ -52,11 +52,11 @@ export default function DeliveryFeeList({
     return (
         <div style={tableStyle}>
             <div
-                className="hidden md:grid grid-cols-[200px_1fr_130px_120px_auto] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid grid-cols-[200px_1fr_130px_120px_140px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Route", "Pricing", "Weight", "Status", ""].map((h, i) => (
-                    <div key={i} className="text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold">
+                {["Route", "Pricing", "Weight", "Status", "Actions"].map((h, i) => (
+                    <div key={i} className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold ${i === 4 ? "text-center" : "text-start"} `}>
                         {h}
                     </div>
                 ))}

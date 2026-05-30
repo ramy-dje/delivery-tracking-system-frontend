@@ -7,7 +7,7 @@ import Pagination from "@/components/commons/Pagination";
 import { Plus, Search, X } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
 import { IShipmentSummary, ShipmentStatus, IShipmentFilter, ICreateShipment } from "@/types/shipment";
-import { listShipments, createShipmentByMerchant, createShipmentAtNode } from "@/services/ShipmentService";
+import { listShipments, createShipmentByMerchant, createShipmentAtNode, cancelShipment } from "@/services/ShipmentService";
 import ShipmentList from "@/components/dashboard/shipments/ShipmentList";
 import ShipmentDetailModal from "@/components/dashboard/shipments/ShipmentDetailModal";
 import CreateShipmentModal from "@/components/dashboard/shipments/CreateShipmentModal";
@@ -17,6 +17,9 @@ import { ROLES } from "@/lib/roles";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import SelectField from "@/components/commons/SelectField";
 import ActionBtn from "@/components/commons/ActionButton";
+import ConfirmDialog from "@/components/commons/ConfirmDialog";
+import SwapShipmentModal from "@/components/dashboard/shipments/SwapShipmentModal";
+import { handleBatchPrint } from "@/utils/printHelper";
 
 const PAGE_SIZE = 10;
 
@@ -40,8 +43,10 @@ export default function ShipmentsPage() {
     const [page, setPage] = useState(1);
 
     const [createOpen, setCreateOpen] = useState(false);
+    const [swapOpen, setSwapOpen] = useState(false);
+    const [cancelOpen, setCancelOpen] = useState(false);
     const [mode, setMode] = useState<'merchant' | 'receptionist'>(() => {
-        if (userRole === ROLES.RECEPTIONIST) return 'receptionist';
+        if (userRole === ROLES.RECEPTIONIST || userRole === ROLES.MANAGER) return 'receptionist';
         if (userRole === ROLES.MERCHANT) return 'merchant';
         return 'merchant';
     });
@@ -49,6 +54,7 @@ export default function ShipmentsPage() {
 
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedShipmentId, setSelectedShipmentId] = useState<string | null>(null);
+    const [selectedShipment, setSelectedShipment] = useState<IShipmentSummary | null>(null);
     const [merchantId, setMerchantId] = useState<string>();
 
     const [stats, setStats] = useState<DashboardStats>({
@@ -67,54 +73,13 @@ export default function ShipmentsPage() {
             const filter: IShipmentFilter = {
                 pageNumber: page,
                 pageSize: PAGE_SIZE,
-                nodeId: hubId,
+                search,
+                status: statusFilter || undefined,
             };
-
-            if (statusFilter) filter.status = statusFilter;
-
             const data = await listShipments(filter);
             setPagination(data);
 
-            let filteredItems = data.items;
-            if (search.trim()) {
-                const term = search.toLowerCase();
-                filteredItems = data.items.filter(s =>
-                    s.trackingCode.toLowerCase().includes(term) ||
-                    s.customer.fullName.toLowerCase().includes(term) ||
-                    s.customer.phoneNumber.includes(term)
-                );
-            }
-
-            const calculatedStats = filteredItems.reduce<DashboardStats>(
-                (acc, shipment) => {
-                    switch (shipment.status) {
-                        case ShipmentStatus.Pending:
-                        case ShipmentStatus.ReceivedAtBranch:
-                            acc.pending++;
-                            break;
-                        case ShipmentStatus.InTransit:
-                        case ShipmentStatus.OutForDelivery:
-                        case ShipmentStatus.ReadyForTransfer:
-                        case ShipmentStatus.ReadyForDelivery:
-                            acc.inTransit++;
-                            break;
-                        case ShipmentStatus.Delivered:
-                            acc.delivered++;
-                            break;
-                        case ShipmentStatus.DeliveryFailed:
-                        case ShipmentStatus.Refused:
-                        case ShipmentStatus.Cancelled:
-                            acc.failed++;
-                            break;
-                        default:
-                            break;
-                    }
-                    return acc;
-                },
-                { pending: 0, inTransit: 0, delivered: 0, failed: 0 }
-            );
-
-            setStats(calculatedStats);
+            setStats({ pending: 0, inTransit: 0, delivered: 0, failed: 0 });
         } catch (e: any) {
             const error = parseApiError(e);
             console.error("Error fetching shipments: ", error);
@@ -165,9 +130,26 @@ export default function ShipmentsPage() {
         setCreateOpen(true);
     };
 
+    const handleCancelShipment = async (shipmentId: string) => {
+        console.log("Cancelling shipment with ID: ", shipmentId);
+        try {
+            await cancelShipment(shipmentId);
+            showToast.success("Shipment cancelled successfully");
+            fetchShipments();
+
+        } catch (err) {
+            const error = parseApiError(err);
+            showToast.error(error.message || "Failed to cancel shipment");
+            console.error("Error cancelling shipment: ", error);
+        }
+    }
+    const handleBatchPrintShipments = async (selected: IShipmentSummary[]) => {
+        await handleBatchPrint(selected);
+    };
+
     return (
-        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.RECEPTIONIST]} fallbackPath="/unauthorized">
-            <div className="flex flex-col gap-3 h-full">
+        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.RECEPTIONIST, ROLES.MANAGER]} fallbackPath="/unauthorized">
+            <div className="flex flex-col min-h-0 gap-3 h-full">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
                     <div>
@@ -256,6 +238,11 @@ export default function ShipmentsPage() {
                     loading={loading}
                     onViewDetail={handleViewDetail}
                     onAddClick={() => openCreateModal(mode)}
+                    onSwapClick={() => setSwapOpen(true)}
+                    userRole={userRole}
+                    onCancelClick={() => setCancelOpen(true)}
+                    setSelectedShipment={setSelectedShipment}
+                    onBatchPrint={handleBatchPrintShipments}
                 />
 
                 {/* Pagination */}
@@ -286,6 +273,28 @@ export default function ShipmentsPage() {
                         onClose={handleDetailClose}
                     />
                 )}
+
+                {swapOpen &&
+                    <SwapShipmentModal
+                        isOpen={swapOpen}
+                        onClose={() => setSwapOpen(false)}
+                        shipment={selectedShipment!}
+                    />
+                }
+                {cancelOpen &&
+                    <ConfirmDialog
+                        title="Confirm Cancellation"
+                        message="Are you sure you want to cancel this shipment?"
+                        confirmLabel="Confirm"
+                        danger={true}
+                        loading={false}
+                        onConfirm={() => {
+                            handleCancelShipment(selectedShipment!.id)
+                            setCancelOpen(false)
+                        }}
+                        onCancel={() => setCancelOpen(false)}
+                    />
+                }
             </div>
         </RoleGuard>
     );

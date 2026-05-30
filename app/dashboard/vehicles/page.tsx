@@ -14,6 +14,7 @@ import VehicleList from "@/components/dashboard/vehicles/VehicleList";
 import CreateVehicleModal from "@/components/dashboard/vehicles/CreateVehicleModal";
 import VehicleDetailModal from "@/components/dashboard/vehicles/VehicleDetailModal";
 import ErrorBaner from "@/components/commons/ErrorBaner";
+import { parseApiError } from "@/utils/apiErrorHandler";
 
 const PAGE_SIZE = 2;
 
@@ -41,8 +42,9 @@ export default function VehiclesPage() {
             const res = await listVehicles({ search, pageNumber: page, pageSize: PAGE_SIZE });
             setPagination(res);
         } catch (e: any) {
-            console.log("Failed to fetch vehicles", e);
-            const msg = e?.message ?? "Failed to load vehicles";
+            const error = parseApiError(e);
+            console.error("Failed to fetch vehicles:", error);
+            const msg = error?.message ?? "Failed to fetch vehicles";
             setError(msg);
             showToast.error(msg);
         } finally {

@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div className="flex-1 min-h-0 flex flex-col gap-3 md:flex-row">
                         <Sidebar />
 
-                        <main className="w-full h-full p-3 border border-white/10 rounded-lg bg-background-surface">
+                        <main className="w-full min-h-0 h-full p-3 border border-white/10 rounded-lg bg-background-surface">
                             {children}
                         </main>
                     </div>

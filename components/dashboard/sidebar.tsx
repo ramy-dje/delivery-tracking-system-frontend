@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import userStore from "@/stores/userStore";
 import { ROLES, ROLE_ROUTES } from "@/lib/roles";
-import { Building2, FileLineChart, FileLineChartIcon, KeySquare, LayoutDashboard, PenLine, Truck, UserCog } from "lucide-react";
+import { Building2, DollarSign, Droplet, FileLineChartIcon, KeySquare, LayoutDashboard, Package, PenLine, Truck, User, UserCog } from "lucide-react";
 import Image from "next/image";
 
 const NAV_GROUPS = [
@@ -21,28 +21,12 @@ const NAV_GROUPS = [
                 allowed: ROLE_ROUTES["/dashboard"],
             },
             {
-                path: "/dashboard/operations",
-                label: "Operations",
-                icon: (
-                    <FileLineChart size={14} />
-                ),
-                allowed: ROLE_ROUTES["/dashboard/operations"],
-            },
-            {
-                path: "/dashboard/management",
-                label: "Management",
-                icon: (
-                    <PenLine size={14} />
-                ),
-                allowed: ROLE_ROUTES["/dashboard/management"],
-            },
-            {
                 path: "/dashboard/branches",
                 label: "Branches",
                 icon: (
                     <Building2 size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.OWNER, ROLES.ADMIN],
             },
             {
                 path: "/dashboard/managers",
@@ -50,7 +34,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.OWNER, ROLES.ADMIN],
             },
             {
                 path: "/dashboard/staffs",
@@ -58,7 +42,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.ADMIN, ROLES.MANAGER],
             },
             {
                 path: "/dashboard/drivers",
@@ -66,7 +50,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.ADMIN, ROLES.MANAGER],
             },
             {
                 path: "/dashboard/vehicles",
@@ -74,35 +58,53 @@ const NAV_GROUPS = [
                 icon: (
                     <KeySquare size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+            },
+            {
+                path: "/dashboard/branch-drop",
+                label: "Branch Drops",
+                icon: (
+                    <Droplet size={14} />
+                ),
+                allowed: [ROLES.RECEPTIONIST],
+            },
+            {
+                path: "/dashboard/delivery-fees",
+                label: "Delivery Fees",
+                icon: (
+                    <DollarSign size={14} />
+                ),
+                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
+            },
+            {
+                path: "/dashboard/merchants",
+                label: "Merchants",
+                icon: (
+                    <User size={14} />
+                ),
+                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
+            },
+            {
+                path: "/dashboard/shipments",
+                label: "Shipments",
+                icon: (
+                    <Package size={14} />
+                ),
+                allowed: [ROLES.MERCHANT, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
+            },
+            {
+                path: "/dashboard/bulk-import",
+                label: "Bulk Import",
+                icon: (
+                    <FileLineChartIcon size={14} />
+                ),
+                allowed: [ROLES.MERCHANT],
             },
         ],
     },
     {
         label: "Admin",
         routes: [
-            {
-                path: "/dashboard/inventory",
-                label: "Inventory",
-                icon: (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                        <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="currentColor" strokeWidth="1.5" />
-                        <path d="M16 3H8L6 7h12l-2-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-                    </svg>
-                ),
-                allowed: ROLE_ROUTES["/dashboard/operations"],
-            },
-            {
-                path: "/dashboard/owner/branches",
-                label: "Branch Managers",
-                icon: (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />
-                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                ),
-                allowed: [ROLES.OWNER],
-            },
             {
                 path: "/dashboard/management/users",
                 label: "Users",
@@ -113,7 +115,7 @@ const NAV_GROUPS = [
                         <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                 ),
-                allowed: [ROLES.ADMIN, ROLES.OWNER],
+                allowed: [ROLES.ADMIN],
             },
         ],
     },
@@ -136,7 +138,7 @@ export default function Sidebar() {
         <aside
             className={`
                 hidden md:flex flex-col
-                bg-[#06090f] border border-white/10
+                bg-background-surface border border-white/10
                 rounded-lg
                 transition-all duration-300 ease-in-out
                 ${collapsed ? "w-16" : "w-55"}
@@ -259,7 +261,7 @@ export default function Sidebar() {
                                         aria-current={isActive ? "page" : undefined}
                                         title={collapsed ? r.label : undefined}
                                         className={`
-                                            flex items-center gap-2.5 rounded-lg transition-all duration-150
+                                            flex items-center gap-2.5 mb-1 rounded-lg transition-all duration-150
                                             ${collapsed ? "justify-center px-0 py-2.5" : "px-2.5 py-2"}
                                             ${isActive
                                                 ? "text-amber-300"

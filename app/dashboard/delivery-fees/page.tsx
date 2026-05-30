@@ -13,6 +13,7 @@ import DeliveryFeeDetailModal from "@/components/dashboard/delivery-fees/Deliver
 import CreateDeliveryFeeModal from "@/components/dashboard/delivery-fees/CreateDeliveryFeeModal";
 import EditDeliveryFeeModal from "@/components/dashboard/delivery-fees/EditDeliverFeeModal";
 import DeliveryFeeList from "@/components/dashboard/delivery-fees/DeliveryFeeList";
+import ActionBtn from "@/components/commons/ActionButton";
 
 const PAGE_SIZE = 10;
 
@@ -157,7 +158,7 @@ export default function DeliveryFeesPage() {
                     <div className="flex items-center gap-2.5 mb-1">
                         <div
                             className="w-1 h-6 rounded-full"
-                            style={{ background: "linear-gradient(180deg,#38bdf8,#0ea5e966)" }}
+                            style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b66)" }}
                         />
                         <h1 className="text-[22px] font-bold text-white tracking-tight">Delivery Fees</h1>
                     </div>
@@ -165,24 +166,15 @@ export default function DeliveryFeesPage() {
                         Manage origin-destination pricing rules for your logistics network.
                     </p>
                 </div>
-                <button
-                    onClick={() => setCreateOpen(true)}
-                    className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all hover:opacity-90 active:scale-95"
-                    style={{
-                        background: "linear-gradient(135deg,#38bdf8,#0ea5e9)",
-                        color: "#020617",
-                        boxShadow: "0 4px 16px rgba(56,189,248,0.2)",
-                    }}
-                >
-                    <Plus size={13} />
-                    New Fee
-                </button>
+                <ActionBtn onClick={() => setCreateOpen(true)} variant="primary" size="action" label="New Fee" title="Create new fee">
+                    <Plus className="w-4 h-4" />
+                </ActionBtn>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-3">
-                <StatCard label="Total" value={totalCount} accent="#94a3b8" />
-                <StatCard label="Active" value={activeCount} accent="#34d399" />
+                <StatCard label="Total" value={totalCount} accent="#fbbf24" />
+                <StatCard label="Active" value={activeCount} accent="#22d3ee" />
                 <StatCard label="Home" value={homeCount} accent="#34d399" />
                 <StatCard label="Showing" value={filteredFees.length} accent="#38bdf8" />
             </div>
@@ -236,7 +228,7 @@ export default function DeliveryFeesPage() {
                 >
                     {[
                         { value: "" as const, label: "All" },
-                        { value: DeliveryType.Home as const, label: "Home", color: "#34d399" },
+                        { value: DeliveryType.Home as const, label: "Home", color: "#fbbf24" },
                         { value: DeliveryType.StopDesk as const, label: "Stop Desk", color: "#38bdf8" },
                     ].map((opt, idx) => {
                         const active = typeFilter === opt.value;
