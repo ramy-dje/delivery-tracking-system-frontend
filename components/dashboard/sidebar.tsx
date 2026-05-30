@@ -93,12 +93,60 @@ const NAV_GROUPS = [
                 allowed: [ROLES.MERCHANT, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
             },
             {
+                path: "/dashboard/supervisors",
+                label: "Supervisors",
+                icon: (
+                    <UserCog size={14} />
+                ),
+                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN],
+            },
+            {
+                path: "/dashboard/transporters",
+                label: "Transporters",
+                icon: (
+                    <Truck size={14} />
+                ),
+                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN],
+            },
+            {
+                path: "/dashboard/freelancers",
+                label: "Freelancers",
+                icon: (
+                    <User size={14} />
+                ),
+                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.SUPERVISOR],
+            },
+            {
                 path: "/dashboard/bulk-import",
                 label: "Bulk Import",
                 icon: (
                     <FileLineChartIcon size={14} />
                 ),
                 allowed: [ROLES.MERCHANT],
+            },
+            {
+                path: "/dashboard/overview",
+                label: "Overview",
+                icon: (
+                    <LayoutDashboard size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.OWNER, ROLES.MANAGER],
+            },
+            {
+                path: "/dashboard/routes",
+                label: "Routes",
+                icon: (
+                    <FileLineChartIcon size={14} />
+                ),
+                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.RECEPTIONIST],
+            },
+            {
+                path: "/dashboard/company",
+                label: "Company",
+                icon: (
+                    <Building2 size={14} />
+                ),
+                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN],
             },
         ],
     },
