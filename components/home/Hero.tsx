@@ -14,7 +14,7 @@ export default function Hero() {
     <section className="relative min-h-screen flex items-center overflow-hidden pt-20">
       {/* Background grid */}
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-40 pointer-events-none"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
@@ -86,7 +86,7 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 0.5 }}
               className="flex flex-wrap gap-4 mb-14"
             >
-              <a href="#pricing" className="btn-primary px-7 py-3.5 rounded-xl text-base">
+              <a href="/register" className="btn-primary px-7 py-3.5 rounded-xl text-base">
                 Start Free Trial
               </a>
               <a href="#how-it-works" className="btn-outline px-7 py-3.5 rounded-xl text-base flex items-center gap-2">

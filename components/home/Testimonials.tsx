@@ -623,7 +623,7 @@ export default function Testimonials() {
                             </p>
 
                             <motion.a
-                                href="#pricing"
+                                href="/register"
                                 className="group relative inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold overflow-hidden"
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.98 }}

@@ -121,7 +121,7 @@ export default function NavBar() {
                   {link.label}
                 </a>
               ))}
-              <a href="#pricing" className="btn-primary text-sm px-5 py-2.5 rounded-lg text-center mt-2">
+              <a href="/register" className="btn-primary text-sm px-5 py-2.5 rounded-lg text-center mt-2">
                 Get Started →
               </a>
             </div>

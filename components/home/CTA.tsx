@@ -203,7 +203,7 @@ export default function CTA() {
                             transition={{ duration: 0.5, delay: 0.4 }}
                             className="flex flex-wrap gap-4 justify-center"
                         >
-                            <a href="#pricing" className="btn-primary px-8 py-4 rounded-xl text-base">
+                            <a href="/register" className="btn-primary px-8 py-4 rounded-xl text-base">
                                 Start Free Trial →
                             </a>
                             <a href="#" className="btn-outline px-8 py-4 rounded-xl text-base">

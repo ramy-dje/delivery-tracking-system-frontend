@@ -265,7 +265,7 @@ export default function Pricing() {
 
                                 {/* CTA Button */}
                                 <a
-                                    href="#"
+                                    href="/register"
                                     className={`text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 ${plan.highlight
                                         ? "btn-primary shadow-lg shadow-amber-400/25"
                                         : "btn-outline"
