@@ -3,7 +3,7 @@ import axios from "axios";
 import { getAccessToken, logout, setAccessToken } from "@/hooks/useAuth";
 
 const api = axios.create({
-  baseURL: "http://localhost:5113/api",
+  baseURL: "http://localhost:8008/api",
   withCredentials: true,
 });
 
