@@ -9,6 +9,7 @@ import HowItWorks from '@/components/home/HowItWorks'
 import Pricing from '@/components/home/Pricing'
 import Testimonials from '@/components/home/Testimonials'
 import CTA from '@/components/home/CTA'
+import Contact from '@/components/home/Contact'
 import { Footer } from 'react-day-picker'
 
 export default function Home() {
@@ -27,6 +28,7 @@ export default function Home() {
       <Pricing />
       <Testimonials />
       <CTA />
+      <Contact />
       <Footer />
     </main>
   )
