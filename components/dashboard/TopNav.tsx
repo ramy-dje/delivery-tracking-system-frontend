@@ -12,6 +12,12 @@ const MOBILE_ROUTES = [
     { path: "/dashboard/management", label: "Management", allowed: ROLE_ROUTES["/dashboard/management"] },
     { path: "/dashboard/branches", label: "Branches", allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER] },
     { path: "/dashboard/owner/branches", label: "Branch Managers", allowed: [ROLES.OWNER] },
+    { path: "/dashboard/overview", label: "Overview", allowed: [ROLES.ADMIN, ROLES.OWNER, ROLES.MANAGER] },
+    { path: "/dashboard/supervisors", label: "Supervisors", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN] },
+    { path: "/dashboard/transporters", label: "Transporters", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN] },
+    { path: "/dashboard/freelancers", label: "Freelancers", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.SUPERVISOR] },
+    { path: "/dashboard/routes", label: "Routes", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.RECEPTIONIST] },
+    { path: "/dashboard/company", label: "Company", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN] },
     { path: "/dashboard/inventory", label: "Inventory", allowed: ROLE_ROUTES["/dashboard/operations"] },
     { path: "/dashboard/management/users", label: "Users", allowed: [ROLES.ADMIN, ROLES.OWNER] },
 ];
