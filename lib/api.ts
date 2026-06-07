@@ -11,7 +11,7 @@ const EXCLUDED_ENDPOINTS = [
   "/auth/login",
   "/auth/register",
   "/auth/refresh",
-  "/auth/refresh-token",
+  "/auth/refresh",
   "/auth/activate",
   "/auth/forgot-password",
   "/auth/reset-password",
@@ -73,7 +73,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await api.post("/auth/refresh-token");
+        const { data } = await api.post("/auth/refresh");
         console.log("Token refreshed successfully:", data);
         const access_token = data.accessToken;
 

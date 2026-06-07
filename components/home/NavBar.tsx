@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import userStore from "@/stores/userStore";
+import { ROLES } from "@/lib/roles";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -14,7 +15,7 @@ const navLinks = [
 ];
 
 export default function NavBar() {
-  const { user } : any = userStore();
+  const { user }: any = userStore();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -37,12 +38,12 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <Image 
-            src="/logo/logolight .png" 
-            alt="FlashShip Logo" 
-            width={140} 
-            height={40} 
-            className="object-contain" 
+          <Image
+            src="/logo/logolight .png"
+            alt="FlashShip Logo"
+            width={140}
+            height={40}
+            className="object-contain"
             priority
           />
         </Link>
@@ -61,7 +62,17 @@ export default function NavBar() {
         </div>
 
         {/* CTA */}
-        
+        {user ? (
+          user.role === ROLES.CLIENT ? (
+            <Link href="/company/create" className="btn-primary text-sm px-5 py-2.5 rounded-lg" >
+              Create Company
+            </Link>
+          ) : (
+            <Link href="/dashboard" className="btn-primary text-sm px-5 py-2.5 rounded-lg" >
+              Dashboard
+            </Link>
+          )
+        ) : (
           <div className="hidden md:flex items-center gap-3">
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors px-4 py-2" >
               Sign Up
@@ -70,7 +81,7 @@ export default function NavBar() {
             <Link href="/register" className="btn-primary text-sm px-5 py-2.5 rounded-lg" >
               Get Started →
             </Link>
-          </div>
+          </div>)}
 
 
         {/* Mobile hamburger */}

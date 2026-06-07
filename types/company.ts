@@ -1,3 +1,4 @@
+import { Role } from "@/lib/roles";
 import { IUser, IUserSummary } from "./user";
 
 export type CompanyBusinessType = "solo" | "company";
@@ -45,11 +46,10 @@ export interface IManager {
 export interface ICompanyResponse {
   success: boolean;
   message: string;
-  data: {
-    company: ICompany;       
-    user: IUser;      
-    manager: IManager | null;
-  };
+  user: IUser;
+  associated: IManager | null;
+  Role: Role;
+  accessToken: string;
 }
 
 export interface ICreateCompanyInput {

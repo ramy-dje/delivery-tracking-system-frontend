@@ -9,11 +9,11 @@ export const loginUser = async (
 };
 
 export const registerUser = async (data: {
-        firstName: string,
-        lastName: string,
-        email: string,
-        phone: string,
-        password: string,
+  firstName: string,
+  lastName: string,
+  email: string,
+  phone: string,
+  password: string,
 }) => {
   return await api.post("/auth/register", data);
 };
@@ -22,6 +22,7 @@ export const activateUser = async (data: {
   activation_number: string;
   activation_token?: string;
 }) => {
+  console.log("Activating user with data:", data);
   return await api.post("/auth/activate", data);
 };
 

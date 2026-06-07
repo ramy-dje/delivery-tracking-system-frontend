@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Check, ShieldCheck } from "lucide-react";
 import { activateUser } from "@/services/AuthService";
 import ActionBtn from "@/components/commons/ActionButton";
+import { parseApiError } from "@/utils/apiErrorHandler";
+import { showToast } from "nextjs-toast-notify";
+import { useRouter } from "next/navigation";
 
 const DIGITS = 4;
 
@@ -16,6 +19,7 @@ export default function ActivationPage({
     params: Promise<{ token: string }>
 }) {
     const { token } = use(params);
+    const router = useRouter();
 
     const [code, setCode] = useState<string[]>(Array(DIGITS).fill(""));
     const [error, setError] = useState<string>("");
@@ -104,9 +108,13 @@ export default function ActivationPage({
                 activation_token: token
             })
             setIsSuccess(true);
-            console.log("Activation Data : ", data)
-        } catch {
-            triggerError("Activation failed. Please try again.");
+            showToast.success("Account activated successfully! Redirecting to dashboard...");
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 2000);
+        } catch (err: any) {
+            const error = parseApiError(err);
+            showToast.error(error.message || "An error occurred during activation.");
 
         } finally {
             setIsLoading(false);
@@ -252,6 +260,8 @@ export default function ActivationPage({
                             label="Activate Account"
                             variant="primary"
                             size="action"
+                            type="submit"
+                            className="w-full py-3"
                             disabled={isLoading} />
                     </form>
 

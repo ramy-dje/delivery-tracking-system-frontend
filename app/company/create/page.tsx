@@ -12,6 +12,8 @@ import { createCompany } from "@/services/CompanyService";
 import { showToast } from "nextjs-toast-notify";
 import { ICreateCompanyInput } from "@/types/company";
 import userStore from "@/stores/userStore";
+import { parseApiError } from "@/utils/apiErrorHandler";
+import { login } from "@/hooks/useAuth";
 
 /* ─── Step definitions ─── */
 const STEPS = [
@@ -237,12 +239,12 @@ export default function CreateCompanyPage() {
             showToast.success(data.message || "Company created! 🎉", {
                 duration: 4000, position: "top-right", transition: "bounceIn", sound: true, progress: true,
             });
-            setProfile(data.data.user);
+            login(data.user, data.accessToken);
             setTimeout(() => { router.push("/dashboard"); router.refresh(); }, 2000);
-        } catch (error: any) {
-            const msg = error.response?.data?.message || error.response?.data?.error || "Failed to create company";
-            if (error.response?.status === 401) { router.push("/login"); return; }
-            showToast.error(msg, { duration: 4000, position: "top-right", transition: "bounceIn", sound: true, progress: true });
+        } catch (err: any) {
+            const error = parseApiError(err);
+            console.log("Error creating company:", error);
+            showToast.error(error.message || "An error occurred. Please try again.");
         } finally {
             setIsLoading(false);
         }

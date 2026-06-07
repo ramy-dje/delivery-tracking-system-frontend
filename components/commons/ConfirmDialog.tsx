@@ -54,7 +54,7 @@ export default function ConfirmDialog({
                 <div className="px-6 pb-6 flex gap-3">
                     <button
                         onClick={onCancel}
-                        className="flex-1 py-2.5 rounded-lg text-[13px] text-slate-400 hover:text-white border border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] hover:bg-white/[0.05] transition-all"
+                        className="flex-1 py-2.5 rounded-lg text-[13px] text-slate-400 hover:text-white border border-white/8 hover:border-white/15 bg-white/2 hover:bg-white/5 transition-all"
                     >
                         Cancel
                     </button>

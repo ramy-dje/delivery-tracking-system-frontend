@@ -13,7 +13,7 @@ import Contact from '@/components/home/Contact'
 import { Footer } from 'react-day-picker'
 
 export default function Home() {
-  const router = useRouter()
+
 
   // useEffect(() => {
   //   router.push('/dashboard')
