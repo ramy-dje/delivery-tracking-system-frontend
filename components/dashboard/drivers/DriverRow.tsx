@@ -2,8 +2,7 @@ import { Eye, Phone, Power } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
 import RoleBadge from "@/components/commons/RoleBadge";
 import { getInitials, getRoleMeta } from "../staffs/SatffRow";
-import { IDriverResponse } from "@/types/driver";
-
+import { IDelivererResponse } from "@/types/driver";
 
 const DriverRow = ({
     driver,
@@ -11,13 +10,15 @@ const DriverRow = ({
     onViewDetail,
     onToggleStatus,
 }: {
-    driver: IDriverResponse;
+    driver: IDelivererResponse;
     isLast: boolean;
     onViewDetail?: () => void;
     onToggleStatus?: () => void;
 }) => {
-    const isActive = driver.isActive !== false;
-    const m = getRoleMeta(driver.role);
+    const isActive = driver.isActive;
+    const m = getRoleMeta(driver.userId?.role || "driver");
+    const fullName = `${driver.userId?.firstName || ""} ${driver.userId?.lastName || ""}`.trim();
+    const phoneNumber = driver.userId?.phone;
 
     return (
         <div
@@ -35,14 +36,19 @@ const DriverRow = ({
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0 transition-transform duration-150 group-hover:scale-[1.06]"
                     style={{ background: m.bg, border: `1px solid ${m.border}`, color: m.color }}
                 >
-                    {getInitials(driver.fullName)}
+                    {getInitials(fullName)}
                 </div>
                 <div className="min-w-0">
                     <div className="text-[14px] font-semibold text-slate-100 truncate leading-tight">
-                        {driver.fullName}
+                        {fullName}
                     </div>
-                    <div className="mt-1">
-                        <RoleBadge role={driver.role} />
+                    <div className="mt-1 flex gap-2 items-center">
+                        <RoleBadge role={driver.userId?.role as any || "driver"} />
+                        {driver.availabilityStatus !== 'available' && (
+                            <span className="text-[10px] uppercase text-slate-400">
+                                {driver.availabilityStatus.replace('_', ' ')}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -54,9 +60,9 @@ const DriverRow = ({
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 14.92z"
                             stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
-                    {driver?.phoneNumber ? (
+                    {phoneNumber ? (
                         <span className="text-[12.5px] font-medium text-slate-300 truncate">
-                            {(driver as any).phoneNumber}
+                            {phoneNumber}
                         </span>
                     ) : (
                         <span className="text-[11px] text-slate-600 italic">No phone</span>
@@ -67,7 +73,7 @@ const DriverRow = ({
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#64748b" strokeWidth="1.5" />
                         <polyline points="22,6 12,13 2,6" stroke="#64748b" strokeWidth="1.5" />
                     </svg>
-                    <span className="text-[11.5px] text-slate-500 truncate">{driver.email}</span>
+                    <span className="text-[11.5px] text-slate-500 truncate">{driver.userId?.email}</span>
                 </div>
             </div>
 
@@ -97,10 +103,10 @@ const DriverRow = ({
                         <Eye size={13} />
                     </ActionBtn>
                 )}
-                {driver.phoneNumber && (
+                {phoneNumber && (
                     <ActionBtn
-                        href={`tel:${driver.phoneNumber}`}
-                        title={`Call ${driver.phoneNumber}`}
+                        href={`tel:${phoneNumber}`}
+                        title={`Call ${phoneNumber}`}
                         variant="sky"
                         revealOnHover
                     >
@@ -110,7 +116,7 @@ const DriverRow = ({
                 {onToggleStatus && (
                     <ActionBtn
                         onClick={onToggleStatus}
-                        title={isActive ? "Deactivate staff" : "Activate staff"}
+                        title={isActive ? "Deactivate driver" : "Activate driver"}
                         variant={isActive ? "red" : "emerald"}
                         revealOnHover
                     >

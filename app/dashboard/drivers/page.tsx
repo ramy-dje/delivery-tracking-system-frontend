@@ -1,16 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { IPaginatedResponse } from "@/types/paginate";
-import { ROLES, Role } from "@/lib/roles";
+import { ROLES } from "@/lib/roles";
 import { getNodeId } from "@/hooks/useAuth";
 import { showToast } from "nextjs-toast-notify";
-import Pagination from "@/components/commons/Pagination";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import { Plus, Search, X } from "lucide-react";
 import RoleGuard from "@/lib/RoleGuard";
 import StatCard from "@/components/commons/StatCard";
-import { IDriverRegister, IDriverResponse } from "@/types/driver";
+import { ICreateDelivererPayload, IDelivererResponse } from "@/types/driver";
 import { createDriver, listDrivers, updateDriverStatus } from "@/services/DriverService";
 import DriverList from "@/components/dashboard/drivers/DriverList";
 import CreateDriverModal from "@/components/dashboard/drivers/CreateDriverModal";
@@ -18,27 +16,19 @@ import ErrorBaner from "@/components/commons/ErrorBaner";
 import DriverDetailModal from "@/components/dashboard/drivers/DriverDetailModal";
 import { parseApiError } from "@/utils/apiErrorHandler";
 
-const PAGE_SIZE = 3;
-
-
 export default function DriversPage() {
     const managerNodeId = getNodeId() ?? "";
 
-    const [pagination, setPagination] = useState<IPaginatedResponse<IDriverResponse> | null>(null);
-    const drivers = pagination?.items ?? [];
-
+    const [drivers, setDrivers] = useState<IDelivererResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-    const [roleFilter, setRoleFilter] = useState<"" | Role>("");
-    const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
-    const [page, setPage] = useState(1);
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [selectedDriver, setSelectedDriver] = useState<IDriverResponse | null>(null);
+    const [selectedDriver, setSelectedDriver] = useState<IDelivererResponse | null>(null);
     const [activationStatusLoading, setActivationStatusLoading] = useState(false);
 
     const [detailOpen, setDetailOpen] = useState(false);
@@ -49,26 +39,23 @@ export default function DriversPage() {
     const fetchDrivers = useCallback(async () => {
         setLoading(true);
         if (!managerNodeId) {
-            setPagination(null);
+            setDrivers([]);
             setLoading(false);
             setError("No logistics node is assigned to this manager.");
             return;
         }
         setError(null);
         try {
-            console.log("Search :", search);
-            const res = await listDrivers({ search, pageNumber: page, pageSize: PAGE_SIZE });
-            console.log("Fetched drivers", res);
-            setPagination(res);
+            const res = await listDrivers(managerNodeId, { search: search || undefined });
+            setDrivers(res.data);
         } catch (e: any) {
             const error = parseApiError(e);
-            console.error("Fetch Drivers error", error);
             const msg = error.message ?? "Failed to fetch drivers";
             showToast.error(msg);
         } finally {
             setLoading(false);
         }
-    }, [managerNodeId, page, search]);
+    }, [managerNodeId, search]);
 
     useEffect(() => {
         const delay = setTimeout(() => {
@@ -78,42 +65,40 @@ export default function DriversPage() {
         return () => clearTimeout(delay);
     }, [fetchDrivers]);
 
-    const activeCount = drivers.filter((d) => d.isActive !== false).length;
-    const totalCount = pagination?.totalCount ?? 0;
+    const activeCount = drivers.filter((d) => d.isActive).length;
+    const totalCount = drivers.length;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
 
-    const handleCreate = async (data: IDriverRegister) => {
+    const handleCreate = async (data: ICreateDelivererPayload) => {
         if (!managerNodeId) return;
         setCreateLoading(true);
         try {
-            await createDriver(data);
+            await createDriver(managerNodeId, data);
             setCreateOpen(false);
-            showToast.success("Driver created successfully");
+            showToast.success("Deliverer created successfully");
             fetchDrivers();
         } catch (e: any) {
             const serverErrors = e?.response?.data?.errors;
             const firstServerError = serverErrors ? Object.values(serverErrors).flat().find(Boolean) : null;
-            const msg = firstServerError ?? e?.response?.data?.message ?? e?.response?.data?.title ?? e?.message ?? "Failed to create driver";
-            showToast.error(msg);
-            console.error("Create Driver error", e);
+            const msg = firstServerError ?? e?.response?.data?.message ?? e?.response?.data?.title ?? e?.message ?? "Failed to create deliverer";
+            showToast.error(msg as string);
         } finally {
             setCreateLoading(false);
         }
     };
 
     const handleConfirmToggleActivation = async () => {
-        if (!selectedDriver) return;
+        if (!selectedDriver || !managerNodeId) return;
         setActivationStatusLoading(true);
         try {
-            await updateDriverStatus(selectedDriver.id, !selectedDriver.isActive);
-            showToast.success(`Driver ${selectedDriver.isActive ? "deactivated" : "activated"}`);
+            await updateDriverStatus(managerNodeId, selectedDriver._id);
+            showToast.success(`Deliverer ${selectedDriver.isActive ? "suspended" : "activated"}`);
             setConfirmOpen(false);
             setSelectedDriver(null);
             fetchDrivers();
         } catch (e: any) {
             const error = parseApiError(e);
-            console.log("Toggle activation error", error);
             showToast.error(error.message);
         } finally {
             setActivationStatusLoading(false);
@@ -131,10 +116,10 @@ export default function DriversPage() {
                     <div>
                         <div className="flex items-center gap-2.5 mb-1">
                             <div className="w-1 h-6 rounded-full" style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b66)" }} />
-                            <h1 className="text-[22px] font-bold text-white tracking-tight">Driver</h1>
+                            <h1 className="text-[22px] font-bold text-white tracking-tight">Deliverers</h1>
                         </div>
                         <p className="text-[13px] text-slate-500 ml-3.5 pl-0.5">
-                            Manage operational drivers for your logistics node.
+                            Manage deliverers for your branch.
                         </p>
                     </div>
                     <button
@@ -143,22 +128,21 @@ export default function DriversPage() {
                         style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 16px rgba(251,191,36,0.2)" }}
                     >
                         <Plus size={13} />
-                        New Driver
+                        New Deliverer
                     </button>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                     <StatCard label="Total" value={totalCount} accent="#94a3b8" />
                     <StatCard label="Active" value={activeCount} accent="#34d399" />
-                    <StatCard label="Showing" value={drivers.length} accent="#fbbf24" />
                 </div>
 
                 {error && (
                     <ErrorBaner error={error} setError={setError} />
                 )}
 
-                {/* ── Filters ───────────────────────────────────────────────── */}
+                {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Search */}
                     <div
@@ -171,7 +155,7 @@ export default function DriversPage() {
                         <Search size={13} className="text-slate-700 shrink-0" />
                         <input
                             type="text"
-                            placeholder="Search by name, email, or node…"
+                            placeholder="Search by name, email, or username…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
@@ -183,7 +167,7 @@ export default function DriversPage() {
                         )}
                     </div>
                     <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
-                        {drivers.length} manager{drivers.length !== 1 ? "s" : ""}
+                        {drivers.length} deliverer{drivers.length !== 1 ? "s" : ""}
                     </span>
                 </div>
 
@@ -195,43 +179,31 @@ export default function DriversPage() {
                     onToggleStatus={(s) => { setSelectedDriver(s); setConfirmOpen(true); }}
                 />
 
-                {/* Pagination area */}
-                {pagination && pagination.totalPages > 1 && (
-                    <Pagination
-                        pageNumber={pagination.pageNumber}
-                        totalPages={pagination.totalPages}
-                        hasNext={pagination.hasNextPage}
-                        hasPrev={pagination.hasPreviousPage}
-                        onChange={(p) => setPage(p)}
-                    />
-                )}
-
-
                 {/* Modals */}
                 <CreateDriverModal
                     isOpen={createOpen}
                     onClose={() => setCreateOpen(false)}
                     onSubmit={handleCreate}
                     loading={createLoading}
-                    logisticNodeId={managerNodeId} // Required
                 />
 
                 {confirmOpen && selectedDriver && (
                     <ConfirmDialog
-                        title={`${selectedDriver.isActive ? "Deactivate" : "Activate"} Driver`}
-                        message={`${selectedDriver.isActive ? "Deactivate" : "Activate"} "${selectedDriver.fullName}"? They will ${selectedDriver.isActive ? "no longer" : "be able to"} access the system.`}
+                        title={`${selectedDriver.isActive ? "Suspend" : "Activate"} Deliverer`}
+                        message={`${selectedDriver.isActive ? "Suspend" : "Activate"} "${selectedDriver.userId.firstName} ${selectedDriver.userId.lastName}"? They will ${selectedDriver.isActive ? "no longer" : "be able to"} access the system.`}
                         confirmLabel="Confirm"
-                        danger={selectedDriver.isActive}  // red for deactivate, green for activate
+                        danger={selectedDriver.isActive} 
                         loading={activationStatusLoading}
                         onConfirm={handleConfirmToggleActivation}
                         onCancel={() => { setConfirmOpen(false); setSelectedDriver(null); }}
                     />
                 )}
 
-                {selectedDriverId && (
+                {selectedDriverId && managerNodeId && (
                     <DriverDetailModal
                         isOpen={detailOpen}
                         driverId={selectedDriverId}
+                        branchId={managerNodeId}
                         onClose={() => { setDetailOpen(false); setSelectedDriverId(null); }}
                     />
                 )}

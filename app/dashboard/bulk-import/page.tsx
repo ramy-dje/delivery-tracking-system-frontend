@@ -20,6 +20,7 @@ import BulkImportSummary from "@/components/dashboard/shipments/bulk-import/Bulk
 import BulkUploadZone from "@/components/dashboard/shipments/bulk-import/BulkUploadZone";
 import BulkPreviewTable from "@/components/dashboard/shipments/bulk-import/BulkPreviewTable";
 import BulkErrorReport from "@/components/dashboard/shipments/bulk-import/BulkReportError";
+import { getNodeId } from "@/hooks/useAuth";
 
 type Step = "upload" | "resolving" | "preview" | "submitting" | "done";
 
@@ -66,6 +67,7 @@ export default function BulkImportPage() {
 
         try {
             const result = await createBulkShipments(
+                getNodeId() ?? "",
                 valid.map(rowToPayload)
             );
 

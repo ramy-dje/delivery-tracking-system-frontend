@@ -1,30 +1,30 @@
 "use client";
-import { CircleX, Eye, Phone, Printer, Repeat, TrendingUp } from "lucide-react";
+import { CircleX, Eye, Phone, Printer, Repeat, TrendingUp, MapPin } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
-import { IShipmentSummary, ShipmentStatus } from "@/types/shipment";
+import { IPackage } from "@/types/shipment";
 import { StatusBadge } from "./StatusBadge";
 import { handlePrint } from "@/utils/printHelper";
 import { Role, ROLES } from "@/lib/roles";
 import Link from "next/link";
 
 const SWAPPABLE_STATUSES = new Set([
-    ShipmentStatus.Pending,
-    ShipmentStatus.ReceivedAtDestinationHub,
-    ShipmentStatus.DeliveryFailed,
+    'pending',
+    'at_destination_branch',
+    'failed_delivery',
 ]);
 
 const CANCELLABLE_STATUSES = new Set([
-    ShipmentStatus.Pending,
+    'pending',
 ]);
 
 interface ShipmentRowProps {
-    shipment: IShipmentSummary;
+    shipment: IPackage;
     userRole: Role | undefined;
     onCancelClick?: () => void;
     onSwaplClick?: () => void;
     isLast: boolean;
     onViewDetail?: () => void;
-    setSelectedShipment: (shipment: IShipmentSummary | null) => void;
+    setSelectedShipment: (shipment: IPackage | null) => void;
     // batch print
     selected?: boolean;
     onSelect?: (id: string, checked: boolean) => void;
@@ -42,9 +42,11 @@ export default function ShipmentRow({
     onSelect,
 }: ShipmentRowProps) {
     const isAlert = [
-        ShipmentStatus.DeliveryFailed,
-        ShipmentStatus.Refused,
-        ShipmentStatus.Cancelled,
+        'failed_delivery',
+        'failed_delivery_attempt',
+        'cancelled',
+        'lost',
+        'damaged',
     ].includes(shipment.status);
 
     const canSwap = onSwaplClick && SWAPPABLE_STATUSES.has(shipment.status);
@@ -67,9 +69,9 @@ export default function ShipmentRow({
                     <input
                         type="checkbox"
                         checked={selected}
-                        onChange={(e) => onSelect(shipment.id, e.target.checked)}
+                        onChange={(e) => onSelect(shipment._id, e.target.checked)}
                         className="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer"
-                        aria-label={`Select shipment ${shipment.trackingCode}`}
+                        aria-label={`Select shipment ${shipment.trackingNumber}`}
                     />
                 </div>
             )}
@@ -77,7 +79,7 @@ export default function ShipmentRow({
             {/* Tracking Code */}
             <div className="flex items-center gap-2 min-w-0">
                 <Link
-                    href={`/dashboard/shipments/${shipment.id}`}
+                    href={`/dashboard/shipments/${shipment._id}`}
                     className={`w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0 transition-transform duration-150 group-hover:scale-[1.06] ${isAlert ? "bg-red-500/20" : "bg-blue-500/20"
                         }`}
                 >
@@ -85,11 +87,11 @@ export default function ShipmentRow({
                 </Link>
                 <div className="min-w-0">
                     <div className="text-[14px] font-semibold text-slate-100 truncate leading-tight">
-                        {shipment.trackingCode}
+                        {shipment.trackingNumber}
                     </div>
                     <div className="mt-1">
                         <span className={`text-[11px] font-medium ${isAlert ? "text-red-400" : "text-slate-500"}`}>
-                            {shipment.customer.fullName}
+                            {shipment.destination.recipientName}
                         </span>
                     </div>
                 </div>
@@ -100,15 +102,15 @@ export default function ShipmentRow({
                 <div className="flex items-center gap-1.5 min-w-0">
                     <Phone className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                     <a
-                        href={`tel:${shipment.customer.phoneNumber}`}
+                        href={`tel:${shipment.destination.recipientPhone}`}
                         className="text-sm font-medium text-slate-300 truncate hover:text-cyan-400 transition-colors"
                     >
-                        {shipment.customer.phoneNumber}
+                        {shipment.destination.recipientPhone}
                     </a>
                 </div>
                 <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-[11px] text-slate-500">
-                        COD: {shipment.codAmount.toFixed(2)} DA
+                        Total Price: {shipment.totalPrice.toFixed(2)} DA
                     </span>
                 </div>
             </div>
@@ -118,32 +120,18 @@ export default function ShipmentRow({
                 <StatusBadge status={shipment.status} />
             </div>
 
-            {/* Attempts & RTO */}
-            <div className="hidden md:flex items-center justify-center gap-2">
-                {shipment.deliveryAttempts > 0 && (
-                    <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                        style={{ backgroundColor: "rgba(251,191,36,0.12)", color: "#fbbf24" }}
-                    >
-                        {shipment.deliveryAttempts} Attempt{shipment.deliveryAttempts > 1 ? "s" : ""}
-                    </span>
-                )}
-                {shipment.isRto && (
-                    <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                        style={{ backgroundColor: "rgba(251,113,133,0.12)", color: "#fb7185" }}
-                    >
-                        RTO
-                    </span>
-                )}
-                {shipment.deliveryAttempts === 0 && !shipment.isRto && (
-                    <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                        style={{ backgroundColor: "rgba(52,211,153,0.12)", color: "#34d399" }}
-                    >
-                        Smooth
-                    </span>
-                )}
+            {/* Delivery Info */}
+            <div className="hidden md:flex flex-col items-center justify-center gap-1">
+                <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium"
+                    style={{ backgroundColor: "rgba(96,165,250,0.12)", color: "#60a5fa" }}
+                >
+                    {shipment.deliveryType.replace('_', ' ')}
+                </span>
+                <span className="text-[10px] text-slate-500 truncate text-center max-w-[120px]">
+                    <MapPin className="inline w-3 h-3 mr-1" />
+                    {shipment.destination.city}, {shipment.destination.state}
+                </span>
             </div>
 
             {/* Actions */}
@@ -171,21 +159,6 @@ export default function ShipmentRow({
                         revealOnHover
                     >
                         <CircleX size={13} />
-                    </ActionBtn>
-                )}
-
-                {/* SWAP */}
-                {canSwap && userRole === ROLES.MERCHANT && (
-                    <ActionBtn
-                        title="Swap Shipment"
-                        variant="amber"
-                        onClick={() => {
-                            setSelectedShipment(shipment);
-                            onSwaplClick!();
-                        }}
-                        revealOnHover
-                    >
-                        <Repeat size={13} />
                     </ActionBtn>
                 )}
 

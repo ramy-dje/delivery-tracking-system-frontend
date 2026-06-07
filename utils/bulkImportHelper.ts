@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { IBulkShipmentRow } from "@/types/bulk";
-import { DELIVERY_TYPE_MAP, DELIVERY_TYPE_VALUES, DeliveryType } from "@/types/deliveryFee";
+import { DeliveryType } from "@/types/shipment";
 
 // ─── Column aliases ───────────────────────────────────────────────────────────
 
@@ -93,6 +93,17 @@ function parseBool(val: string): boolean {
     return ["true", "yes", "1", "oui"].includes(val.toLowerCase().trim());
 }
 
+const DELIVERY_TYPE_MAP: Record<string, DeliveryType> = {
+    "home": "home",
+    "domicile": "home",
+    "branch_pickup": "branch_pickup",
+    "relais": "branch_pickup",
+    "stopdesk": "branch_pickup",
+    "locker": "locker"
+};
+
+const DELIVERY_TYPE_VALUES = ["home", "branch_pickup", "locker"];
+
 export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRow[] {
     return raw.map((rawRow, idx) => {
         const norm: Partial<Record<keyof IBulkShipmentRow, string>> = {};
@@ -132,7 +143,7 @@ export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRo
             errors.push("Weight must be a positive number");
 
         const dtRaw = ((norm.deliveryType as string | undefined) ?? "home").toLowerCase().trim();
-        const deliveryType = DELIVERY_TYPE_MAP[dtRaw] ?? DeliveryType.Home;
+        const deliveryType = DELIVERY_TYPE_MAP[dtRaw] ?? "home";
         if (!DELIVERY_TYPE_MAP[dtRaw]) {
             errors.push(
                 `Delivery type "${dtRaw}" is invalid. Use: ${DELIVERY_TYPE_VALUES.join(", ")}`
@@ -256,13 +267,13 @@ export async function resolveCommuneIds(
 
 export function rowToPayload(row: IBulkShipmentRow) {
     return {
-        customer: {
-            fullName: row.customerFullName,
-            phoneNumber: row.customerPhone,
-            communeId: row.communeId,
-        },
-        codAmount: row.codAmount,
-        weightKg: row.weightKg,
+        recipientName: row.customerFullName,
+        recipientPhone: row.customerPhone,
+        recipientAddress: row.communeRaw, // default to commune
+        recipientCity: row.communeRaw,
+        recipientState: row.wilayaRaw,
+        totalPrice: row.codAmount,
+        weight: row.weightKg,
         description: row.description || undefined,
         deliveryType: row.deliveryType,
     };

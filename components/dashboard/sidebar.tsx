@@ -53,6 +53,22 @@ const NAV_GROUPS = [
                 allowed: [ROLES.ADMIN, ROLES.MANAGER],
             },
             {
+                path: "/dashboard/cashiers",
+                label: "Cashiers",
+                icon: (
+                    <UserCog size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR],
+            },
+            {
+                path: "/dashboard/loaders",
+                label: "Loaders",
+                icon: (
+                    <Truck size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR],
+            },
+            {
                 path: "/dashboard/vehicles",
                 label: "Vehicles",
                 icon: (

@@ -4,20 +4,20 @@ import { SkeletonList } from "@/components/commons/Skeleton";
 import EmptyState from "@/components/commons/EmptyState";
 import { Package, Printer } from "lucide-react";
 import ShipmentRow from "./ShipmentRow";
-import { IShipmentSummary } from "@/types/shipment";
+import { IPackage } from "@/types/shipment";
 import { Role } from "@/lib/roles";
 import ActionBtn from "@/components/commons/ActionButton";
 
 interface ShipmentListProps {
-    shipments: IShipmentSummary[];
+    shipments: IPackage[];
     userRole: Role | undefined;
     loading?: boolean;
     onViewDetail?: (shipmentId: string) => void;
     onCancelClick?: () => void;
     onSwapClick?: () => void;
     onAddClick?: () => void;
-    onBatchPrint?: (shipments: IShipmentSummary[]) => void;
-    setSelectedShipment: (shipment: IShipmentSummary | null) => void;
+    onBatchPrint?: (shipments: IPackage[]) => void;
+    setSelectedShipment: (shipment: IPackage | null) => void;
 }
 
 export default function ShipmentList({
@@ -54,11 +54,11 @@ export default function ShipmentList({
     const someSelected = selectedIds.size > 0 && !allSelected;
 
     const handleSelectAll = (checked: boolean) => {
-        setSelectedIds(checked ? new Set(shipments.map((s) => s.id)) : new Set());
+        setSelectedIds(checked ? new Set(shipments.map((s) => s._id)) : new Set());
     };
 
     const handleBatchPrint = () => {
-        const toPrint = shipments.filter((s) => selectedIds.has(s.id));
+        const toPrint = shipments.filter((s) => selectedIds.has(s._id));
         onBatchPrint?.(toPrint);
     };
 
@@ -101,7 +101,7 @@ export default function ShipmentList({
                 </div>
 
                 {/* Column labels */}
-                {["Tracking", "Details", "Status", "Attempts & RTO", "Activity"].map((h, i) => (
+                {["Tracking", "Details", "Status", "Delivery & Origin", "Activity"].map((h, i) => (
                     <div
                         key={i}
                         className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold ${i >= 2 ? "text-center" : "text-start"}`}
@@ -142,15 +142,15 @@ export default function ShipmentList({
             <div className="flex-1 min-h-0 overflow-y-auto">
                 {shipments.map((shipment, idx) => (
                     <ShipmentRow
-                        key={shipment.id}
+                        key={shipment._id}
                         shipment={shipment}
                         userRole={userRole}
                         onCancelClick={onCancelClick}
                         onSwaplClick={onSwaplClick}
                         isLast={idx === shipments.length - 1}
                         setSelectedShipment={setSelectedShipment}
-                        onViewDetail={onViewDetail ? () => onViewDetail(shipment.id) : undefined}
-                        selected={selectedIds.has(shipment.id)}
+                        onViewDetail={onViewDetail ? () => onViewDetail(shipment._id) : undefined}
+                        selected={selectedIds.has(shipment._id)}
                         onSelect={handleSelect}
                     />
                 ))}

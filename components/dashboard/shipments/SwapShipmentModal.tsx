@@ -13,18 +13,19 @@ import EntityPicker from "@/components/commons/EntityPicker";
 
 import { ICommune } from "@/types/common";
 import {
-    IShipmentSummary,
+    IPackage,
     ISwapRequest,
 } from "@/types/shipment";
 
 import { listDisponibleCommunes, getCommuneById } from "@/services/LocationService";
 import { showToast } from "nextjs-toast-notify";
 import { initiateSwap } from "@/services/ShipmentService";
+import { getNodeId } from "@/hooks/useAuth";
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    shipment: IShipmentSummary | null;
+    shipment: IPackage | null;
     loading?: boolean;
 }
 
@@ -33,9 +34,10 @@ function SwapShipmentModal({
     onClose,
     shipment,
 }: Props) {
-    const [fullName, setFullName] = useState(shipment?.customer.fullName || "");
-    const [phoneNumber, setPhoneNumber] = useState(shipment?.customer.phoneNumber || "");
-    const [communeId, setCommuneId] = useState<string | null>(shipment?.customer.communeId || null);
+    const hubId = getNodeId() ?? "";
+    const [fullName, setFullName] = useState(shipment?.destination.recipientName || "");
+    const [phoneNumber, setPhoneNumber] = useState(shipment?.destination.recipientPhone || "");
+    const [communeId, setCommuneId] = useState<string | null>(null);
 
     const [communeSearch, setCommuneSearch] = useState("");
 
@@ -71,7 +73,7 @@ function SwapShipmentModal({
                 },
             };
 
-            await initiateSwap(shipment!.id, payload);
+            await initiateSwap(hubId, shipment!._id, payload);
             showToast.success("Shipment swap successful");
             onClose();
         } catch (error) {

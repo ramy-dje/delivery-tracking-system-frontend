@@ -67,8 +67,8 @@ export default function CompanyDetailModal({ isOpen, company, onClose, onSave, s
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                     <div className="flex items-center gap-3 min-w-0">
-                        {company.logo?.url ? (
-                            <img src={company.logo.url} alt="logo" className="w-9 h-9 rounded-xl object-cover shrink-0" />
+                        {company.logo ? (
+                            <img src={company.logo} alt="logo" className="w-9 h-9 rounded-xl object-cover shrink-0" />
                         ) : (
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[14px] font-bold shrink-0"
                                 style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", color: "#fbbf24" }}>
@@ -164,7 +164,7 @@ export default function CompanyDetailModal({ isOpen, company, onClose, onSave, s
                             style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
                             <div className="text-[9.5px] uppercase tracking-widest text-slate-700 font-semibold mb-1">Headquarters</div>
                             <div className="text-[12.5px] text-slate-400">
-                                {[company.headquarters.street, company.headquarters.city, company.headquarters.state, company.headquarters.postalCode]
+                                {[company.headquarters.street, company.headquarters.city, company.headquarters.state]
                                     .filter(Boolean).join(", ")}
                             </div>
                         </div>

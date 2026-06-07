@@ -26,3 +26,12 @@ export interface ITariffResponse {
         hasMore: boolean;
     };
 }
+
+export type DeliveryType = "stopdesk" | "domicile";
+
+export const DELIVERY_TYPE_VALUES: DeliveryType[] = ["stopdesk", "domicile"];
+
+export const DELIVERY_TYPE_MAP: Record<DeliveryType, string> = {
+    stopdesk: "Stopdesk",
+    domicile: "Domicile"
+};

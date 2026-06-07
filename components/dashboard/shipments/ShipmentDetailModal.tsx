@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { IShipmentDetail, ShipmentStatus, FailureReason } from "@/types/shipment";
+import { IPackage } from "@/types/shipment";
 import { Package, Phone, MapPin, Clock, CheckCircle, AlertCircle, RotateCcw, Weight, DollarSign } from "lucide-react";
 import { getShipmentById } from "@/services/ShipmentService";
 import { GlassStatCard } from "@/components/commons/GlassStatCard";
@@ -8,8 +8,9 @@ import GlassEffectCard from "@/components/commons/GlassEffectCard";
 import LoadingSpinner from "@/components/commons/LoadingSpinner";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { format } from "date-fns";
-import { getFailureReasonLabel, StatusBadge } from "./StatusBadge";
+import { StatusBadge } from "./StatusBadge";
 import { GlassHero } from "@/components/commons/GlassHero";
+import { getNodeId } from "@/hooks/useAuth";
 
 interface ShipmentDetailModalProps {
     shipmentId: string;
@@ -18,20 +19,21 @@ interface ShipmentDetailModalProps {
 }
 
 export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: ShipmentDetailModalProps) {
-    const [shipment, setShipment] = useState<IShipmentDetail | null>(null);
+    const hubId = getNodeId() ?? "";
+    const [shipment, setShipment] = useState<IPackage | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isOpen || !shipmentId) return;
+        if (!isOpen || !shipmentId || !hubId) return;
         let active = true;
 
         const fetchShipment = async () => {
             setLoading(true);
             setError(null);
             try {
-                const data = await getShipmentById(shipmentId);
-                if (active) setShipment(data);
+                const res = await getShipmentById(hubId, shipmentId);
+                if (active) setShipment(res.data);
             } catch (e: any) {
                 if (active) setError(e?.message ?? "Failed to load shipment details");
             } finally {
@@ -41,18 +43,18 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
 
         fetchShipment();
         return () => { active = false; };
-    }, [isOpen, shipmentId]);
+    }, [isOpen, shipmentId, hubId]);
 
     const items = [
         {
             icon: <Phone size={10} />,
-            value: shipment?.customer.phoneNumber || "No phone",
-            muted: !shipment?.customer.phoneNumber,
+            value: shipment?.destination.recipientPhone || "No phone",
+            muted: !shipment?.destination.recipientPhone,
         },
         {
             icon: <MapPin size={10} />,
-            value: shipment?.customer.commune?.nameFr || "Unknown Location",
-            muted: !shipment?.customer.commune?.nameFr,
+            value: shipment?.destination.city || "Unknown Location",
+            muted: !shipment?.destination.city,
         },
     ];
 
@@ -60,7 +62,7 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
         <GlassEffectCard
             isOpen={isOpen}
             onClose={onClose}
-            title="Shipment Details"
+            title="Package Details"
             subtitle={shipmentId?.slice(0, 14).toUpperCase()}
             headerIcon={<Package size={17} style={{ color: "#fbbf24" }} />}
             showCloseButton={true}
@@ -85,12 +87,12 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
                 <div className="space-y-5">
                     {/* Identity Hero */}
                     <GlassHero
-                        title={shipment.trackingCode}
-                        subtitle={shipment.customer.fullName}
+                        title={shipment.trackingNumber}
+                        subtitle={shipment.destination.recipientName}
                         statusLabel={<StatusBadge status={shipment.status} />}
-                        isActive={shipment.status === ShipmentStatus.Delivered}
+                        isActive={shipment.status === 'delivered'}
                         metaItems={items}
-                        accentColor={shipment.status === ShipmentStatus.Delivered ? "emerald" : shipment.status === ShipmentStatus.Cancelled ? "red" : "amber"}
+                        accentColor={shipment.status === 'delivered' ? "emerald" : ['cancelled', 'failed_delivery', 'lost', 'damaged'].includes(shipment.status) ? "red" : "amber"}
                     />
 
                     {/* Status & Stats */}
@@ -107,17 +109,17 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
                             <GlassStatCard
                                 icon={<CheckCircle size={11} style={{ color: "#fbbf24" }} />}
                                 label="Delivery Attempts"
-                                value={shipment.deliveryAttempts > 0 ? `${shipment.deliveryAttempts}` : "None"}
-                                secondaryValue={shipment.isRto ? "Return Initiated" : undefined}
-                                badge={shipment.isRto ? { label: "RTO", color: "amber" } : undefined}
+                                value={shipment.attemptCount > 0 ? `${shipment.attemptCount}` : "None"}
+                                secondaryValue={shipment.returnInfo?.isReturn ? "Return Initiated" : undefined}
+                                badge={shipment.returnInfo?.isReturn ? { label: "RTO", color: "amber" } : undefined}
                                 accentColor="amber"
                             />
 
                             <GlassStatCard
-                                icon={<Clock size={11} style={{ color: shipment.events?.length ? "#34d399" : "#475569" }} />}
+                                icon={<Clock size={11} style={{ color: shipment.trackingHistory?.length ? "#34d399" : "#475569" }} />}
                                 label="Last Update"
-                                value={shipment.events?.[0] ? format(new Date(shipment.events[0].createdAt), "MMM dd") : "No events"}
-                                secondaryValue={shipment.events?.[0] ? format(new Date(shipment.events[0].createdAt), "HH:mm") : undefined}
+                                value={shipment.updatedAt ? format(new Date(shipment.updatedAt), "MMM dd") : "No events"}
+                                secondaryValue={shipment.updatedAt ? format(new Date(shipment.updatedAt), "HH:mm") : undefined}
                                 emptyState={{ label: "—" }}
                                 accentColor="emerald"
                             />
@@ -125,39 +127,33 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
                     </div>
 
                     {/* Pricing */}
-                    <div className="grid grid-cols-3 gap-2.5">
-                        <GlassStatCard icon={<Package size={11} />} label="COD" value={`${shipment.codAmount.toFixed(2)} DA`} accentColor="cyan" />
-                        <GlassStatCard icon={<Weight size={11} />} label="Weight" value={`${shipment.weightKg} kg`} accentColor="violet" />
-                        <GlassStatCard icon={<DollarSign size={11} />} label="Fee" value={`${shipment.deliveryFee.toFixed(2)} DA`} accentColor="amber" />
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <GlassStatCard icon={<Package size={11} />} label="Total Price" value={`${shipment.totalPrice.toFixed(2)} DA`} accentColor="cyan" />
+                        <GlassStatCard icon={<Weight size={11} />} label="Weight" value={`${shipment.weight} kg`} accentColor="violet" />
                     </div>
 
-                    {/* Failure/RTO Info */}
-                    {(shipment.status === ShipmentStatus.DeliveryFailed || shipment.status === ShipmentStatus.Refused || shipment.isRto) && (
+                    {/* Issues/RTO Info */}
+                    {shipment.issues && shipment.issues.length > 0 && (
                         <div className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 space-y-3">
                             <div className="flex items-center gap-2 text-red-400 mb-2">
                                 <AlertCircle size={14} />
                                 <span className="text-xs font-semibold uppercase">Issue Details</span>
                             </div>
-                            {shipment.failureReason !== FailureReason.Other && (
-                                <div className="text-[11px] text-slate-300">
-                                    Reason: <span className="text-slate-100 font-medium">{getFailureReasonLabel(shipment.failureReason)}</span>
+                            {shipment.issues.map((issue, idx) => (
+                                <div key={idx} className="text-[11px] text-slate-300">
+                                    {issue.type}: <span className="text-slate-100 font-medium">{issue.description}</span>
                                 </div>
-                            )}
-                            {shipment.failureNotes && (
-                                <div className="text-[11px] text-slate-300">
-                                    Notes: <span className="text-slate-100 font-medium">{shipment.failureNotes}</span>
-                                </div>
-                            )}
-                            {shipment.isRto && (
-                                <div className="flex items-center gap-1.5 text-[11px] text-amber-300">
-                                    <RotateCcw size={12} /> Return to Merchant Initiated
+                            ))}
+                            {shipment.returnInfo?.isReturn && (
+                                <div className="flex items-center gap-1.5 text-[11px] text-amber-300 mt-2">
+                                    <RotateCcw size={12} /> Return Initiated
                                 </div>
                             )}
                         </div>
                     )}
 
                     {/* Timeline */}
-                    {shipment.events && shipment.events.length > 0 && (
+                    {shipment.trackingHistory && shipment.trackingHistory.length > 0 && (
                         <div>
                             <div className="flex items-center gap-2.5 mb-3">
                                 <div className="w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.15)" }}>
@@ -167,19 +163,19 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
                                 <div className="flex-1 h-px bg-white/5" />
                             </div>
                             <div className="space-y-3">
-                                {shipment.events
-                                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                {shipment.trackingHistory
+                                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                                     .slice(0, 5)
                                     .map((event, idx) => (
-                                        <div key={event.id} className="flex gap-3">
+                                        <div key={idx} className="flex gap-3">
                                             <div className="flex flex-col items-center">
                                                 <div className="w-2 h-2 rounded-full bg-amber-400/50 mt-1.5" />
-                                                {idx < shipment.events.length - 1 && <div className="w-px flex-1 bg-white/10 mt-1" />}
+                                                {idx < shipment.trackingHistory.length - 1 && <div className="w-px flex-1 bg-white/10 mt-1" />}
                                             </div>
                                             <div>
                                                 <StatusBadge status={event.status} />
                                                 <div className="text-[11px] text-slate-500">
-                                                    {format(new Date(event.createdAt), "MMM dd, yyyy HH:mm")}
+                                                    {format(new Date(event.timestamp), "MMM dd, yyyy HH:mm")}
                                                 </div>
                                                 {event.notes && (
                                                     <div className="text-[11px] text-slate-400 mt-0.5">{event.notes}</div>
