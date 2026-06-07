@@ -6,6 +6,11 @@ export const listRoutes = async (branchId: string): Promise<{ success: boolean; 
   return res.data;
 };
 
+export const getAllRoutes = async (): Promise<{ success: boolean; data: IRoute[] }> => {
+  const res = await api.get(`/manager/routes`);
+  return res.data;
+};
+
 export const listActiveRoutes = async (branchId: string): Promise<{ success: boolean; data: IRoute[] }> => {
   const res = await api.get(`/supervisor/branches/${branchId}/routes/active`);
   return res.data;

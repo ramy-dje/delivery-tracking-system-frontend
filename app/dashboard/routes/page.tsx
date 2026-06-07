@@ -11,7 +11,7 @@ import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { IRoute, RouteStatus } from "@/types/route";
-import { listRoutes, toggleCancelRoute } from "@/services/RouteService";
+import { getAllRoutes, listRoutes, toggleCancelRoute } from "@/services/RouteService";
 import RouteList from "@/components/dashboard/routes/RouteList";
 
 const STATUS_FILTERS: { label: string; value: "" | RouteStatus }[] = [
@@ -41,7 +41,7 @@ export default function RoutesPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await listRoutes(branchId);
+            const res = branchId ? await listRoutes(branchId) : await getAllRoutes();
             const items: IRoute[] = (res.data ?? []).map((r: any) => ({
                 id: r._id ?? r.id,
                 status: r.status ?? "pending",
