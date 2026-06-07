@@ -59,7 +59,7 @@ export default function VehiclesPage() {
         return () => clearTimeout(delay);
     }, [fetchVehicles]);
 
-    const refrigeratedCount = vehicles.filter((v) => v.isRefrigerated).length;
+    const fragileSupportCount = vehicles.filter((v) => v.supportsFragile).length;
     const totalCount = pagination?.totalCount ?? 0;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ export default function VehiclesPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3">
                     <StatCard label="Total" value={totalCount} accent="#94a3b8" />
-                    <StatCard label="Refrigerated" value={refrigeratedCount} accent="#38bdf8" />
+                    <StatCard label="Fragile Supported" value={fragileSupportCount} accent="#38bdf8" />
                     <StatCard label="Showing" value={vehicles.length} accent="#fbbf24" />
                 </div>
 
@@ -140,7 +140,7 @@ export default function VehiclesPage() {
                         <Search size={13} className="text-slate-700 shrink-0" />
                         <input
                             type="text"
-                            placeholder="Search by plate, brand, or model…"
+                            placeholder="Search by registration, brand, or model…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"

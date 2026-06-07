@@ -1,61 +1,77 @@
 import { IBaseFilter } from "./paginate";
 
-export type VehicleType = "Moto" | "Car" | "Van" | "Truck";
+export type VehicleType = 'motorcycle' | 'car' | 'van' | 'small_truck' | 'large_truck';
+export type VehicleStatus = 'available' | 'in_use' | 'maintenance' | 'out_of_service' | 'retired';
+export type AssignedUserRole = 'transporter' | 'deliverer' | 'driver';
 
-// Must match backend: DeliveryDz.Domain.Enums.VehicleOwnershipType  
-export type VehicleOwnershipType = "Company" | "Driver";
+export interface IVehicleDocuments {
+    registrationCard?: string;
+    insurance?: string;
+    insuranceExpiry?: string | Date;
+    technicalInspection?: string;
+    inspectionExpiry?: string | Date;
+}
 
 export interface IVehicleResponse {
-    id: string;
-    licensePlate: string;
-    brand?: string;
-    model?: string;
-    capacityKg: number;
-    volumeM3: number;
-    isRefrigerated: boolean;
+    id: string; // From backend _id
+    companyId: string;
     type: VehicleType;
-    ownershipType: VehicleOwnershipType;
+    registrationNumber: string;
+    brand?: string;
+    modelName?: string;
+    year?: number;
+    color?: string;
+    
+    maxWeight: number;
+    maxVolume: number;
+    supportsFragile: boolean;
+
+    documents?: IVehicleDocuments;
+
+    currentBranchId?: string;
+    assignedUserId?: string;
+    assignedUserRole?: AssignedUserRole;
+
+    status: VehicleStatus;
+    notes?: string;
+
+    // Virtuals
+    isAvailable: boolean;
+    isAssigned: boolean;
+    isHeavy: boolean;
+    isLight: boolean;
+    documentStatus: 'valid' | 'expiring_soon' | 'expired' | 'missing';
+    canTransportFragile: boolean;
+    displayName: string;
+    category: string;
 }
 
-export interface IVehicleAssignment {
-    driverId: string;
-    driverName: string;
-    assignedAt: Date;
-}
-
-export interface IVehicleDetails {
-    id: string;
-    licensePlate: string;
-    brand?: string;
-    model?: string;
-    capacityKg: number;
-    volumeM3: number;
-    isRefrigerated: boolean;
-    type: VehicleType;
-    ownershipType: VehicleOwnershipType;
-    ownerDriverId?: string;
-    ownerDriverName?: string;
-    currentAssignment?: IVehicleAssignment | null;
+export interface IVehicleDetails extends IVehicleResponse {
+    // We can add extra populated details here if the backend returns populated user/branch data
+    assignedUserName?: string;
+    currentBranchName?: string;
 }
 
 export interface IVehicleFilter extends IBaseFilter {
     search?: string;
     type?: VehicleType;
-    ownershipType?: VehicleOwnershipType;
-    minCapacityKg?: number;
-    maxCapacityKg?: number;
-    isRefrigerated?: boolean;
+    status?: VehicleStatus;
+    minWeight?: number;
+    maxWeight?: number;
+    supportsFragile?: boolean;
     isAvailable?: boolean;
 }
 
 export interface ICreateVehicleRequest {
-    licensePlate: string;
-    capacityKg: number;
-    volumeM3: number;
-    brand?: string;
-    model?: string;
     type: VehicleType;
-    ownershipType: VehicleOwnershipType;
-    ownerDriverId?: string;
-    isRefrigerated: boolean;
+    registrationNumber: string;
+    brand?: string;
+    modelName?: string;
+    year?: number;
+    color?: string;
+    maxWeight: number;
+    maxVolume: number;
+    supportsFragile: boolean;
+    notes?: string;
+    documents?: IVehicleDocuments;
 }

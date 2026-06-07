@@ -125,7 +125,7 @@ export default function StaffsPage() {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER]}>
+        // <RoleGuard allowedRoles={[ROLES.MANAGER]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}
@@ -288,6 +288,6 @@ export default function StaffsPage() {
                     />
                 )}
             </div>
-        </RoleGuard>
+        // </RoleGuard>
     );
 }

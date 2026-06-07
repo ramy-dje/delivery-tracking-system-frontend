@@ -218,13 +218,13 @@ export default function DriverDetailModal({
                                     icon={<Truck size={11} style={{ color: "#fbbf24" }} />}
                                     label="Vehicle"
                                     value={driver.assignedVehicle
-                                        ? `${driver.assignedVehicle.brand} ${driver.assignedVehicle.model}`
+                                        ? `${driver.assignedVehicle.brand} ${driver.assignedVehicle.modelName}`
                                         : null
                                     }
-                                    secondaryValue={driver.assignedVehicle?.licensePlate}
-                                    badge={driver.assignedVehicle?.capacityKg
+                                    secondaryValue={driver.assignedVehicle?.registrationNumber}
+                                    badge={driver.assignedVehicle?.maxWeight
                                         ? {
-                                            label: `${driver.assignedVehicle.capacityKg.toLocaleString()} kg`,
+                                            label: `${driver.assignedVehicle.maxWeight.toLocaleString()} kg`,
                                             color: "amber"
                                         }
                                         : undefined
@@ -321,8 +321,8 @@ export default function DriverDetailModal({
                                 return res.items.filter((d) => d.id !== driverId);
                             }}
                             getId={(d) => d.id}
-                            getLabel={(d) => `${d.brand} ${d.model}`}
-                            getSubLabel={(d) => d.licensePlate}
+                            getLabel={(d) => `${d.brand} ${d.modelName}`}
+                            getSubLabel={(d) => d.registrationNumber}
                             renderIcon={() => (
                                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
                                     <Truck className="w-3.5 h-3.5 text-primary" />
