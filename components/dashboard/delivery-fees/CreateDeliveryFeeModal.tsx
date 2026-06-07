@@ -1,59 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { ICreateDeliveryFeePayload, DeliveryType } from "@/types/deliveryFee";
+import { IUpsertTariffPayload } from "@/types/deliveryFee";
 import EntityPicker from "@/components/commons/EntityPicker";
 import { getWilayas } from "@/services/LocationService";
 import { IWilaya } from "@/types/common";
 import InputField from "@/components/commons/InputField";
 
-// ── Delivery type options ──────────────────────────────────────────────────
-
-const DELIVERY_TYPE_OPTIONS = [
-    {
-        value: DeliveryType.Home,
-        label: "Home Delivery",
-        desc: "Delivered directly to the recipient's address",
-        color: "#34d399",
-        rgb: "52,211,153",
-    },
-    {
-        value: DeliveryType.StopDesk,
-        label: "Stop Desk",
-        desc: "Picked up at the nearest relay desk",
-        color: "#38bdf8",
-        rgb: "56,189,248",
-    },
-];
-
 // ── Validation ────────────────────────────────────────────────────────────
 
 interface FormErrors {
-    deliveryType?: string;
-    originWilayaId?: string;
-    destinationWilayaId?: string;
-    baseFee?: string;
-    extraKgFee?: string;
+    wilayaFrom?: string;
+    wilayaTo?: string;
+    stopdesk?: string;
+    domicile?: string;
 }
 
 function validate(f: {
-    deliveryType: DeliveryType | null;
-    originWilayaId: string;
-    destinationWilayaId: string;
-    baseFee: string;
-    extraKgFee: string;
+    wilayaFrom: string;
+    wilayaTo: string;
+    stopdesk: string;
+    domicile: string;
 }): FormErrors {
     const e: FormErrors = {};
 
-    if (f.deliveryType === null) e.deliveryType = "Select a delivery type";
-    if (!f.originWilayaId) e.originWilayaId = "Required";
-    if (!f.destinationWilayaId) e.destinationWilayaId = "Required";
+    if (!f.wilayaFrom) e.wilayaFrom = "Required";
+    if (!f.wilayaTo) e.wilayaTo = "Required";
 
-    if (!f.baseFee || isNaN(Number(f.baseFee)) || Number(f.baseFee) < 0)
-        e.baseFee = "Enter a valid base fee";
+    if (!f.stopdesk || isNaN(Number(f.stopdesk)) || Number(f.stopdesk) < 0)
+        e.stopdesk = "Enter a valid stopdesk price";
 
-    if (!f.extraKgFee || isNaN(Number(f.extraKgFee)) || Number(f.extraKgFee) < 0)
-        e.extraKgFee = "Enter a valid extra kg fee";
+    if (!f.domicile || isNaN(Number(f.domicile)) || Number(f.domicile) < 0) {
+        e.domicile = "Enter a valid domicile price";
+    } else if (Number(f.domicile) < Number(f.stopdesk)) {
+        e.domicile = "Domicile price must be ≥ stopdesk price";
+    }
 
     return e;
 }
@@ -63,7 +44,7 @@ function validate(f: {
 interface CreateDeliveryFeeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: ICreateDeliveryFeePayload) => Promise<void>;
+    onSubmit: (data: IUpsertTariffPayload) => Promise<void>;
     loading?: boolean;
 }
 
@@ -75,18 +56,14 @@ export default function CreateDeliveryFeeModal({
     onSubmit,
     loading,
 }: CreateDeliveryFeeModalProps) {
-    const [deliveryType, setDeliveryType] = useState<DeliveryType | null>(null);
-
-    const [originWilayaId, setOriginWilayaId] = useState<string>("");
-    const [destinationWilayaId, setDestinationWilayaId] = useState<string>("");
+    const [wilayaFrom, setWilayaFrom] = useState<string>("");
+    const [wilayaTo, setWilayaTo] = useState<string>("");
 
     const [originSearch, setOriginSearch] = useState("");
     const [destinationSearch, setDestinationSearch] = useState("");
 
-    const [baseFee, setBaseFee] = useState("");
-    const [extraKgFee, setExtraKgFee] = useState("");
-    const [includedWeightKg, setIncludedWeightKg] = useState("");
-    const [estimatedHours, setEstimatedHours] = useState("");
+    const [stopdesk, setStopdesk] = useState("");
+    const [domicile, setDomicile] = useState("");
 
     const [errors, setErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState(false);
@@ -95,11 +72,10 @@ export default function CreateDeliveryFeeModal({
         if (!touched) return;
         setErrors(
             validate({
-                deliveryType,
-                originWilayaId,
-                destinationWilayaId,
-                baseFee,
-                extraKgFee,
+                wilayaFrom,
+                wilayaTo,
+                stopdesk,
+                domicile,
             })
         );
     };
@@ -108,28 +84,20 @@ export default function CreateDeliveryFeeModal({
         setTouched(true);
 
         const errs = validate({
-            deliveryType,
-            originWilayaId,
-            destinationWilayaId,
-            baseFee,
-            extraKgFee,
+            wilayaFrom,
+            wilayaTo,
+            stopdesk,
+            domicile,
         });
 
         setErrors(errs);
         if (Object.keys(errs).length > 0) return;
 
         await onSubmit({
-            deliveryType: deliveryType!,
-            originWilayaId,
-            destinationWilayaId,
-            baseFee: Number(baseFee),
-            extraKgFee: Number(extraKgFee),
-            includedWeightKg: includedWeightKg
-                ? Number(includedWeightKg)
-                : undefined,
-            estimatedHours: estimatedHours
-                ? Number(estimatedHours)
-                : undefined,
+            wilayaFrom: Number(wilayaFrom),
+            wilayaTo: Number(wilayaTo),
+            stopdesk: Number(stopdesk),
+            domicile: Number(domicile),
         });
     };
 
@@ -148,63 +116,29 @@ export default function CreateDeliveryFeeModal({
                 {/* HEADER */}
                 <div className="px-6 py-4 border-b border-white/10">
                     <div className="text-white font-semibold">
-                        Create Delivery Fee
+                        Add Tariff
                     </div>
                     <div className="text-[11px] text-slate-600">
-                        Define pricing rule between two wilayas
+                        Define pricing rules between two wilayas
                     </div>
                 </div>
 
                 {/* BODY */}
                 <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
 
-                    {/* DELIVERY TYPE */}
-                    <div className="grid grid-cols-2 gap-2">
-                        {DELIVERY_TYPE_OPTIONS.map((t) => {
-                            const active = deliveryType === t.value;
-
-                            return (
-                                <button
-                                    key={t.value}
-                                    type="button"
-                                    onClick={() => {
-                                        setDeliveryType(t.value);
-                                        revalidate();
-                                    }}
-                                    className="p-3 rounded-lg text-left"
-                                    style={{
-                                        background: active
-                                            ? `rgba(${t.rgb},0.08)`
-                                            : "rgba(255,255,255,0.03)",
-                                        border: active
-                                            ? `1px solid rgba(${t.rgb},0.3)`
-                                            : "1px solid rgba(255,255,255,0.06)",
-                                    }}
-                                >
-                                    <div className="text-[12px] text-white font-semibold">
-                                        {t.label}
-                                    </div>
-                                    <div className="text-[10px] text-slate-600">
-                                        {t.desc}
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-
                     {/* WILAYAS */}
                     <div className="grid grid-cols-2 gap-3">
 
                         {/* ORIGIN */}
                         <EntityPicker<IWilaya>
-                            value={originWilayaId}
+                            value={wilayaFrom}
                             onChange={(id) => {
-                                setOriginWilayaId(id ?? "");
+                                setWilayaFrom(id ?? "");
                                 revalidate();
                             }}
                             label="Origin Wilaya"
                             required
-                            error={errors.originWilayaId}
+                            error={errors.wilayaFrom}
                             placeholder="Select origin"
                             fetchData={() =>
                                 getWilayas({
@@ -214,21 +148,21 @@ export default function CreateDeliveryFeeModal({
                                 })
                             }
                             onSearchChange={setOriginSearch}
-                            getId={(w) => w.id}
+                            getId={(w) => w.code.toString()}
                             getLabel={(w) => w.code + " - " + w.nameFr}
                             getSubLabel={(w) => " " + w.nameAr}
                         />
 
                         {/* DESTINATION */}
                         <EntityPicker<IWilaya>
-                            value={destinationWilayaId}
+                            value={wilayaTo}
                             onChange={(id) => {
-                                setDestinationWilayaId(id ?? "");
+                                setWilayaTo(id ?? "");
                                 revalidate();
                             }}
                             label="Destination Wilaya"
                             required
-                            error={errors.destinationWilayaId}
+                            error={errors.wilayaTo}
                             placeholder="Select destination"
                             fetchData={() =>
                                 getWilayas({
@@ -238,7 +172,7 @@ export default function CreateDeliveryFeeModal({
                                 })
                             }
                             onSearchChange={setDestinationSearch}
-                            getId={(w) => w.id}
+                            getId={(w) => w.code.toString()}
                             getLabel={(w) => w.code + " - " + w.nameFr}
                             getSubLabel={(w) => " " + w.nameAr}
                         />
@@ -247,50 +181,27 @@ export default function CreateDeliveryFeeModal({
                     {/* PRICING */}
                     <div className="grid grid-cols-2 gap-3">
                         <InputField
-                            label="Base Fee (DZD)"
+                            label="Stopdesk Price (DZD) *"
                             type="number"
-                            value={baseFee}
+                            value={stopdesk}
                             onChange={(e) => {
-                                setBaseFee(e.target.value);
+                                setStopdesk(e.target.value);
                                 revalidate();
                             }}
                             placeholder="e.g. 450"
-                            error={errors.baseFee}
+                            error={errors.stopdesk}
                         />
 
                         <InputField
-                            label="Extra Kg Fee (DZD)"
+                            label="Domicile Price (DZD) *"
                             type="number"
-                            value={extraKgFee}
+                            value={domicile}
                             onChange={(e) => {
-                                setExtraKgFee(e.target.value);
+                                setDomicile(e.target.value);
                                 revalidate();
                             }}
-                            placeholder="e.g. 50"
-                            error={errors.extraKgFee}
-                        />
-                    </div>
-
-                    {/* OPTIONAL */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <InputField
-                            label="Included Weight (kg)"
-                            type="number"
-                            value={includedWeightKg}
-                            onChange={(e) =>
-                                setIncludedWeightKg(e.target.value)
-                            }
-                            placeholder="e.g. 5"
-                        />
-
-                        <InputField
-                            label="Estimated Hours"
-                            type="number"
-                            value={estimatedHours}
-                            onChange={(e) =>
-                                setEstimatedHours(e.target.value)
-                            }
-                            placeholder="e.g. 48"
+                            placeholder="e.g. 650"
+                            error={errors.domicile}
                         />
                     </div>
                 </div>
@@ -299,7 +210,7 @@ export default function CreateDeliveryFeeModal({
                 <div className="flex justify-end gap-2 px-6 py-4 border-t border-white/10">
                     <button
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-200"
+                        className="text-slate-400 hover:text-slate-200 px-4 py-2"
                     >
                         Cancel
                     </button>
@@ -307,13 +218,12 @@ export default function CreateDeliveryFeeModal({
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="px-4 py-2 rounded-lg text-black font-semibold"
+                        className="px-6 py-2 rounded-lg text-black font-semibold"
                         style={{
-                            background:
-                                "linear-gradient(135deg,#38bdf8,#0ea5e9)",
+                            background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
                         }}
                     >
-                        {loading ? "Creating..." : "Create"}
+                        {loading ? "Creating..." : "Save Tariff"}
                     </button>
                 </div>
             </div>

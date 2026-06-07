@@ -1,17 +1,17 @@
 "use client";
 
 import { SkeletonList } from "@/components/commons/Skeleton";
-import { IDeliveryFeeSummary } from "@/types/deliveryFee";
+import { ITariffEntry } from "@/types/deliveryFee";
 import DeliveryFeeRow from "./DeliveryFeeRow";
 import EmptyState from "@/components/commons/EmptyState";
 import { Truck } from "lucide-react";
 
 interface DeliveryFeeListProps {
-    fees: IDeliveryFeeSummary[];
+    fees: ITariffEntry[];
     loading?: boolean;
-    onViewDetail?: (feeId: string) => void;
-    onEdit?: (fee: IDeliveryFeeSummary) => void;
-    onToggleStatus?: (fee: IDeliveryFeeSummary) => void;
+    onViewDetail?: (fee: ITariffEntry) => void;
+    onEdit?: (fee: ITariffEntry) => void;
+    onDelete?: (fee: ITariffEntry) => void;
     onAddClick?: () => void;
 }
 
@@ -21,7 +21,7 @@ export default function DeliveryFeeList({
     onAddClick,
     onViewDetail,
     onEdit,
-    onToggleStatus,
+    onDelete,
 }: DeliveryFeeListProps) {
     const tableStyle: React.CSSProperties = {
         background: "#060a10",
@@ -38,10 +38,10 @@ export default function DeliveryFeeList({
         return (
             <div className="flex justify-center items-center" style={tableStyle}>
                 <EmptyState
-                    title="No Delivery Fees yet"
-                    description="Define your first delivery fee by selecting origin/destination wilayas and fee details."
+                    title="No Tariffs set yet"
+                    description="Define your first tariff by selecting wilaya pairs and entering their prices."
                     icon={Truck}
-                    actionLabel="+ Add Delivery Fee"
+                    actionLabel="+ Add Tariff"
                     tone="warning"
                     onAction={onAddClick}
                 />
@@ -52,23 +52,23 @@ export default function DeliveryFeeList({
     return (
         <div style={tableStyle}>
             <div
-                className="hidden md:grid grid-cols-[200px_1fr_130px_120px_140px] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid grid-cols-[200px_1fr_1fr_140px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Route", "Pricing", "Weight", "Status", "Actions"].map((h, i) => (
-                    <div key={i} className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold ${i === 4 ? "text-center" : "text-start"} `}>
+                {["Wilaya Pair", "Stopdesk Price", "Domicile Price", "Actions"].map((h, i) => (
+                    <div key={i} className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold ${i === 3 ? "text-center" : "text-start"} `}>
                         {h}
                     </div>
                 ))}
             </div>
             {fees.map((fee, idx) => (
                 <DeliveryFeeRow
-                    key={fee.id}
+                    key={`${fee.wilayaA}-${fee.wilayaB}`}
                     fee={fee}
                     isLast={idx === fees.length - 1}
-                    onViewDetail={onViewDetail ? () => onViewDetail(fee.id) : undefined}
+                    onViewDetail={onViewDetail ? () => onViewDetail(fee) : undefined}
                     onEdit={onEdit ? () => onEdit(fee) : undefined}
-                    onToggleStatus={onToggleStatus ? () => onToggleStatus(fee) : undefined}
+                    onDelete={onDelete ? () => onDelete(fee) : undefined}
                 />
             ))}
         </div>
