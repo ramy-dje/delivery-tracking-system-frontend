@@ -26,7 +26,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Building2 size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN],
+                allowed: [ROLES.MANAGER, ROLES.ADMIN],
             },
             {
                 path: "/dashboard/managers",
@@ -34,7 +34,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN],
+                allowed: [ROLES.MANAGER],
             },
             {
                 path: "/dashboard/staffs",
@@ -42,7 +42,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/drivers",
@@ -50,7 +50,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/cashiers",
@@ -58,7 +58,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/loaders",
@@ -66,7 +66,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Truck size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/vehicles",
@@ -74,7 +74,7 @@ const NAV_GROUPS = [
                 icon: (
                     <KeySquare size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/branch-drop",
@@ -90,7 +90,7 @@ const NAV_GROUPS = [
                 icon: (
                     <DollarSign size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
+                allowed: [ROLES.MANAGER],
             },
             {
                 path: "/dashboard/merchants",
@@ -98,7 +98,7 @@ const NAV_GROUPS = [
                 icon: (
                     <User size={14} />
                 ),
-                allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
+                allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST],
             },
             {
                 path: "/dashboard/shipments",
@@ -106,7 +106,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Package size={14} />
                 ),
-                allowed: [ROLES.MERCHANT, ROLES.ADMIN, ROLES.MANAGER, ROLES.RECEPTIONIST],
+                allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.RECEPTIONIST],
             },
             {
                 path: "/dashboard/supervisors",
@@ -114,7 +114,7 @@ const NAV_GROUPS = [
                 icon: (
                     <UserCog size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN],
+                allowed: [ROLES.MANAGER],
             },
             {
                 path: "/dashboard/transporters",
@@ -122,7 +122,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Truck size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/freelancers",
@@ -130,7 +130,7 @@ const NAV_GROUPS = [
                 icon: (
                     <User size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.SUPERVISOR],
+                allowed: [ROLES.MANAGER, ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/bulk-import",
@@ -146,7 +146,7 @@ const NAV_GROUPS = [
                 icon: (
                     <LayoutDashboard size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.OWNER, ROLES.MANAGER],
+                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
             },
             {
                 path: "/dashboard/routes",
@@ -154,7 +154,7 @@ const NAV_GROUPS = [
                 icon: (
                     <FileLineChartIcon size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.RECEPTIONIST],
+                allowed: [ROLES.MANAGER, ROLES.ADMIN, ROLES.RECEPTIONIST],
             },
             {
                 path: "/dashboard/company",
@@ -162,7 +162,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Building2 size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN],
+                allowed: [ROLES.MANAGER, ROLES.ADMIN],
             },
         ],
     },
