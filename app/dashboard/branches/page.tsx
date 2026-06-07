@@ -60,7 +60,7 @@ export default function BranchesPage() {
         try {
             const params: Record<string, any> = { pageNumber: page, pageSize: PAGE_SIZE };
             if (search) params.search = search;
-            if (filterType) params.type = filterType;
+            if (filterType) params.branchType = filterType;
             const res = await listBranches(params);
             setPagination(res);
         } catch (e: any) {
@@ -155,9 +155,8 @@ export default function BranchesPage() {
 
     const displayedBranches = tab === "active" ? branches : deleted;
 
-    const hubCount = branches.filter((b) => b.type === NodeType.Hub).length;
-    const branchCount = branches.filter((b) => b.type === NodeType.Branch).length;
-    const warehouseCount = branches.filter((b) => b.type === NodeType.MainHub).length;
+    const hubCount = branches.filter((b) => b.branchType === NodeType.RegionalMainHub).length;
+    const branchCount = branches.filter((b) => b.branchType === NodeType.LocalBranch).length;
 
     // ── Render ───────────────────────────────────────────────────────────
 
@@ -195,7 +194,6 @@ export default function BranchesPage() {
                     <StatCard label="Total" value={pagination?.totalCount || 0} accent="#94a3b8" />
                     <StatCard label="Hubs" value={hubCount} accent="#fbbf24" />
                     <StatCard label="Branches" value={branchCount} accent="#22d3ee" />
-                    <StatCard label="Main Hubs" value={warehouseCount} accent="#a78bfa" />
                 </div>
             )}
 
@@ -285,9 +283,8 @@ export default function BranchesPage() {
                             }}
                         >
                             <option value="" style={{ background: "#0d1117" }}>All types</option>
-                            <option value="Hub" style={{ background: "#0d1117" }}>Hub</option>
-                            <option value="Branch" style={{ background: "#0d1117" }}>Branch</option>
-                            <option value="MainHub" style={{ background: "#0d1117" }}>Main Hub</option>
+                            <option value={NodeType.RegionalMainHub} style={{ background: "#0d1117" }}>Hub</option>
+                            <option value={NodeType.LocalBranch} style={{ background: "#0d1117" }}>Branch</option>
                         </select>
 
                         <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">

@@ -3,60 +3,82 @@ import { IBaseFilter } from "./paginate";
 
 
 export enum NodeType {
-    Branch = "Branch",
-    Hub = "Hub",
-    MainHub = "MainHub"
+    LocalBranch = "local_branch",
+    RegionalMainHub = "regional_main_hub"
 }
-
-export const NodeTypeToNumber: Record<NodeType, number> = {
-    [NodeType.Branch]: 0,
-    [NodeType.Hub]: 1,
-    [NodeType.MainHub]: 2,
-};
 
 export interface IBranchResponse extends ILocation {
     id: string;
     name: string;
     code: string;
-    type: NodeType;
-    wilayaId: string;
-    wilaya: IWilaya;
-    commune: ICommune;
-    parentNodeId: string | null;
+    branchType: NodeType;
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        postalCode?: string;
+    };
+    phone: string;
+    email: string;
+    status: string;
+    capacityLimit?: number;
+    currentLoad: number;
+    parentHubId?: string | null;
+    servesBranches?: string[];
     companyId: string;
-    communeId: string,
     createdAt: string;
-    isDeleted: boolean,
-    deletedAt: string | null,
-
+    updatedAt: string | null;
 }
 
 
-export interface ICreateBranchPayload extends ILocation {
+export interface ICreateBranchPayload {
     name: string;
-    type: number;
-    wilayaId: string;
-    parentNodeId?: string;
-    communeId: string;
-    coverageCommuneIds: string[];
+    code: string;
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        postalCode?: string;
+    };
+    location: {
+        type: 'Point';
+        coordinates: [number, number];
+    };
+    phone: string;
+    email: string;
+    branchType?: NodeType;
+    parentHubId?: string;
+    servesBranches?: string[];
+    capacityLimit?: number;
+    operatingHours?: Record<string, { open: string; close: string; }>;
 }
 
 export interface IUpdateBranchPayload {
     name?: string;
-    type?: number;
-    wilayaId?: string;
-    wilaya?: string;
-    parentNodeId?: string;
-    longitude?: number;
-    latitude?: number;
+    address?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+    };
+    location?: {
+        type: 'Point';
+        coordinates: [number, number];
+    };
+    phone?: string;
+    email?: string;
+    branchType?: NodeType;
+    parentHubId?: string | null;
+    servesBranches?: string[];
+    capacityLimit?: number;
+    operatingHours?: Record<string, { open: string; close: string; }>;
 }
 
 export interface IBranchFilter extends IBaseFilter {
-    wilayaId?: string;
-    communeId?: string;
-    type?: number;
+    branchType?: NodeType;
     search?: string;
-    parentNodeId?: string;
+    parentHubId?: string;
+    status?: string;
 }
 
 export interface IBranchDetails {

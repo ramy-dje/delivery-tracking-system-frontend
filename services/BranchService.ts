@@ -3,7 +3,7 @@ import { getCompanyId } from "@/hooks/useAuth";
 import { IBranchDetails, IBranchFilter, IBranchResponse, ICreateBranchPayload, IUpdateBranchPayload } from "@/types/branch";
 import { IPaginatedResponse } from "@/types/paginate";
 
-const baseForCompany = (companyId: string) => `/companies/${companyId}/logistics-nodes`;
+const baseForCompany = (companyId: string) => `/companies/${companyId}/branches`;
 
 
 export const listBranches = async (params?: IBranchFilter): Promise<IPaginatedResponse<IBranchResponse>> => {

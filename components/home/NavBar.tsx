@@ -61,8 +61,8 @@ export default function NavBar() {
         </div>
 
         {/* CTA */}
-        {
-          !user ? (<div className="hidden md:flex items-center gap-3">
+        
+          <div className="hidden md:flex items-center gap-3">
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors px-4 py-2" >
               Sign Up
             </Link>
@@ -70,16 +70,7 @@ export default function NavBar() {
             <Link href="/register" className="btn-primary text-sm px-5 py-2.5 rounded-lg" >
               Get Started →
             </Link>
-          </div>) : (
-            user.role === "manager" ?
-              <Link href="/Dashboard" className="btn-primary text-sm px-5 py-2.5 rounded-lg" >
-                Dashboard
-              </Link> :
-              <Link href="/#pricing" className="btn-primary text-sm px-5 py-2.5 rounded-lg" >
-                Create Company
-              </Link>
-          )
-        }
+          </div>
 
 
         {/* Mobile hamburger */}

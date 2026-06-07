@@ -20,7 +20,7 @@ const BranchRow = ({
     onDelete?: () => void;
     onRestore?: () => void;
 }) => {
-    const m = TYPE_META[branch.type] ?? TYPE_META.Branch;
+    const m = TYPE_META[branch.branchType] ?? TYPE_META[NodeType.LocalBranch];
     return (
         <div
             className={`
@@ -56,15 +56,15 @@ const BranchRow = ({
 
             {/* Type */}
             <div className="hidden md:flex items-center justify-center">
-                <TypeBadge type={branch.type} />
+                <TypeBadge type={branch.branchType} />
             </div>
 
             {/* Location */}
             <div className="hidden md:flex items-center gap-1.5">
                 <LocateIcon size={15} />
                 <span className="text-[12px] text-slate-500 truncate">
-                    {branch.wilaya?.nameFr}
-                    {branch.commune?.nameFr ? `, ${branch.commune.nameFr}` : ""}
+                    {branch.address?.state}
+                    {branch.address?.city ? `, ${branch.address.city}` : ""}
                 </span>
             </div>
 

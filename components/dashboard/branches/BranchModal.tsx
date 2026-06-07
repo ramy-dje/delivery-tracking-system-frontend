@@ -6,18 +6,15 @@ import {
     ICreateBranchPayload,
     IUpdateBranchPayload,
     NodeType,
-    NodeTypeToNumber,
 } from "@/types/branch";
 import MapPicker, { MapCoords } from "@/components/commons/MapPicker";
 import EntityPicker from "@/components/commons/EntityPicker";
 import MultiEntityPicker from "@/components/commons/MultiEntityPicker";
-import { GitBranch, Map, MapPin, Network, X } from "lucide-react";
+import { GitBranch, Map, MapPin, Network, X, Mail, Phone, Hash } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
 import InputField from "@/components/commons/InputField";
 import SelectField from "@/components/commons/SelectField";
 import { listBranches } from "@/services/BranchService";
-import { ICommune } from "@/types/common";
-import { getAllCommunes } from "@/services/LocationService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,15 +26,12 @@ interface BranchModalProps {
 }
 
 const NODE_TYPES = [
-    { label: NodeType.MainHub, value: NodeType.MainHub },
-    { label: NodeType.Hub, value: NodeType.Hub },
-    { label: NodeType.Branch, value: NodeType.Branch },
+    { label: "Regional Main Hub", value: NodeType.RegionalMainHub },
+    { label: "Local Branch", value: NodeType.LocalBranch },
 ];
 
 function parentTypesFor(type: NodeType): NodeType[] {
-    if (type === NodeType.MainHub) return [];
-    if (type === NodeType.Hub) return [NodeType.MainHub];
-    if (type === NodeType.Branch) return [NodeType.Hub, NodeType.MainHub];
+    if (type === NodeType.LocalBranch) return [NodeType.RegionalMainHub];
     return [];
 }
 
@@ -60,21 +54,43 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
 
     // ── Core form state ───────────────────────────────────────────────────────
     const [name, setName] = useState(branch?.name ?? "");
-    const [nodeType, setNodeType] = useState<NodeType>((branch?.type ?? NodeType.Branch) as NodeType);
-    const [parentNodeId, setParentNodeId] = useState<string>(branch?.parentNodeId ?? "");
-    const [communeId, setCommuneId] = useState<string>(branch?.communeId ?? "");
-    const [coverageIds, setCoverageIds] = useState<string[]>([]);
+    const [code, setCode] = useState(branch?.code ?? "");
+    const [nodeType, setNodeType] = useState<NodeType>((branch?.branchType ?? NodeType.LocalBranch) as NodeType);
+    const [parentNodeId, setParentNodeId] = useState<string>(branch?.parentHubId ?? "");
+    const [phone, setPhone] = useState(branch?.phone ?? "");
+    const [email, setEmail] = useState(branch?.email ?? "");
+    const [capacityLimit, setCapacityLimit] = useState<number | undefined>(branch?.capacityLimit);
+    
+    // Address
+    const [street, setStreet] = useState(branch?.address?.street ?? "");
+    const [city, setCity] = useState(branch?.address?.city ?? "");
+    const [state, setState] = useState(branch?.address?.state ?? "");
+
+    // Serves Branches
+    const [servesBranches, setServesBranches] = useState<string[]>(branch?.servesBranches ?? []);
+    
     const [coords, setCoords] = useState<MapCoords | undefined>(
-        branch?.latitude && branch?.longitude
+        // The backend model is "location": { "type": "Point", "coordinates": [longitude, latitude] }
+        // Wait, wait... `branch.location` doesn't exist on `IBranchResponse` ?
+        // IBranchResponse actually implements `ILocation` which has `latitude` and `longitude`.
+        // Wait, did we change that in types/branch.ts ?
+        // IBranchResponse extends ILocation. So `branch.latitude` and `branch.longitude` exist?
+        // Wait, the backend returns `location: { type: 'Point', coordinates: [lng, lat] }`
+        // So the frontend interface `IBranchResponse` should have `location: { type: 'Point', coordinates: [number, number] }`.
+        // Let's assume it has it from our previous edits or from the backend response.
+        // Oh wait, `IBranchResponse` previously extended `ILocation` directly (`latitude`, `longitude`). But backend sends `{ location: { coordinates: [lng, lat] } }`?
+        // Let's just safely fall back to checking both.
+        // We will do this:
+        (branch as any)?.location?.coordinates
+            ? { latitude: (branch as any).location.coordinates[1], longitude: (branch as any).location.coordinates[0] }
+            : branch?.latitude && branch?.longitude
             ? { latitude: branch.latitude, longitude: branch.longitude }
             : undefined
     );
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // ── Server-search state — one per commune picker ──────────────────────────
-    // Each picker gets its own search term so they don't interfere with each other
-    const [primarySearch, setPrimarySearch] = useState("");
-    const [coverageSearch, setCoverageSearch] = useState("");
+    // ── Server-search state ──────────────────────────
+    const [branchSearch, setBranchSearch] = useState("");
 
     // ── Keyboard close ────────────────────────────────────────────────────────
     useEffect(() => {
@@ -84,42 +100,34 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
     }, [onClose]);
 
     // ── Reset parent when type changes ────────────────────────────────────────
-    useEffect(() => { setParentNodeId(""); }, [nodeType]);
-
-    // ── If primary commune changes, evict it from coverage ────────────────────
-    useEffect(() => {
-        if (communeId) setCoverageIds((prev) => prev.filter((id) => id !== communeId));
-    }, [communeId]);
+    useEffect(() => { setParentNodeId(""); setServesBranches([]); }, [nodeType]);
 
     const canHaveParent = parentTypesFor(nodeType).length > 0;
+    const canServeBranches = nodeType === NodeType.RegionalMainHub;
 
     // ── Fetchers ──────────────────────────────────────────────────────────────
     const fetchParentNodes = useCallback(async (): Promise<IBranchResponse[]> => {
         const results = await Promise.all(
             parentTypesFor(nodeType).map((t) =>
-                listBranches({ type: NodeTypeToNumber[t], pageNumber: 1, pageSize: 20 }).then((r) => r.items)
+                listBranches({ branchType: t, pageNumber: 1, pageSize: 20 }).then((r) => r.items)
             )
         );
         return results.flat();
     }, [nodeType]);
 
-    // Rebuilds whenever the search term changes → EntityPicker / MultiEntityPicker
-    // detect the new reference and re-call fetchData automatically.
-    const fetchPrimaryCommunes = useCallback(
-        () => getAllCommunes({ search: primarySearch, pageNumber: 1, pageSize: 30 }),
-        [primarySearch]
-    );
-
-    const fetchCoverageCommunes = useCallback(
-        () => getAllCommunes({ search: coverageSearch, pageNumber: 1, pageSize: 30 }),
-        [coverageSearch]
+    const fetchServableBranches = useCallback(
+        () => listBranches({ search: branchSearch, branchType: NodeType.LocalBranch, pageNumber: 1, pageSize: 30 }).then(r => r.items),
+        [branchSearch]
     );
 
     // ── Validation ────────────────────────────────────────────────────────────
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
         if (!name.trim()) errs.name = "Name is required";
-        if (!isEdit && !communeId) errs.communeId = "Primary commune is required";
+        if (!code.trim()) errs.code = "Code is required";
+        if (!phone.trim()) errs.phone = "Phone is required";
+        if (!email.trim()) errs.email = "Email is required";
+        if (!street.trim() || !city.trim() || !state.trim()) errs.address = "Full address is required";
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -132,21 +140,27 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
         if (isEdit) {
             await onSubmit({
                 name: name || undefined,
-                type: NodeTypeToNumber[nodeType],
-                parentNodeId: parentNodeId || undefined,
-                longitude: coords?.longitude,
-                latitude: coords?.latitude,
+                phone: phone || undefined,
+                email: email || undefined,
+                capacityLimit: capacityLimit || undefined,
+                branchType: nodeType,
+                parentHubId: parentNodeId || null,
+                location: coords ? { type: 'Point', coordinates: [coords.longitude, coords.latitude] } : undefined,
+                address: { street, city, state },
+                servesBranches: servesBranches.length > 0 ? servesBranches : undefined,
             } satisfies IUpdateBranchPayload);
         } else {
             await onSubmit({
                 name,
-                type: NodeTypeToNumber[nodeType],
-                parentNodeId: parentNodeId || undefined,
-                wilayaId: "",   // derived server-side from communeId
-                communeId,
-                longitude: Number(coords?.longitude ?? 0),
-                latitude: Number(coords?.latitude ?? 0),
-                coverageCommuneIds: coverageIds,
+                code,
+                phone,
+                email,
+                capacityLimit: capacityLimit || undefined,
+                branchType: nodeType,
+                parentHubId: parentNodeId || undefined,
+                address: { street, city, state },
+                location: { type: 'Point', coordinates: [Number(coords?.longitude ?? 0), Number(coords?.latitude ?? 0)] },
+                servesBranches: servesBranches.length > 0 ? servesBranches : undefined,
             } satisfies ICreateBranchPayload);
         }
     };
@@ -198,7 +212,7 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
                 {/* ── Form ────────────────────────────────────────────── */}
                 <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
 
-                    {/* 1 · Name + Type */}
+                    {/* 1 · Name + Code */}
                     <div className="grid grid-cols-2 gap-4">
                         <InputField
                             label="Name"
@@ -207,110 +221,134 @@ export default function BranchModal({ branch, onClose, onSubmit, loading }: Bran
                             placeholder="e.g. Algiers North Hub"
                             error={errors.name}
                         />
+                        <InputField
+                            label="Code"
+                            value={code}
+                            onChange={(e) => { setCode(e.target.value); setErrors((p) => ({ ...p, code: "" })); }}
+                            placeholder="e.g. ALG-01"
+                            error={errors.code}
+                            disabled={isEdit}
+                        />
+                    </div>
+                    
+                    {/* 2 · Type + Capacity */}
+                    <div className="grid grid-cols-2 gap-4">
                         <SelectField
                             label="Type"
                             value={nodeType}
                             onChange={(v) => setNodeType(v as NodeType)}
                             options={NODE_TYPES}
                         />
+                        <InputField
+                            label="Capacity Limit"
+                            type="number"
+                            value={capacityLimit || ""}
+                            onChange={(e) => setCapacityLimit(Number(e.target.value) || undefined)}
+                            placeholder="e.g. 1000"
+                        />
                     </div>
 
-                    {/* 2 · Parent Node */}
+                    {/* 3 · Contact Info */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputField
+                            label="Phone"
+                            value={phone}
+                            onChange={(e) => { setPhone(e.target.value); setErrors((p) => ({ ...p, phone: "" })); }}
+                            placeholder="+213..."
+                            error={errors.phone}
+                        />
+                        <InputField
+                            label="Email"
+                            value={email}
+                            onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: "" })); }}
+                            placeholder="contact@example.com"
+                            error={errors.email}
+                        />
+                    </div>
+
+                    {/* 4 · Address */}
+                    <div className="space-y-4">
+                        <SectionHeader icon={<MapPin size={14} />} label="Address" />
+                        <InputField
+                            label="Street"
+                            value={street}
+                            onChange={(e) => { setStreet(e.target.value); setErrors((p) => ({ ...p, address: "" })); }}
+                            placeholder="123 Logistics Ave"
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputField
+                                label="City"
+                                value={city}
+                                onChange={(e) => { setCity(e.target.value); setErrors((p) => ({ ...p, address: "" })); }}
+                                placeholder="Algiers"
+                            />
+                            <InputField
+                                label="State"
+                                value={state}
+                                onChange={(e) => { setState(e.target.value); setErrors((p) => ({ ...p, address: "" })); }}
+                                placeholder="Algiers"
+                            />
+                        </div>
+                        {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                    </div>
+
+                    {/* 5 · Parent Node */}
                     {canHaveParent && (
                         <>
                             <div className="border-t border-white/4" />
                             <div>
-                                <SectionHeader icon={<Network size={14} />} label="Parent Node" note="optional" />
+                                <SectionHeader icon={<Network size={14} />} label="Parent Hub" />
                                 <EntityPicker<IBranchResponse>
                                     value={parentNodeId || null}
                                     onChange={(id) => setParentNodeId(id ?? "")}
                                     fetchData={fetchParentNodes}
                                     getId={(n) => n.id}
                                     getLabel={(n) => n.name}
-                                    getSubLabel={(n) => n.type}
+                                    getSubLabel={(n) => n.branchType}
                                     renderIcon={() => (
                                         <div className="w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center">
                                             <GitBranch className="w-3.5 h-3.5 text-amber-400" />
                                         </div>
                                     )}
-                                    label={`Parent — ${parentTypesFor(nodeType).join(" / ")}`}
-                                    placeholder={`Search ${parentTypesFor(nodeType).join(" or ")} nodes…`}
+                                    label={`Parent Hub`}
+                                    placeholder={`Search Hubs…`}
                                     searchFn={(n, q) => n.name.toLowerCase().includes(q.toLowerCase())}
                                 />
                             </div>
                         </>
                     )}
 
-                    {/* 3 · Primary Commune */}
-                    <>
-                        <div className="border-t border-white/4" />
-                        <div>
-                            <SectionHeader icon={<MapPin size={14} />} label="Primary Commune" />
-                            {isEdit ? (
-                                <div
-                                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-[13px]"
-                                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
-                                >
-                                    <MapPin size={12} className="text-slate-600" />
-                                    <span className="text-slate-400">{branch.commune?.nameFr ?? branch.communeId}</span>
-                                    <span className="text-[10px] text-slate-700 ml-auto flex items-center gap-1">
-                                        <Map size={11} /> Cannot change after creation
-                                    </span>
-                                </div>
-                            ) : (
-                                <EntityPicker<ICommune>
-                                    value={communeId || null}
-                                    onChange={(id) => { setCommuneId(id ?? ""); setErrors((p) => ({ ...p, communeId: "" })); }}
-                                    fetchData={fetchPrimaryCommunes}
-                                    onSearchChange={setPrimarySearch}
-                                    getId={(c) => c.id}
-                                    getLabel={(c) => c.nameFr}
-                                    getSubLabel={(c) => c.nameAr}
-                                    renderIcon={() => (
-                                        <div className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                                        </div>
-                                    )}
-                                    label="Commune *"
-                                    placeholder="Type to search communes…"
-                                    required
-                                    error={errors.communeId}
-                                />
-                            )}
-                        </div>
-                    </>
-
-                    {/* 4 · Coverage Communes — create only */}
-                    {!isEdit && (
+                    {/* 6 · Serves Branches — create only */}
+                    {canServeBranches && !isEdit && (
                         <>
                             <div className="border-t border-white/4" />
                             <div>
                                 <SectionHeader
-                                    icon={<MapPin size={14} />}
-                                    label="Coverage Communes"
-                                    note="optional · additional areas this node serves"
+                                    icon={<GitBranch size={14} />}
+                                    label="Serves Branches"
+                                    note="optional · branches this hub serves"
                                 />
-                                <MultiEntityPicker<ICommune>
-                                    value={coverageIds}
-                                    onChange={(ids) => setCoverageIds(ids)}
-                                    fetchData={fetchCoverageCommunes}
-                                    onSearchChange={setCoverageSearch}
-                                    getId={(c) => c.id}
-                                    getLabel={(c) => c.nameFr}
-                                    getSubLabel={(c) => c.nameAr}
+                                <MultiEntityPicker<IBranchResponse>
+                                    value={servesBranches}
+                                    onChange={(ids) => setServesBranches(ids)}
+                                    fetchData={fetchServableBranches}
+                                    onSearchChange={setBranchSearch}
+                                    getId={(b) => b.id}
+                                    getLabel={(b) => b.name}
+                                    getSubLabel={(b) => b.code}
                                     renderIcon={() => (
                                         <div className="w-6 h-6 rounded-full bg-violet-500/10 flex items-center justify-center">
-                                            <MapPin className="w-3.5 h-3.5 text-violet-400" />
+                                            <GitBranch className="w-3.5 h-3.5 text-violet-400" />
                                         </div>
                                     )}
-                                    placeholder="Type to search and add communes…"
-                                    filterFn={(item) => item.id !== communeId}
+                                    placeholder="Type to search and add branches…"
+                                    filterFn={(item) => item.id !== branch?.id}
                                 />
                             </div>
                         </>
                     )}
 
-                    {/* 5 · Map Pin */}
+                    {/* 7 · Map Pin */}
                     <>
                         <div className="border-t border-white/4" />
                         <div>
