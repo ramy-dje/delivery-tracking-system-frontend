@@ -11,5 +11,6 @@ export interface IRegisterRequest {
 export interface IAuthResponseDto {
   accessToken: string;
   message?: string;
-  user: IUser;
+  user: any;
+  associated?: any;
 }
