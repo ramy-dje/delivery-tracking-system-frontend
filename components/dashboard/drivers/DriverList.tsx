@@ -4,14 +4,13 @@ import { SkeletonList } from "@/components/commons/Skeleton";
 import EmptyState from "@/components/commons/EmptyState";
 import { User } from "lucide-react";
 import DriverRow from "./DriverRow";
-import { IDriverResponse } from "@/types/driver";
-
+import { IDelivererResponse } from "@/types/driver";
 
 interface DriverListProps {
-    drivers: IDriverResponse[];
+    drivers: IDelivererResponse[];
     loading?: boolean;
     onViewDetail?: (driverId: string) => void;
-    onToggleStatus?: (driver: IDriverResponse) => void;
+    onToggleStatus?: (driver: IDelivererResponse) => void;
     onAddClick?: () => void;
 }
 
@@ -31,17 +30,16 @@ export default function DriverList({ drivers, loading, onAddClick, onViewDetail,
         return (
             <div className="flex justify-center items-center" style={tableStyle}>
                 <EmptyState
-                    title="No Drivers yet"
-                    description="Add your first driver and assign them to a logistics node."
+                    title="No Deliverers yet"
+                    description="Add your first deliverer to the branch."
                     icon={User}
-                    actionLabel="+ Add Driver"
+                    actionLabel="+ Add Deliverer"
                     tone="warning"
                     onAction={onAddClick}
                 />
             </div>
         );
     }
-
 
     return (
         <div style={tableStyle}>
@@ -57,10 +55,10 @@ export default function DriverList({ drivers, loading, onAddClick, onViewDetail,
             </div>
             {drivers.map((s, idx) => (
                 <DriverRow
-                    key={s.id}
+                    key={s._id}
                     driver={s}
                     isLast={idx === drivers.length - 1}
-                    onViewDetail={onViewDetail ? () => onViewDetail(s.id) : undefined}
+                    onViewDetail={onViewDetail ? () => onViewDetail(s._id) : undefined}
                     onToggleStatus={onToggleStatus ? () => onToggleStatus(s) : undefined}
                 />
             ))}
