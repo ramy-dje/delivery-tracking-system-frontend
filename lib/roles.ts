@@ -5,7 +5,7 @@ export const ROLES = {
   DRIVER: "deliverer",
   TRUCK_DRIVER: "transporter",
   SUPERVISOR: "supervisor",
-  ADMIN: "Admin",
+  ADMIN: "admin",
   MANAGER: "manager",
   SORTER: "loader",
   RECEPTIONIST: "cachier",
