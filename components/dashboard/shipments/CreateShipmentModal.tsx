@@ -1,75 +1,83 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Phone, FileText, Weight, X, DollarSign, Package, Truck } from "lucide-react";
+import { Phone, FileText, Weight, X, DollarSign, Package, Truck, MapPin } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import EntityPicker from "@/components/commons/EntityPicker";
-import { ICreateShipment } from "@/types/shipment";
-import { ICommune } from "@/types/common";
+import { ICreatePackageBody } from "@/types/shipment";
 import { DeliveryType } from "@/types/deliveryFee";
 import { IMerchant } from "@/types/merchant";
 import { listMerchants } from "@/services/MerchantService";
-import { listDisponibleCommunes } from "@/services/LocationService";
-import { parseApiError } from "@/utils/apiErrorHandler";
+import { getNodeId } from "@/hooks/useAuth";
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (payload: ICreateShipment, mode: "merchant" | "receptionist", merchantId?: string) => Promise<void>;
+    onSubmit: (payload: ICreatePackageBody) => Promise<void>;
     loading?: boolean;
-    merchantId?: string;
     mode?: "merchant" | "receptionist";
 }
 
 export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading, mode = "merchant" }: Props) {
-    const [customerName, setCustomerName] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [communeId, setCommuneId] = useState<string | null>(null);
+    const hubId = getNodeId() ?? "";
+    const [recipientName, setRecipientName] = useState("");
+    const [recipientPhone, setRecipientPhone] = useState("");
+    const [recipientAddress, setRecipientAddress] = useState("");
+    const [recipientCity, setRecipientCity] = useState("");
+    const [recipientState, setRecipientState] = useState("");
+    
+    // For receptionist mode, if we still need to select a client/sender
+    // it will be passed as senderId or clientId. 
+    // The backend `createPackage` relies on auth context or explicit IDs if admin.
     const [merchantSelectedId, setMerchantSelectedId] = useState<string | null>(null);
-    const [codAmount, setCodAmount] = useState("");
+    const [merchantSearch, setMerchantSearch] = useState("");
+
+    const [totalPrice, setTotalPrice] = useState("");
     const [weightKg, setWeightKg] = useState("");
     const [description, setDescription] = useState("");
-    const [deliveryType, setDeliveryType] = useState<DeliveryType>(DeliveryType.Home);
-    const [communeSearch, setCommuneSearch] = useState("");
-    const [merchantSearch, setMerchantSearch] = useState("");
+    const [deliveryType, setDeliveryType] = useState<DeliveryType>('home');
+    
     const [errors, setErrors] = useState<any>({});
-    const [touched, setTouched] = useState(false);
 
     if (!isOpen) return null;
 
     const validate = () => {
         const e: any = {};
-        if (!customerName) e.customerName = "Required";
-        if (!phoneNumber) e.phoneNumber = "Required";
-        if (!communeId) e.communeId = "Required";
-        if (!codAmount || Number(codAmount) < 0) e.codAmount = "Invalid";
+        if (!recipientName) e.recipientName = "Required";
+        if (!recipientPhone) e.recipientPhone = "Required";
+        if (!recipientAddress) e.recipientAddress = "Required";
+        if (!recipientCity) e.recipientCity = "Required";
+        if (!recipientState) e.recipientState = "Required";
+        if (!totalPrice || Number(totalPrice) < 0) e.totalPrice = "Invalid";
         if (!weightKg || Number(weightKg) < 0) e.weightKg = "Required";
-        if (mode === "receptionist" && !merchantSelectedId) e.merchantId = "Select merchant";
         return e;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setTouched(true);
         const v = validate();
         setErrors(v);
         if (Object.keys(v).length > 0) return;
 
-        const payload: ICreateShipment = {
-            customer: { fullName: customerName, phoneNumber, communeId: communeId! },
-            codAmount: Number(codAmount),
-            weightKg: Number(weightKg),
+        const payload: ICreatePackageBody = {
+            recipientName,
+            recipientPhone,
+            recipientAddress,
+            recipientCity,
+            recipientState,
+            totalPrice: Number(totalPrice),
+            weight: Number(weightKg),
             description: description || undefined,
             deliveryType,
+            originBranchId: hubId,
         };
 
-        await onSubmit(payload, mode, mode === "receptionist" ? merchantSelectedId! : undefined);
-        onClose();
+        // Note: For receptionist we might need to add senderId/clientId to payload 
+        // if backend requires it. For now assuming backend handles or we add it later.
+        
+        await onSubmit(payload);
     };
 
     const isReceptionist = mode === "receptionist";
-
-
-
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -81,8 +89,8 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                             <Package className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
-                            <div className="text-[14px] font-semibold text-white">{isReceptionist ? "Walk-in Shipment" : "Pickup Shipment"}</div>
-                            <div className="text-[11px] text-slate-600">Create a new shipment record</div>
+                            <div className="text-[14px] font-semibold text-white">{isReceptionist ? "Walk-in Package" : "Pickup Package"}</div>
+                            <div className="text-[11px] text-slate-600">Create a new package record</div>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-400 hover:bg-white/5 transition-all">
@@ -94,63 +102,76 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                 <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
                     <div className="grid grid-cols-2 gap-3">
                         <InputField
-                            label="Full Name"
+                            label="Recipient Name"
                             type="text"
                             placeholder="e.g. Mohamed Bekk"
-                            icon={Phone} value={customerName}
+                            icon={Phone} value={recipientName}
                             onChange={(e) => {
-                                setCustomerName(e.target.value);
-                                setErrors((prev: any) => ({ ...prev, customerName: undefined }));
+                                setRecipientName(e.target.value);
+                                setErrors((prev: any) => ({ ...prev, recipientName: undefined }));
                             }}
-                            error={errors.customerName}
+                            error={errors.recipientName}
                         />
                         <InputField
                             label="Phone"
                             type="tel"
                             placeholder="06 XX XX XX XX"
                             icon={Phone}
-                            value={phoneNumber}
+                            value={recipientPhone}
                             onChange={(e) => {
-                                setPhoneNumber(e.target.value);
-                                setErrors((prev: any) => ({ ...prev, phoneNumber: undefined }));
+                                setRecipientPhone(e.target.value);
+                                setErrors((prev: any) => ({ ...prev, recipientPhone: undefined }));
                             }}
-                            error={errors.phoneNumber}
+                            error={errors.recipientPhone}
                         />
                     </div>
 
-                    <EntityPicker<ICommune>
-                        value={communeId}
-                        onChange={setCommuneId}
-                        fetchData={() => listDisponibleCommunes({ search: communeSearch, pageNumber: 1, pageSize: 30 })}
-                        getId={(c) => c.id}
-                        getLabel={(c) => c.nameFr}
-                        onSearchChange={setCommuneSearch}
-                        label="Commune"
-                        placeholder="Search..."
-                        error={errors.communeId}
-                    />
-
-                    {isReceptionist && (
-                        <EntityPicker<IMerchant>
-                            value={merchantSelectedId}
-                            onChange={setMerchantSelectedId}
-                            fetchData={async () => (await listMerchants({ search: merchantSearch, pageNumber: 1, pageSize: 20 })).items}
-                            getId={(m) => m.id}
-                            getLabel={(m) => `${m.firstName} ${m.lastName}`}
-                            onSearchChange={setMerchantSearch}
-                            label="Merchant"
-                            placeholder="Select merchant..."
-                            error={errors.merchantId}
+                    <div className="grid grid-cols-3 gap-3">
+                        <InputField
+                            label="State"
+                            type="text"
+                            placeholder="State"
+                            icon={MapPin} value={recipientState}
+                            onChange={(e) => {
+                                setRecipientState(e.target.value);
+                                setErrors((prev: any) => ({ ...prev, recipientState: undefined }));
+                            }}
+                            error={errors.recipientState}
                         />
-                    )}
+                        <div className="col-span-2">
+                             <InputField
+                                label="City"
+                                type="text"
+                                placeholder="City"
+                                icon={MapPin} value={recipientCity}
+                                onChange={(e) => {
+                                    setRecipientCity(e.target.value);
+                                    setErrors((prev: any) => ({ ...prev, recipientCity: undefined }));
+                                }}
+                                error={errors.recipientCity}
+                            />
+                        </div>
+                    </div>
+                    
+                    <InputField
+                        label="Address"
+                        type="text"
+                        placeholder="Detailed address..."
+                        icon={MapPin} value={recipientAddress}
+                        onChange={(e) => {
+                            setRecipientAddress(e.target.value);
+                            setErrors((prev: any) => ({ ...prev, recipientAddress: undefined }));
+                        }}
+                        error={errors.recipientAddress}
+                    />
 
                     {/* Delivery Type */}
                     <div className="flex flex-col gap-1.5">
                         <span className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">Delivery Type</span>
                         <div className="grid grid-cols-2 gap-2">
                             {([
-                                { val: DeliveryType.Home, label: "Home", icon: <Package size={13} /> },
-                                { val: DeliveryType.StopDesk, label: "Stop Desk", icon: <Truck size={13} /> }
+                                { val: 'home', label: "Home", icon: <Package size={13} /> },
+                                { val: 'branch_pickup', label: "Branch Pickup", icon: <Truck size={13} /> }
                             ] as const).map(opt => {
                                 const active = deliveryType === opt.val;
                                 return (
@@ -174,16 +195,16 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
 
                     <div className="grid grid-cols-2 gap-3">
                         <InputField
-                            label="COD Amount"
+                            label="Total Price (DZD)"
                             type="number"
                             placeholder="e.g. 2000"
                             icon={DollarSign}
-                            value={codAmount}
+                            value={totalPrice}
                             onChange={(e) => {
-                                setCodAmount(e.target.value);
-                                setErrors((prev: any) => ({ ...prev, codAmount: undefined }));
+                                setTotalPrice(e.target.value);
+                                setErrors((prev: any) => ({ ...prev, totalPrice: undefined }));
                             }}
-                            error={errors.codAmount}
+                            error={errors.totalPrice}
                         />
                         <InputField
                             label="Weight (kg)"
@@ -205,7 +226,7 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                 {/* Footer */}
                 <div className="flex items-center justify-between px-6 py-4 border-t" style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}>
                     <div className="text-[11px] text-slate-500">
-                        {Object.keys(errors).length > 0 ? <span className="text-red-400 italic">Please fix errors</span> : `Creating ${isReceptionist ? "Walk-in" : "Pickup"} Shipment`}
+                        {Object.keys(errors).length > 0 ? <span className="text-red-400 italic">Please fix errors</span> : `Creating Package`}
                     </div>
                     <div className="flex items-center gap-2.5">
                         <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 rounded-lg text-[13px] text-slate-500 hover:text-slate-300 border border-white/7 hover:border-white/13 transition-all disabled:opacity-40">
@@ -219,7 +240,7 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                             {loading ? (
                                 <><svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.4" strokeDashoffset="10" /></svg>Creating…</>
                             ) : (
-                                <><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>Create Shipment</>
+                                <><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>Create</>
                             )}
                         </button>
                     </div>

@@ -1,5 +1,5 @@
 import { DeliveryType } from "@/types/deliveryFee";
-import { IShipmentSummary } from "@/types/shipment";
+import { IPackage } from "@/types/shipment";
 import JsBarcode from "jsbarcode";
 import QRCode from "qrcode";
 
@@ -27,6 +27,7 @@ async function generateQrDataUrl(value: string): Promise<string> {
 }
 
 function formatDate(iso: string): string {
+  if(!iso) return "";
   return new Date(iso).toLocaleDateString("fr-DZ", {
     day: "2-digit",
     month: "2-digit",
@@ -34,19 +35,15 @@ function formatDate(iso: string): string {
   });
 }
 
-function wilayaCode(code: number): string {
-  return String(code).padStart(2, "0");
-}
-
 function buildLabelHtml(
-  shipment: IShipmentSummary,
+  shipment: IPackage,
   barcodeUrl: string,
   qrUrl: string
 ): string {
   const deliveryTypeLabel =
-    shipment.deliveryType === DeliveryType.Home
+    shipment.deliveryType === 'home'
       ? "DOMICILE"
-      : shipment.deliveryType === DeliveryType.StopDesk
+      : shipment.deliveryType === 'branch_pickup'
         ? "RELAIS"
         : shipment.deliveryType;
 
@@ -54,63 +51,57 @@ function buildLabelHtml(
 <div class="label">
   <div class="header">
     <div class="brand">
-      <img class="company-logo" src="${shipment.companyLogo}" alt="${shipment.companyName}" />
       <div class="brand-meta">
-        <div class="company-name">${shipment.companyName}</div>
-        <div class="company-subdomain">${shipment.companySubDomain}.courierdz.dz</div>
+        <div class="company-name">COURIER DZ</div>
       </div>
     </div>
     <div class="shipment-meta">
       <div><strong>Date:</strong> ${formatDate(shipment.createdAt)}</div>
-      <div><strong>Réf:</strong> ${shipment.id.slice(0, 8).toUpperCase()}</div>
+      <div><strong>Réf:</strong> ${shipment._id.slice(0, 8).toUpperCase()}</div>
       <div class="delivery-badge">${deliveryTypeLabel}</div>
     </div>
   </div>
 
   <div class="destination-block">
-    <div class="destination-code">${wilayaCode(shipment.finalDestinationWilayaCode)}</div>
     <div class="destination-info">
-      <div class="destination-wilaya">${shipment.finalDestinationWilayaName}</div>
-      <div class="destination-commune">${shipment.finalDestinationCommuneName}</div>
-      <div class="destination-hub">HUB · ${shipment.finalDestinationNodeName}</div>
+      <div class="destination-wilaya">${shipment.destination.state || "N/A"}</div>
+      <div class="destination-commune">${shipment.destination.city || "N/A"}</div>
+      <div class="destination-hub">ADRESSE · ${shipment.destination.address || "N/A"}</div>
     </div>
   </div>
 
-  ${shipment.isRto || shipment.hasBeenSwapped ? `
+  ${shipment.returnInfo?.isReturn ? `
   <div class="status-flags">
-    ${shipment.isRto ? `<div class="flag flag-danger">RTO</div>` : ""}
-    ${shipment.hasBeenSwapped ? `<div class="flag flag-warning">ÉCHANGE</div>` : ""}
+    ${shipment.returnInfo?.isReturn ? `<div class="flag flag-danger">RTO</div>` : ""}
   </div>` : ""}
 
   <div class="tracking-section">
     <div class="tracking-label">Numéro de suivi</div>
-    <div class="tracking-code">${shipment.trackingCode}</div>
+    <div class="tracking-code">${shipment.trackingNumber}</div>
     <img class="barcode-img" src="${barcodeUrl}" alt="Barcode" />
   </div>
 
   <div class="people">
     <div class="person">
       <div class="person-title">Expéditeur</div>
-      <div class="person-name">${shipment.merchantBusinessName || "Marchand"}</div>
-      <div class="person-phone">${shipment.merchantPhoneNumber || ""}</div>
+      <div class="person-name">Marchand</div>
     </div>
     <div class="person">
       <div class="person-title">Destinataire</div>
-      <div class="person-name">${shipment.customer.fullName}</div>
-      <div class="person-phone">${shipment.customer.phoneNumber}</div>
-      <div class="person-address">${shipment.finalDestinationCommuneName}, ${shipment.finalDestinationWilayaName}</div>
+      <div class="person-name">${shipment.destination.recipientName}</div>
+      <div class="person-phone">${shipment.destination.recipientPhone}</div>
+      <div class="person-address">${shipment.destination.city}, ${shipment.destination.state}</div>
     </div>
   </div>
 
   <div class="amounts">
     <div class="cod-box">
       <div class="cod-label">Montant à encaisser</div>
-      <div class="cod-value">${shipment.codAmount.toLocaleString("fr-DZ")} DZD</div>
+      <div class="cod-value">${shipment.totalPrice.toLocaleString("fr-DZ")} DZD</div>
     </div>
     <div class="secondary-financials">
-      <div><span>Livraison</span><strong>${shipment.deliveryFee.toLocaleString("fr-DZ")} DZD</strong></div>
-      <div><span>Poids</span><strong>${shipment.weightKg ?? "—"} kg</strong></div>
-      <div><span>Tentatives</span><strong>${shipment.deliveryAttempts}/3</strong></div>
+      <div><span>Poids</span><strong>${shipment.weight ?? "—"} kg</strong></div>
+      <div><span>Tentatives</span><strong>${shipment.attemptCount}/${shipment.maxAttempts}</strong></div>
     </div>
   </div>
 
@@ -181,10 +172,10 @@ const LABEL_STYLES = `
 `;
 
 /** Print a single shipment label (existing behaviour) */
-export async function handlePrint(shipment: IShipmentSummary): Promise<void> {
-  const barcodeUrl = generateBarcodeDataUrl(shipment.trackingCode);
+export async function handlePrint(shipment: IPackage): Promise<void> {
+  const barcodeUrl = generateBarcodeDataUrl(shipment.trackingNumber);
   const qrUrl = await generateQrDataUrl(
-    `https://${shipment.companySubDomain}.courierdz.dz/track/${shipment.trackingCode}`
+    `https://courierdz.dz/track/${shipment.trackingNumber}`
   );
 
   const printWindow = window.open("", "_blank", "width=500,height=800");
@@ -195,7 +186,7 @@ export async function handlePrint(shipment: IShipmentSummary): Promise<void> {
 
   printWindow.document.write(`<!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8" /><title>Bordereau ${shipment.trackingCode}</title>
+<head><meta charset="UTF-8" /><title>Bordereau ${shipment.trackingNumber}</title>
 <style>${LABEL_STYLES}</style>
 </head>
 <body onload="window.print(); setTimeout(() => window.close(), 600);">
@@ -205,15 +196,15 @@ ${buildLabelHtml(shipment, barcodeUrl, qrUrl)}
 }
 
 /** Print multiple shipment labels in one print dialog */
-export async function handleBatchPrint(shipments: IShipmentSummary[]): Promise<void> {
+export async function handleBatchPrint(shipments: IPackage[]): Promise<void> {
   if (shipments.length === 0) return;
 
   // Generate all barcodes + QR codes in parallel
   const assets = await Promise.all(
     shipments.map(async (s) => ({
-      barcode: generateBarcodeDataUrl(s.trackingCode),
+      barcode: generateBarcodeDataUrl(s.trackingNumber),
       qr: await generateQrDataUrl(
-        `https://${s.companySubDomain}.courierdz.dz/track/${s.trackingCode}`
+        `https://courierdz.dz/track/${s.trackingNumber}`
       ),
     }))
   );

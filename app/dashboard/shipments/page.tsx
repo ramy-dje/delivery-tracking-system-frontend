@@ -6,8 +6,8 @@ import { showToast } from "nextjs-toast-notify";
 import Pagination from "@/components/commons/Pagination";
 import { Plus, Search, X } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
-import { IShipmentSummary, ShipmentStatus, IShipmentFilter, ICreateShipment } from "@/types/shipment";
-import { listShipments, createShipmentByMerchant, createShipmentAtNode, cancelShipment } from "@/services/ShipmentService";
+import { IPackage, PackageStatus, IShipmentFilter, ICreatePackageBody, STATUS_LABEL } from "@/types/shipment";
+import { listShipments, createShipment, cancelShipment } from "@/services/ShipmentService";
 import ShipmentList from "@/components/dashboard/shipments/ShipmentList";
 import ShipmentDetailModal from "@/components/dashboard/shipments/ShipmentDetailModal";
 import CreateShipmentModal from "@/components/dashboard/shipments/CreateShipmentModal";
@@ -33,13 +33,13 @@ interface DashboardStats {
 export default function ShipmentsPage() {
     const hubId = getNodeId() ?? "";
     const userRole = getUserRole();
-    const [pagination, setPagination] = useState<IPaginatedResponse<IShipmentSummary> | null>(null);
+    const [pagination, setPagination] = useState<IPaginatedResponse<IPackage> | null>(null);
     const shipments = pagination?.items ?? [];
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState<"" | ShipmentStatus>("");
+    const [statusFilter, setStatusFilter] = useState<"" | PackageStatus>("");
     const [page, setPage] = useState(1);
 
     const [createOpen, setCreateOpen] = useState(false);
@@ -54,8 +54,7 @@ export default function ShipmentsPage() {
 
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedShipmentId, setSelectedShipmentId] = useState<string | null>(null);
-    const [selectedShipment, setSelectedShipment] = useState<IShipmentSummary | null>(null);
-    const [merchantId, setMerchantId] = useState<string>();
+    const [selectedShipment, setSelectedShipment] = useState<IPackage | null>(null);
 
     const [stats, setStats] = useState<DashboardStats>({
         pending: 0,
@@ -93,15 +92,10 @@ export default function ShipmentsPage() {
         fetchShipments();
     }, [fetchShipments]);
 
-    const handleCreateSubmit = async (payload: ICreateShipment, mode: "merchant" | "receptionist", merchantId?: string) => {
+    const handleCreateSubmit = async (payload: ICreatePackageBody) => {
         setCreateLoading(true);
         try {
-            if (mode === "receptionist") {
-                if (!merchantId) throw new Error("Merchant is required for walk-in shipments");
-                await createShipmentAtNode(merchantId, payload);
-            } else {
-                await createShipmentByMerchant(payload);
-            }
+            await createShipment(hubId, payload);
             showToast.success("Shipment created successfully");
             await fetchShipments();
             setCreateOpen(false);
@@ -131,19 +125,17 @@ export default function ShipmentsPage() {
     };
 
     const handleCancelShipment = async (shipmentId: string) => {
-        console.log("Cancelling shipment with ID: ", shipmentId);
         try {
-            await cancelShipment(shipmentId);
+            await cancelShipment(hubId, shipmentId);
             showToast.success("Shipment cancelled successfully");
             fetchShipments();
-
         } catch (err) {
             const error = parseApiError(err);
             showToast.error(error.message || "Failed to cancel shipment");
             console.error("Error cancelling shipment: ", error);
         }
     }
-    const handleBatchPrintShipments = async (selected: IShipmentSummary[]) => {
+    const handleBatchPrintShipments = async (selected: IPackage[]) => {
         await handleBatchPrint(selected);
     };
 
@@ -218,12 +210,12 @@ export default function ShipmentsPage() {
                         label=""
                         value={statusFilter ? String(statusFilter) : ""}
                         onChange={(value) => {
-                            setStatusFilter(value ? (value as unknown as ShipmentStatus) : "");
+                            setStatusFilter(value ? (value as unknown as PackageStatus) : "");
                             setPage(1);
                         }}
-                        options={Object.values(ShipmentStatus).map((s) => ({
-                            value: String(s),
-                            label: String(s).replace(/([A-Z])/g, " $1").trim(),
+                        options={Object.keys(STATUS_LABEL).map((s) => ({
+                            value: s,
+                            label: STATUS_LABEL[s as PackageStatus],
                         }))}
                     />
 
@@ -263,7 +255,6 @@ export default function ShipmentsPage() {
                     onSubmit={handleCreateSubmit}
                     loading={createLoading}
                     mode={mode}
-                    merchantId={merchantId}
                 />
 
                 {selectedShipmentId && (
@@ -289,7 +280,7 @@ export default function ShipmentsPage() {
                         danger={true}
                         loading={false}
                         onConfirm={() => {
-                            handleCancelShipment(selectedShipment!.id)
+                            handleCancelShipment(selectedShipment!._id)
                             setCancelOpen(false)
                         }}
                         onCancel={() => setCancelOpen(false)}
