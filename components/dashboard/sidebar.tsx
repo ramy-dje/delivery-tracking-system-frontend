@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import userStore from "@/stores/userStore";
-import { ROLES, ROLE_ROUTES } from "@/lib/roles";
+import { ROLES } from "@/lib/roles";
 import { Building2, DollarSign, Droplet, FileLineChartIcon, KeySquare, LayoutDashboard, Package, PenLine, Truck, User, UserCog } from "lucide-react";
 import Image from "next/image";
 
@@ -13,20 +13,12 @@ const NAV_GROUPS = [
         label: "Main",
         routes: [
             {
-                path: "/dashboard",
-                label: "Overview",
-                icon: (
-                    <LayoutDashboard size={14} />
-                ),
-                allowed: ROLE_ROUTES["/dashboard"],
-            },
-            {
                 path: "/dashboard/branches",
                 label: "Branches",
                 icon: (
                     <Building2 size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.ADMIN],
+                allowed: [ROLES.MANAGER],
             },
             {
                 path: "/dashboard/managers",

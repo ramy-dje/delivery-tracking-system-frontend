@@ -108,14 +108,27 @@ const CompanyRow = ({
                     </ActionBtn>
                 )}
                 {onToggleBlock && (
-                    <ActionBtn
-                        onClick={onToggleBlock}
-                        title={company.status === "suspended" ? "Unblock company" : "Suspend company"}
-                        variant={company.status === "suspended" ? "emerald" : "red"}
-                        revealOnHover
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleBlock();
+                        }}
+                        className={`
+                            relative inline-flex h-[18px] w-[32px] shrink-0 cursor-pointer rounded-full border-2 border-transparent 
+                            transition-colors duration-200 ease-in-out focus:outline-none
+                            ${company.status === "active" ? "bg-emerald-500" : "bg-slate-600"}
+                        `}
+                        title={company.status === "active" ? "Deactivate company" : "Activate company"}
                     >
-                        <Power size={13} className={company.status === "suspended" ? "text-emerald-400" : "text-rose-400"} />
-                    </ActionBtn>
+                        <span className="sr-only">Toggle active status</span>
+                        <span
+                            className={`
+                                pointer-events-none inline-block h-[14px] w-[14px] transform rounded-full bg-white shadow ring-0 
+                                transition duration-200 ease-in-out
+                                ${company.status === "active" ? "translate-x-[14px]" : "translate-x-0"}
+                            `}
+                        />
+                    </button>
                 )}
             </div>
         </div>

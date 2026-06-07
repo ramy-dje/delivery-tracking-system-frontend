@@ -10,12 +10,14 @@ import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { ICompany, ICreateCompanyInput } from "@/types/company";
-import { createCompany, getMyCompany, toggleBlockCompany, updateCompany } from "@/services/CompanyService";
+import { createCompany, getAllCompanies, getMyCompany, toggleBlockCompany, updateCompany } from "@/services/CompanyService";
+import userStore from "@/stores/userStore";
 import CompanyList from "@/components/dashboard/company/CompanyList";
 import CreateCompanyModal from "@/components/dashboard/company/CreateCompanyModal";
 import CompanyDetailModal from "@/components/dashboard/company/CompanyDetailModal";
 
 export default function CompanyPage() {
+    const { user } = userStore();
     const [companies, setCompanies] = useState<ICompany[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -38,16 +40,21 @@ export default function CompanyPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await getMyCompany();
-            const c: ICompany = res.data?.company;
-            setCompanies(c ? [c] : []);
+            if (user?.role === ROLES.ADMIN) {
+                const res = await getAllCompanies();
+                setCompanies(res.data || []);
+            } else {
+                const res = await getMyCompany();
+                const c: ICompany = res.data?.company;
+                setCompanies(c ? [c] : []);
+            }
         } catch (e: any) {
             const err = parseApiError(e);
             setError(err.message ?? "Failed to load company");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user?.role]);
 
     useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
 

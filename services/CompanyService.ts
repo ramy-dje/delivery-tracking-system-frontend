@@ -6,8 +6,13 @@ export const createCompany = async (data: ICreateCompanyInput): Promise<ICompany
   return response.data;
 };
 
-export const getMyCompany = async (): Promise<ICompany> => {
-  const res = await api.get<ICompany>("/manager/companies/my");
+export const getMyCompany = async (): Promise<any> => {
+  const res = await api.get<any>("/manager/companies/my");
+  return res.data;
+};
+
+export const getAllCompanies = async (): Promise<any> => {
+  const res = await api.get<any>("/manager/companies");
   return res.data;
 };
 
