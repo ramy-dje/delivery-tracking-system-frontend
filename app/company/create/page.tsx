@@ -219,6 +219,7 @@ export default function CreateCompanyPage() {
             const lng = parseFloat(formData.hqLng);
             if (formData.hqStreet.trim() && !isNaN(lat) && !isNaN(lng)) {
                 headquarters = {
+
                     street: formData.hqStreet.trim(),
                     city: formData.hqCity.trim(),
                     state: formData.hqState.trim(),

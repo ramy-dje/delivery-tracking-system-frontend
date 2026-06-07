@@ -9,6 +9,7 @@ export interface IHeadquarters {
   street: string;
   city: string;
   state: string;
+  postalCode?: string;
   location: {
     type: "Point";
     coordinates: [number, number];

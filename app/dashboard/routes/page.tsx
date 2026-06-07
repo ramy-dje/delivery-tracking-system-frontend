@@ -38,7 +38,6 @@ export default function RoutesPage() {
     // ── Fetch ────────────────────────────────────────────────────────────────
 
     const fetchRoutes = useCallback(async () => {
-        if (!branchId) { setError("No branch assigned to this account."); setLoading(false); return; }
         setLoading(true);
         setError(null);
         try {
@@ -111,7 +110,7 @@ export default function RoutesPage() {
     // ── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SHIFT_SUPERVISOR, ROLES.ADMIN]}>
+        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}

@@ -1,13 +1,13 @@
 import api from "@/lib/api";
-import { ICreateCompanyInput, ICompanyResponse, ICompany, IMyCompanyResponse, IUpdateCompanyInput } from "@/types/company";
+import { ICreateCompanyInput, ICompanyResponse, ICompany, IUpdateCompanyInput } from "@/types/company";
 
 export const createCompany = async (data: ICreateCompanyInput): Promise<ICompanyResponse> => {
   const response = await api.post<ICompanyResponse>("/manager/companies", data);
   return response.data;
 };
 
-export const getMyCompany = async (): Promise<IMyCompanyResponse> => {
-  const res = await api.get<IMyCompanyResponse>("/manager/companies/my");
+export const getMyCompany = async (): Promise<ICompany> => {
+  const res = await api.get<ICompany>("/manager/companies/my");
   return res.data;
 };
 
