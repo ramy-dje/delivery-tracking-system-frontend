@@ -5,7 +5,6 @@ import { listManagers, createManager, removeStaff } from "@/services/ManagerServ
 import ManagerList from "@/components/dashboard/managers/ManagerList";
 import CreateManagerModal from "@/components/dashboard/managers/CreateManagerModal";
 import ManagerDetailModal from "@/components/dashboard/managers/ManagerDetailModal";
-import ReassignManagerModal from "@/components/dashboard/managers/ReassignManagerModal";
 import { IManagerResponse, ICreateManagerRequest } from "@/types/manager";
 import { ROLES } from "@/lib/roles";
 import { showToast } from "nextjs-toast-notify";
@@ -44,7 +43,6 @@ export default function ManagersPage() {
     // Detail and reassign modals
     const [selectedManagerId, setSelectedManagerId] = useState<string | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
-    const [showReassignModal, setShowReassignModal] = useState(false);
 
     // ── Fetch ─────────────────────────────────────────────────────────────
 
@@ -118,17 +116,6 @@ export default function ManagersPage() {
         setShowDetailModal(true);
     };
 
-    const handleOpenReassign = () => {
-        setShowDetailModal(false);
-        setShowReassignModal(true);
-    };
-
-    const handleReassignSuccess = () => {
-        setShowReassignModal(false);
-        showToast.success("Manager reassigned successfully");
-        fetchManagers();
-    };
-
     // ── Derived ───────────────────────────────────────────────────────────
 
     const filtered = managers.filter((m) => {
@@ -137,8 +124,7 @@ export default function ManagersPage() {
         const matchSearch =
             !q ||
             m.fullName.toLowerCase().includes(q) ||
-            m.email.toLowerCase().includes(q) ||
-            m.logisticsNodeName?.toLowerCase().includes(q);
+            m.email.toLowerCase().includes(q);
 
         const matchStatus =
             filterStatus === "" ? true : m.isActive === filterStatus;
@@ -317,21 +303,6 @@ export default function ManagersPage() {
                             setShowDetailModal(false);
                             setSelectedManagerId(null);
                         }}
-                        onReassignClick={handleOpenReassign}
-                    />
-
-                    <ReassignManagerModal
-                        managerId={selectedManagerId}
-                        managerName={managers.find((m) => m.id === selectedManagerId)?.fullName ?? ""}
-                        currentNodeId={managers.find((m) => m.id === selectedManagerId)?.logisticsNodeId ?? null}
-                        currentNodeName={managers.find((m) => m.id === selectedManagerId)?.logisticsNodeName ?? null}
-                        companyId={companyId}
-                        isOpen={showReassignModal}
-                        onClose={() => {
-                            setShowReassignModal(false);
-                            setShowDetailModal(true);
-                        }}
-                        onSuccess={handleReassignSuccess}
                     />
                 </>
             )}

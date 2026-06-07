@@ -79,9 +79,9 @@ function ManagerRow({
                 </div>
             </div>
 
-            {/* ── Node ────────────────────────────────────────────────── */}
+            {/* ── Access Level ────────────────────────────────────────────────── */}
             <div className="hidden md:flex items-center min-w-0">
-                {manager.logisticsNodeName ? (
+                {manager.accessLevel ? (
                     <div
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg min-w-0 max-w-full"
                         style={{
@@ -90,11 +90,11 @@ function ManagerRow({
                         }}
                     >
                         <svg className="shrink-0" width="10" height="10" viewBox="0 0 24 24" fill="none">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
                                 stroke={AMBER} strokeWidth="1.6" strokeLinejoin="round" />
                         </svg>
-                        <span className="text-[12px] font-semibold truncate" style={{ color: AMBER }}>
-                            {manager.logisticsNodeName}
+                        <span className="text-[12px] font-semibold truncate capitalize" style={{ color: AMBER }}>
+                            {manager.accessLevel.replace('_', ' ')}
                         </span>
                     </div>
                 ) : (
@@ -106,7 +106,7 @@ function ManagerRow({
                             color: "#334155",
                         }}
                     >
-                        Unassigned
+                        Unknown
                     </span>
                 )}
             </div>
@@ -205,7 +205,7 @@ export default function ManagerList({
                 className="hidden md:grid grid-cols-[1fr_300px_200px_120px_120px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Manager", "Contact", "Node", "Status", "Actions"].map((h, i) => (
+                {["Manager", "Contact", "Access", "Status", "Actions"].map((h, i) => (
                     <div key={i} className="text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold">
                         {h}
                     </div>

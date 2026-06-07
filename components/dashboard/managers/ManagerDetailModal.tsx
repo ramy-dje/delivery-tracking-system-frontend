@@ -3,14 +3,12 @@
 import { useEffect, useState } from "react";
 import { getManagerById } from "@/services/ManagerService";
 import { IManagerDetail } from "@/types/manager";
-import { tr } from "date-fns/locale";
 
 interface ManagerDetailModalProps {
     managerId: string;
     companyId: string;
     isOpen: boolean;
     onClose: () => void;
-    onReassignClick?: () => void;
 }
 
 export default function ManagerDetailModal({
@@ -18,7 +16,6 @@ export default function ManagerDetailModal({
     companyId,
     isOpen,
     onClose,
-    onReassignClick,
 }: ManagerDetailModalProps) {
     const [manager, setManager] = useState<IManagerDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -84,7 +81,7 @@ export default function ManagerDetailModal({
                         </div>
                         <div>
                             <div className="text-[14px] font-semibold text-white">Manager Details</div>
-                            <div className="text-[11px] text-slate-600">View and manage manager information</div>
+                            <div className="text-[11px] text-slate-600">View manager information</div>
                         </div>
                     </div>
                     <button
@@ -148,14 +145,14 @@ export default function ManagerDetailModal({
                                 </div>
                             </div>
 
-                            {/* Role + Status */}
+                            {/* Access Level + Status */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                        Role
+                                        Access Level
                                     </label>
-                                    <p className="text-[14px] font-semibold text-amber-300 mt-1.5">
-                                        {manager.role}
+                                    <p className="text-[14px] font-semibold text-amber-300 mt-1.5 capitalize">
+                                        {manager.accessLevel ? manager.accessLevel.replace('_', ' ') : 'Unknown'}
                                     </p>
                                 </div>
                                 <div>
@@ -176,59 +173,31 @@ export default function ManagerDetailModal({
                                 </div>
                             </div>
 
-                            {/* Node Assignment */}
+                            {/* Branch Access */}
                             <div className="pt-2 border-t border-white/6">
                                 <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                    Assigned Node
+                                    Branch Access
                                 </label>
-                                {manager.logisticsNodeName ? (
-                                    <div className="mt-2 space-y-2">
-                                        <p className="text-[14px] font-semibold text-white">
-                                            {manager.logisticsNodeName}
-                                        </p>
-                                        {manager.nodeName && (
-                                            <p className="text-[12px] text-slate-500">
-                                                Name: {manager.nodeName}
-                                            </p>
-                                        )}
-                                        {manager.nodeType && (
-                                            <p className="text-[12px] text-slate-500">
-                                                Type: {manager.nodeType}
-                                            </p>
-                                        )}
-                                        {manager.logisticsNodeId && (
-                                            <p className="text-[11px] text-slate-600 font-mono">
-                                                ID: {manager.logisticsNodeId}
-                                            </p>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <p className="text-[12px] text-slate-600 italic mt-2">
-                                        No node assigned
+                                <div className="mt-2 space-y-2">
+                                    <p className="text-[14px] font-semibold text-white">
+                                        {manager.branchAccess?.allBranches ? "All Branches" : "Specific Branches Only"}
                                     </p>
-                                )}
+                                    {!manager.branchAccess?.allBranches && (
+                                        <p className="text-[12px] text-slate-500">
+                                            {manager.branchAccess?.specificBranches?.length || 0} branches assigned
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Phone Number */}
-                            {manager.phoneNumber && (
+                            {manager.phone && (
                                 <div className="pt-2 border-t border-white/6">
                                     <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
                                         Phone Number
                                     </label>
                                     <p className="text-[14px] font-semibold text-white mt-1.5">
-                                        {manager.phoneNumber}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Company ID */}
-                            {manager.companyId && (
-                                <div className="pt-2 border-t border-white/6">
-                                    <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                        Company ID
-                                    </label>
-                                    <p className="text-[11px] text-slate-600 font-mono mt-1.5">
-                                        {manager.companyId}
+                                        {manager.phone}
                                     </p>
                                 </div>
                             )}
@@ -256,7 +225,7 @@ export default function ManagerDetailModal({
                         }}
                     >
                         <div className="text-[11px] text-slate-600">
-                            Manager {manager.logisticsNodeName ? "assigned to" : "not assigned to"} <span className="font-semibold text-slate-400">{manager.logisticsNodeName || "any node"}</span>
+                            Role: Manager
                         </div>
                         <div className="flex items-center gap-2.5">
                             <button
@@ -266,29 +235,6 @@ export default function ManagerDetailModal({
                             >
                                 Close
                             </button>
-                            {onReassignClick && (
-                                <button
-                                    type="button"
-                                    onClick={onReassignClick}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95"
-                                    style={{
-                                        background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-                                        boxShadow: "0 4px 16px rgba(251,191,36,0.2)",
-                                    }}
-                                >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                        <path
-                                            d="M7 16a5 5 0 016-9m6 6a5 5 0 01-6 9"
-                                            stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                                        />
-                                        <path
-                                            d="M7 16H3v4m14-4h4v4"
-                                            stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                    Reassign Node
-                                </button>
-                            )}
                         </div>
                     </div>
                 )}

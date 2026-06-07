@@ -1,12 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ICreateManagerRequest } from "@/types/manager";
-import { ROLES } from "@/lib/roles";
-import LogisticsNodePicker from "@/components/commons/LogisticsNodePicker";
-import { getMyCompany } from "@/services/CompanyService";
-import { getCompanyBranches, listStaff } from "@/services/ManagerService";
-import { IBranchResponse } from "@/types/branch";
+import { useState } from "react";
+import { ICreateManagerRequest, ManagerAccessLevel } from "@/types/manager";
 
 // ─── Field wrapper ────────────────────────────────────────────────────────
 
@@ -82,14 +77,12 @@ interface FormErrors {
     fullName?: string;
     email?: string;
     password?: string;
-    logisticsNodeId?: string;
 }
 
 function validate(f: {
     fullName: string;
     email: string;
     password: string;
-    logisticsNodeId: string | null;
 }): FormErrors {
     const e: FormErrors = {};
     if (!f.fullName.trim()) e.fullName = "Full name is required";
@@ -98,7 +91,6 @@ function validate(f: {
         e.email = "Invalid email address";
     if (!f.password) e.password = "Password is required";
     else if (f.password.length < 8) e.password = "Must be at least 8 characters";
-    if (!f.logisticsNodeId) e.logisticsNodeId = "Please select a logistics node";
     return e;
 }
 
@@ -121,54 +113,33 @@ export default function CreateManagerModal({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
-    const [logisticsNodeId, setLogisticsNodeId] = useState<string | null>(null);
-    const [nodes, setNodes] = useState<IBranchResponse[]>([]);
-    const [companyId, setCompanyId] = useState<string | null>(null);
-    const [nodeError, setNodeError] = useState<string | null>(null);
+    
+    // New fields replacing node selection
+    const [accessLevel, setAccessLevel] = useState<ManagerAccessLevel>("limited");
+    const [allBranches, setAllBranches] = useState(true);
+
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState(false);
 
-    const revalidate = (patch: Partial<{ fullName: string; email: string; password: string; logisticsNodeId: string | null }>) => {
+    const revalidate = (patch: Partial<{ fullName: string; email: string; password: string }>) => {
         if (!touched) return;
-        setErrors(validate({ fullName, email, password, logisticsNodeId, ...patch }));
+        setErrors(validate({ fullName, email, password, ...patch }));
     };
 
-    const selectedNode = nodes.find((n) => n.id === logisticsNodeId) ?? null;
+    const _currentValidation = validate({ fullName, email, password });
+    const isFormValid = Object.keys(_currentValidation).length === 0;
 
-    // Determine current form validity (used to enable Submit button)
-    const _currentValidation = validate({ fullName, email, password, logisticsNodeId });
-    const isFormValid = Object.keys(_currentValidation).length === 0 && !nodeError;
     const handleSubmit = async () => {
         setTouched(true);
 
-        const errs = validate({ fullName, email, password, logisticsNodeId });
+        const errs = validate({ fullName, email, password });
         setErrors(errs);
         if (Object.keys(errs).length > 0) return;
 
         // Split fullName → firstName + lastName
         const [firstName, ...rest] = fullName.trim().split(" ");
-        // If user entered a single name, use it for both first and last to satisfy backend min-length validation
         const lastName = rest.join(" ") || firstName;
-
-        setNodeError(null);
-
-        // Check if node has already a manager
-        if (companyId && selectedNode) {
-            try {
-                const staffRes: any = await listStaff(companyId, 1, 1000);
-                const items = staffRes?.items ?? staffRes ?? [];
-                const managerExists = items.some(
-                    (u: any) => u.logisticsNodeId === logisticsNodeId && u.role === ROLES.MANAGER && u.isActive !== false
-                );
-                if (managerExists) {
-                    setNodeError("This logistics node already has a manager assigned.");
-                    return;
-                }
-            } catch (e) {
-                // Fall back to server-side validation
-            }
-        }
 
         await onSubmit({
             firstName,
@@ -176,33 +147,13 @@ export default function CreateManagerModal({
             email,
             password,
             phoneNumber: phoneNumber.trim() || undefined,
-            role: ROLES.MANAGER,
-            logisticsNodeId: logisticsNodeId as string,
+            accessLevel,
+            branchAccess: {
+                allBranches,
+                specificBranches: [] // We can expand this later to use a BranchPicker
+            }
         });
     };
-
-    useEffect(() => {
-        let mounted = true;
-        (async () => {
-            try {
-                const myCompany = await getMyCompany();
-                const id = myCompany?.id ?? myCompany?.data?.id ?? null;
-                if (!mounted) return;
-                setCompanyId(id);
-                if (id) {
-                    try {
-                        const nodesRes = await getCompanyBranches(id);
-                        if (mounted) setNodes(nodesRes ?? []);
-                    } catch (e) {
-                        // ignore
-                    }
-                }
-            } catch (e) {
-                // ignore
-            }
-        })();
-        return () => { mounted = false; };
-    }, []);
 
     return (
         <div
@@ -245,7 +196,7 @@ export default function CreateManagerModal({
                         <div>
                             <div className="text-[14px] font-semibold text-white">Create Manager</div>
                             <div className="text-[11px] text-slate-600">
-                                Assign a manager to a logistics node
+                                Add a co-manager with specific access
                             </div>
                         </div>
                     </div>
@@ -265,29 +216,36 @@ export default function CreateManagerModal({
                 {/* ── Body ──────────────────────────────────────────────── */}
                 <div className="px-6 py-5 space-y-4 max-h-[68vh] overflow-y-auto">
 
-                    {/* Logistics node picker (Required Step 1) */}
-                    <div className="relative">
-                        <LogisticsNodePicker
-                            value={logisticsNodeId}
-                            onChange={(nextNodeId) => {
-                                setLogisticsNodeId(nextNodeId);
-                                revalidate({ logisticsNodeId: nextNodeId });
-                            }}
-                            label="Assign to Node"
-                            required
-                            placeholder="Select a logistics node"
-                            error={errors.logisticsNodeId}
-                        />
-                        <p className="text-[10.5px] text-slate-700 mt-1.5 ml-0.5">
-                            Select a logistics node (hub, branch, or main hub) to assign a manager.
-                        </p>
-                        {nodeError && (
-                            <p className="text-[11px] text-red-400 mt-1.5 ml-0.5">{nodeError}</p>
-                        )}
+                    {/* Access level (Step 1) */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <Field label="Access Level" required>
+                            <select
+                                value={accessLevel}
+                                onChange={(e) => setAccessLevel(e.target.value as ManagerAccessLevel)}
+                                className="w-full px-3 py-2.5 rounded-lg text-[13px] text-white focus:outline-none transition-all appearance-none cursor-pointer"
+                                style={{
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                }}
+                            >
+                                <option value="full">Full Access</option>
+                                <option value="limited">Limited Access</option>
+                                <option value="view_only">View Only</option>
+                            </select>
+                        </Field>
+
+                        <Field label="Branch Access">
+                            <div className="flex items-center gap-2 h-[41px] px-3 rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => setAllBranches(!allBranches)}>
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${allBranches ? 'bg-amber-500 border-amber-500' : 'border-slate-500'}`}>
+                                    {allBranches && <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                </div>
+                                <span className="text-[13px] text-slate-300">All Branches</span>
+                            </div>
+                        </Field>
                     </div>
 
                     {/* Divider */}
-                    <div className="flex items-center gap-3 py-0.5">
+                    <div className="flex items-center gap-3 py-0.5 mt-2">
                         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
                         <span className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
                             Manager Details
@@ -386,18 +344,7 @@ export default function CreateManagerModal({
                         background: "rgba(255,255,255,0.01)",
                     }}
                 >
-                    {/* Live node summary */}
-                    <div className="text-[11px]">
-                        {selectedNode ? (
-                            <span className="text-slate-500">
-                                Manager for <span className="font-semibold text-amber-300">{selectedNode.name}</span>
-                            </span>
-                        ) : (
-                            <span className="text-slate-700 italic">Select a node to continue</span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 ml-auto">
                         <button
                             type="button"
                             onClick={onClose}
