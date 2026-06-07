@@ -39,7 +39,7 @@ export default function CompanyPage() {
         setError(null);
         try {
             const res = await getMyCompany();
-            const c: ICompany = res.data ?? res;
+            const c: ICompany = res.data?.company;
             setCompanies(c ? [c] : []);
         } catch (e: any) {
             const err = parseApiError(e);

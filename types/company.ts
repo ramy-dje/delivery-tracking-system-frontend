@@ -2,53 +2,51 @@ import { IUser, IUserSummary } from "./user";
 
 export type CompanyBusinessType = "solo" | "company";
 
+export type CompanyStatus = "active" | "inactive" | "suspended" | "pending";
+
 export interface IHeadquarters {
   street: string;
   city: string;
   state: string;
-  postalCode?: string;
   location: {
     type: "Point";
     coordinates: [number, number];
   };
 }
 
-export interface ICompanyLogo {
-  public_id: string;
-  url: string;
-}
-
 export interface ICompany {
   _id: string;
   name: string;
   businessType: CompanyBusinessType;
+  userId: string | IUserSummary;
   registrationNumber?: string;
   email?: string;
   phone?: string;
-  logo?: ICompanyLogo;
+  logo?: string;
   headquarters?: IHeadquarters;
-  status: "active" | "inactive" | "suspended";
-  userId: string | IUserSummary;
+  status: CompanyStatus;
+  
   createdAt: string;
   updatedAt: string;
+  
+  // Virtuals
+  isSolo: boolean;
+  isActive: boolean;
+  formattedAddress?: string;
 }
-
-
-
-export interface IManager {
-  _id: string;
-  userId: string;
-  role?: string;
-}
-
 
 export interface ICompanyResponse {
   success: boolean;
-  message: string;
+  message?: string;
+  data: ICompany;
+}
+
+export interface IMyCompanyResponse {
+  success: boolean;
   data: {
-    company: ICompany;       
-    user: IUser;      
-    manager: IManager | null;
+    company: ICompany;
+    managerProfile: any;
+    user: any;
   };
 }
 
@@ -58,6 +56,16 @@ export interface ICreateCompanyInput {
   registrationNumber?: string;
   email?: string;
   phone?: string;
-  logo?: ICompanyLogo;
+  logo?: string;
+  headquarters?: IHeadquarters;
+}
+
+export interface IUpdateCompanyInput {
+  name?: string;
+  businessType?: CompanyBusinessType;
+  registrationNumber?: string;
+  email?: string;
+  phone?: string;
+  logo?: string;
   headquarters?: IHeadquarters;
 }

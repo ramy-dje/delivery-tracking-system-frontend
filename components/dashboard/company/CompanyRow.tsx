@@ -44,8 +44,8 @@ const CompanyRow = ({
         >
             {/* Logo + name */}
             <div className="flex items-center gap-3 min-w-0">
-                {company.logo?.url ? (
-                    <img src={company.logo.url} alt="logo"
+                {company.logo ? (
+                    <img src={company.logo} alt="logo"
                         className="w-10 h-10 rounded-xl object-cover shrink-0 transition-transform duration-150 group-hover:scale-[1.06]" />
                 ) : (
                     <div
