@@ -109,14 +109,6 @@ const NAV_GROUPS = [
                 allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.RECEPTIONIST],
             },
             {
-                path: "/dashboard/supervisors",
-                label: "Supervisors",
-                icon: (
-                    <UserCog size={14} />
-                ),
-                allowed: [ROLES.MANAGER],
-            },
-            {
                 path: "/dashboard/transporters",
                 label: "Transporters",
                 icon: (
