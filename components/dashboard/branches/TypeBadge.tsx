@@ -1,15 +1,15 @@
-import { NodeType } from "@/types/branch";
+import { BranchType } from "@/types/branch";
 import { TYPE_META } from "./TypeMeta";
 
-const TypeBadge = ({ type }: { type: NodeType }) => {
-    const m = TYPE_META[type] ?? TYPE_META[NodeType.LocalBranch];
+const TypeBadge = ({ type }: { type: BranchType }) => {
+    const m = TYPE_META[type] ?? TYPE_META["local_branch"];
     return (
         <span
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold tracking-wide font-mono"
             style={{ background: m.bg, color: m.text, border: `1px solid ${m.border}` }}
         >
             <span className="text-[9px]">{m.icon}</span>
-            {type}
+            {type === "local_branch" ? "Local" : "Hub"}
         </span>
     );
 }

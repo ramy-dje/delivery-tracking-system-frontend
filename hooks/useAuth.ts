@@ -1,4 +1,5 @@
 import userStore from "@/stores/userStore";
+import { IManager } from "@/types/auth";
 import { IUser } from "@/types/user";
 
 export const useAuth = () => userStore();
@@ -20,7 +21,7 @@ export const isAuthenticated = () => {
 }
 
 export const getCompanyId = () => {
-  return userStore.getState().user?.companyId;
+  return userStore.getState().associated?.companyId;
 }
 
 export const getNodeId = () => {
@@ -35,8 +36,8 @@ export const setProfile = (user: IUser) => {
   userStore.getState().setProfile(user);
 };
 
-export const login = (user: IUser, access_token: string) => {
-  userStore.getState().login(user, access_token);
+export const login = (user: IUser, access_token: string, associated?: IManager | null) => {
+  userStore.getState().login(user, access_token, associated);
 };
 
 export const logout = () => {

@@ -21,8 +21,8 @@ const NAV_GROUPS = [
                 allowed: [ROLES.MANAGER],
             },
             {
-                path: "/dashboard/managers",
-                label: "Managers",
+                path: "/dashboard/supervisors",
+                label: "Supervisors",
                 icon: (
                     <UserCog size={14} />
                 ),
@@ -149,7 +149,7 @@ const NAV_GROUPS = [
                 allowed: [ROLES.MANAGER, ROLES.ADMIN],
             },
         ],
-}];
+    }];
 
 export default function Sidebar() {
     const pathname = usePathname();

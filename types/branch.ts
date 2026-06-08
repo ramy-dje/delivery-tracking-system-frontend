@@ -1,122 +1,148 @@
-import { ICommune, ILocation, IWilaya } from "./common";
-import { IBaseFilter } from "./paginate";
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
+export type WeekDay =
+    | "monday"
+    | "tuesday"
+    | "wednesday"
+    | "thursday"
+    | "friday"
+    | "saturday"
+    | "sunday";
 
-export enum NodeType {
-    LocalBranch = "local_branch",
-    RegionalMainHub = "regional_main_hub"
+export type BranchType = "local_branch" | "regional_main_hub";
+export type BranchStatus = "active" | "inactive" | "maintenance" | "pending";
+
+// ─── Nested shapes ────────────────────────────────────────────────────────────
+
+export interface IOperatingHours {
+    open: string;
+    close: string;
 }
 
-export interface IBranchResponse extends ILocation {
-    id: string;
+export interface IBranchAddress {
+    street: string;
+    city: string;
+    state: string;
+    postalCode?: string;
+}
+
+export interface IBranchLocation {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+}
+
+// ─── Response types (what the backend actually returns) ───────────────────────
+
+/**
+ * Returned by GET /companies/:companyId/branches  (list)
+ * and POST /companies/:companyId/branches (create)
+ * companyId is a plain string here (not populated)
+ */
+export interface IBranchResponse {
+    _id: string;
+    id: string; // virtual alias for _id if your backend sends it; keep both for safety
+
+    companyId: string;
     name: string;
     code: string;
-    branchType: NodeType;
-    address: {
-        street: string;
-        city: string;
-        state: string;
-        postalCode?: string;
-    };
+
+    address: IBranchAddress;
+    location: IBranchLocation;
+
     phone: string;
     email: string;
-    status: string;
+
+    operatingHours: Record<WeekDay, IOperatingHours>;
+
     capacityLimit?: number;
     currentLoad: number;
-    parentHubId?: string | null;
-    servesBranches?: string[];
-    companyId: string;
+
+    status: BranchStatus;
+
     createdAt: string;
-    updatedAt: string | null;
+    updatedAt: string;
+
+    // Virtuals
+    isHub: boolean;
+    isFull: boolean;
+    isOpen: boolean;
+    isAvailable: boolean;
+    fullAddress: string;
+    availableCapacity: number;
+
+    branchType: BranchType;
+    parentHubId?: string;
+    servesBranches?: string[];
 }
 
+export interface IBranchDetails {
+    _id: string;
+    id: string;
+
+    companyId: {
+        _id: string;
+        name: string;
+        businessType: string;
+        status: string;
+    };
+
+    name: string;
+    code: string;
+
+    address: IBranchAddress;
+    location: IBranchLocation;
+
+    phone: string;
+    email: string;
+
+    operatingHours: Record<WeekDay, IOperatingHours>;
+
+    capacityLimit?: number;
+    currentLoad: number;
+
+    status: BranchStatus;
+
+    createdAt: string;
+    updatedAt: string;
+
+    // Virtuals
+    isHub: boolean;
+    isFull: boolean;
+    isOpen: boolean;
+    isAvailable: boolean;
+    fullAddress: string;
+    availableCapacity: number;
+
+    branchType: BranchType;
+    parentHubId?: string;
+    servesBranches?: string[];
+}
+
+// ─── Payload types ────────────────────────────────────────────────────────────
 
 export interface ICreateBranchPayload {
     name: string;
     code: string;
-    address: {
-        street: string;
-        city: string;
-        state: string;
-        postalCode?: string;
-    };
-    location: {
-        type: 'Point';
-        coordinates: [number, number];
-    };
+    address: IBranchAddress;
+    location: IBranchLocation;
     phone: string;
     email: string;
-    branchType?: NodeType;
+    operatingHours?: Record<string, IOperatingHours>;
+    capacityLimit?: number;
+    branchType?: BranchType;
     parentHubId?: string;
     servesBranches?: string[];
-    capacityLimit?: number;
-    operatingHours?: Record<string, { open: string; close: string; }>;
 }
 
 export interface IUpdateBranchPayload {
     name?: string;
-    address?: {
-        street?: string;
-        city?: string;
-        state?: string;
-        postalCode?: string;
-    };
-    location?: {
-        type: 'Point';
-        coordinates: [number, number];
-    };
+    address?: Partial<IBranchAddress>;
+    location?: IBranchLocation;
     phone?: string;
     email?: string;
-    branchType?: NodeType;
+    operatingHours?: Record<string, IOperatingHours>;
+    capacityLimit?: number;
+    branchType?: BranchType;
     parentHubId?: string | null;
     servesBranches?: string[];
-    capacityLimit?: number;
-    operatingHours?: Record<string, { open: string; close: string; }>;
-}
-
-export interface IBranchFilter extends IBaseFilter {
-    branchType?: NodeType;
-    search?: string;
-    parentHubId?: string;
-    status?: string;
-}
-
-export interface IBranchDetails {
-    id: string;
-    name: string;
-    type: NodeType;
-    wilayaId: string;
-    wilayaName: string;
-    communeId: string;
-    communeName: string;
-    longitude: number;
-    latitude: number;
-    companyId: string;
-    companyName: string;
-    parentNodeId: string | null;
-    parentNodeName: string | null;
-    coverages: ICoverageCommune[];
-    childNodes: IChildNode[];
-    managerId: string | null;
-    managerName: string | null;
-    vehiclesCount: number;
-    staffCount: number;
-    driverShiftsCount: number;
-    isDeleted: boolean;
-    deletedAt: string | null;
-    createdAt: string;
-    updatedAt: string | null;
-}
-
-export interface ICoverageCommune {
-    wilayaId: string;
-    communeId: string;
-    wilayaName: string;
-    communeName: string;
-}
-
-export interface IChildNode {
-    id: string;
-    name: string;
-    type: NodeType;
 }

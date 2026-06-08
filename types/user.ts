@@ -10,8 +10,8 @@ export interface IUser {
   logisticsNodeId?: string;
   phoneNumber?: string;
   isActive?: boolean;
-
 }
+
 
 export interface IUserSummary {
   id: string;

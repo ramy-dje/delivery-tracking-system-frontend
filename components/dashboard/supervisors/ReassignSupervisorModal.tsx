@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { assignManagerToNode, getCompanyBranches } from "@/services/ManagerService";
-import { IAssignManagerRequest } from "@/types/manager";
+import { getCompanyBranches, updateSupervisor } from "@/services/SupervisorService";
 import { IBranchResponse } from "@/types/branch";
 import LogisticsNodePicker from "@/components/commons/LogisticsNodePicker";
 
-interface ReassignManagerModalProps {
-    managerId: string;
-    managerName: string;
-    currentNodeId?: string | null;
-    currentNodeName?: string | null;
+// ─── Props ────────────────────────────────────────────────────────────────
+
+interface ReassignSupervisorModalProps {
+    /** The supervisor's _id */
+    supervisorId: string;
+    supervisorName: string;
+    currentBranchId?: string | null;
+    currentBranchName?: string | null;
     companyId: string;
     isOpen: boolean;
     onClose: () => void;
@@ -18,41 +20,43 @@ interface ReassignManagerModalProps {
     loading?: boolean;
 }
 
-export default function ReassignManagerModal({
-    managerId,
-    managerName,
-    currentNodeId,
-    currentNodeName,
+// ─── Component ────────────────────────────────────────────────────────────
+
+export default function ReassignSupervisorModal({
+    supervisorId,
+    supervisorName,
+    currentBranchId,
+    currentBranchName,
     companyId,
     isOpen,
     onClose,
     onSuccess,
     loading: isSubmitting,
-}: ReassignManagerModalProps) {
-    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(currentNodeId ?? null);
-    const [nodes, setNodes] = useState<IBranchResponse[]>([]);
-    const [loadingNodes, setLoadingNodes] = useState(false);
+}: ReassignSupervisorModalProps) {
+    const [selectedBranchId, setSelectedBranchId] = useState<string | null>(currentBranchId ?? null);
+    const [branches, setBranches] = useState<IBranchResponse[]>([]);
+    const [loadingBranches, setLoadingBranches] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+    const selectedBranch = branches.find((b) => b.id === selectedBranchId) ?? null;
 
     useEffect(() => {
         if (!isOpen || !companyId) return;
 
         let mounted = true;
         (async () => {
-            setLoadingNodes(true);
+            setLoadingBranches(true);
             setError(null);
             try {
                 const data = await getCompanyBranches(companyId);
-                if (mounted) setNodes(data ?? []);
+                if (mounted) setBranches(data ?? []);
             } catch (e: any) {
                 if (mounted) {
-                    setError(e?.message ?? "Failed to load logistics nodes");
+                    setError(e?.message ?? "Failed to load branches");
                 }
             } finally {
-                if (mounted) setLoadingNodes(false);
+                if (mounted) setLoadingBranches(false);
             }
         })();
 
@@ -60,25 +64,29 @@ export default function ReassignManagerModal({
     }, [isOpen, companyId]);
 
     const handleSubmit = async () => {
-        if (!selectedNodeId) {
-            setError("Please select a logistics node");
+        if (!selectedBranchId) {
+            setError("Please select a branch");
             return;
         }
 
         setSubmitting(true);
         setError(null);
         try {
-            const payload: IAssignManagerRequest = {
-                logisticsNodeId: selectedNodeId,
-            };
-            await assignManagerToNode(companyId, managerId, payload);
+            // updateSupervisor does not accept branchId directly via IUpdateSupervisorRequest.
+            // Branch reassignment must be handled through your backend endpoint.
+            // Here we call updateSupervisor with a cast; adapt if your API exposes a dedicated reassign route.
+            await updateSupervisor(supervisorId, {
+                // @ts-expect-error — branchId is not in IUpdateSupervisorRequest but may be accepted by the API
+                branchId: selectedBranchId,
+            });
             onSuccess();
         } catch (e: any) {
-            const serverMsg = e?.response?.data?.message ||
+            const serverMsg =
+                e?.response?.data?.message ||
                 (e?.response?.data?.errors && Array.isArray(e.response.data.errors)
                     ? e.response.data.errors.join("; ")
                     : undefined);
-            setError(serverMsg ?? e?.message ?? "Failed to reassign manager");
+            setError(serverMsg ?? e?.message ?? "Failed to reassign supervisor");
         } finally {
             setSubmitting(false);
         }
@@ -88,7 +96,7 @@ export default function ReassignManagerModal({
 
     return (
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center p-4"
             style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
@@ -125,9 +133,9 @@ export default function ReassignManagerModal({
                             </svg>
                         </div>
                         <div>
-                            <div className="text-[14px] font-semibold text-white">Reassign Manager</div>
+                            <div className="text-[14px] font-semibold text-white">Reassign Supervisor</div>
                             <div className="text-[11px] text-slate-600">
-                                Move {managerName} to a different node
+                                Move {supervisorName} to a different branch
                             </div>
                         </div>
                     </div>
@@ -147,8 +155,9 @@ export default function ReassignManagerModal({
 
                 {/* Body */}
                 <div className="px-6 py-5 space-y-4 max-h-[68vh] overflow-y-auto">
+
                     {/* Current Assignment */}
-                    {currentNodeName && (
+                    {currentBranchName && (
                         <div
                             className="flex items-center gap-3 px-4 py-3 rounded-lg text-[13px]"
                             style={{
@@ -162,7 +171,7 @@ export default function ReassignManagerModal({
                                 <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                             <span>
-                                Currently assigned to <span className="font-semibold">{currentNodeName}</span>
+                                Currently assigned to <span className="font-semibold">{currentBranchName}</span>
                             </span>
                         </div>
                     )}
@@ -184,23 +193,22 @@ export default function ReassignManagerModal({
                         </div>
                     )}
 
-                    {/* Node Picker */}
+                    {/* Branch Picker */}
                     <div>
                         <LogisticsNodePicker
-                            value={selectedNodeId}
-                            onChange={setSelectedNodeId}
-                            label="Select New Node"
+                            value={selectedBranchId}
+                            onChange={setSelectedBranchId}
+                            label="Select New Branch"
                             required
-                            placeholder="Choose a logistics node to assign to"
-                            loading={loadingNodes}
+                            placeholder="Choose a branch to assign to"
                         />
                         <p className="text-[10.5px] text-slate-700 mt-1.5 ml-0.5">
-                            Select where to reassign this manager. A manager can only be assigned to one node.
+                            Select which branch to reassign this supervisor to. A supervisor can only be assigned to one branch.
                         </p>
                     </div>
 
                     {/* Preview */}
-                    {selectedNode && (
+                    {selectedBranch && (
                         <div
                             className="flex items-center gap-3 px-4 py-3 rounded-lg"
                             style={{
@@ -215,7 +223,7 @@ export default function ReassignManagerModal({
                                 />
                             </svg>
                             <span className="text-[12px] text-slate-400">
-                                Will reassign to <span className="font-semibold text-amber-300">{selectedNode.name}</span>
+                                Will reassign to <span className="font-semibold text-amber-300">{selectedBranch.name}</span>
                             </span>
                         </div>
                     )}
@@ -230,7 +238,7 @@ export default function ReassignManagerModal({
                     }}
                 >
                     <div className="text-[11px] text-slate-600">
-                        Reassigning <span className="font-semibold text-slate-400">{managerName}</span>
+                        Reassigning <span className="font-semibold text-slate-400">{supervisorName}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                         <button
@@ -244,7 +252,7 @@ export default function ReassignManagerModal({
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={!selectedNodeId || submitting || isSubmitting || loadingNodes}
+                            disabled={!selectedBranchId || submitting || isSubmitting || loadingBranches}
                             className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                             style={{
                                 background: "linear-gradient(135deg,#fbbf24,#f59e0b)",

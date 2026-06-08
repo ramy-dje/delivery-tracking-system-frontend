@@ -1,39 +1,66 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getManagerById } from "@/services/ManagerService";
-import { IManagerDetail } from "@/types/manager";
+import { getSupervisorById } from "@/services/SupervisorService";
+import { ISupervisorDetail, IUserData, IBranchData } from "@/types/supervisor";
 
-interface ManagerDetailModalProps {
-    managerId: string;
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+function resolveUserData(userId: string | IUserData): IUserData | null {
+    if (typeof userId === "object" && userId !== null) return userId;
+    return null;
+}
+
+function resolveBranchData(branchId: string | IBranchData): IBranchData | null {
+    if (typeof branchId === "object" && branchId !== null) return branchId;
+    return null;
+}
+
+function formatPermission(perm: string): string {
+    return perm.replace(/^can_/, "").replace(/_/g, " ");
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────
+
+interface SupervisorDetailModalProps {
+    supervisorId: string;
     companyId: string;
+    /** branchId is optional — if omitted the modal resolves it from the supervisor record */
+    branchId?: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
-export default function ManagerDetailModal({
-    managerId,
+// ─── Component ────────────────────────────────────────────────────────────
+
+export default function SupervisorDetailModal({
+    supervisorId,
     companyId,
+    branchId: branchIdProp,
     isOpen,
     onClose,
-}: ManagerDetailModalProps) {
-    const [manager, setManager] = useState<IManagerDetail | null>(null);
+}: SupervisorDetailModalProps) {
+    const [supervisor, setSupervisor] = useState<ISupervisorDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isOpen || !managerId || !companyId) return;
+        if (!isOpen || !supervisorId || !companyId) return;
 
         let mounted = true;
         (async () => {
             setLoading(true);
             setError(null);
             try {
-                const data = await getManagerById(companyId, managerId);
-                if (mounted) setManager(data);
+                // branchIdProp may be undefined — we still call with it; the API endpoint
+                // is GET /manager/companies/:companyId/branches/:branchId/supervisor.
+                // If your backend supports GET by supervisorId directly, swap here.
+                const resolvedBranchId = branchIdProp ?? supervisorId;
+                const res = await getSupervisorById(companyId, resolvedBranchId);
+                if (mounted) setSupervisor(res.data);
             } catch (e: any) {
                 if (mounted) {
-                    setError(e?.message ?? "Failed to load manager details");
+                    setError(e?.message ?? "Failed to load supervisor details");
                 }
             } finally {
                 if (mounted) setLoading(false);
@@ -41,9 +68,16 @@ export default function ManagerDetailModal({
         })();
 
         return () => { mounted = false; };
-    }, [isOpen, managerId, companyId]);
+    }, [isOpen, supervisorId, companyId, branchIdProp]);
 
     if (!isOpen) return null;
+
+    const userData = supervisor ? resolveUserData(supervisor.userId) : null;
+    const branchData = supervisor ? resolveBranchData(supervisor.branchId) : null;
+
+    const fullName = userData
+        ? `${userData.firstName} ${userData.lastName}`.trim()
+        : "—";
 
     return (
         <div
@@ -80,8 +114,8 @@ export default function ManagerDetailModal({
                             </svg>
                         </div>
                         <div>
-                            <div className="text-[14px] font-semibold text-white">Manager Details</div>
-                            <div className="text-[11px] text-slate-600">View manager information</div>
+                            <div className="text-[14px] font-semibold text-white">Supervisor Details</div>
+                            <div className="text-[11px] text-slate-600">View supervisor information</div>
                         </div>
                     </div>
                     <button
@@ -123,7 +157,7 @@ export default function ManagerDetailModal({
                         </div>
                     )}
 
-                    {manager && (
+                    {supervisor && (
                         <div className="space-y-5">
                             {/* Name + Email */}
                             <div className="grid grid-cols-2 gap-4">
@@ -132,7 +166,7 @@ export default function ManagerDetailModal({
                                         Full Name
                                     </label>
                                     <p className="text-[14px] font-semibold text-white mt-1.5">
-                                        {manager.fullName}
+                                        {fullName}
                                     </p>
                                 </div>
                                 <div>
@@ -140,19 +174,19 @@ export default function ManagerDetailModal({
                                         Email
                                     </label>
                                     <p className="text-[14px] font-semibold text-white mt-1.5 truncate">
-                                        {manager.email}
+                                        {userData?.email ?? "—"}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Access Level + Status */}
+                            {/* Phone + Status */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                        Access Level
+                                        Phone
                                     </label>
-                                    <p className="text-[14px] font-semibold text-amber-300 mt-1.5 capitalize">
-                                        {manager.accessLevel ? manager.accessLevel.replace('_', ' ') : 'Unknown'}
+                                    <p className="text-[14px] font-semibold text-white mt-1.5">
+                                        {userData?.phone ?? "—"}
                                     </p>
                                 </div>
                                 <div>
@@ -163,52 +197,81 @@ export default function ManagerDetailModal({
                                         <span
                                             className="w-2 h-2 rounded-full"
                                             style={{
-                                                background: manager.isActive ? "#34d399" : "#475569",
+                                                background: supervisor.isActive ? "#34d399" : "#475569",
                                             }}
                                         />
-                                        <p className="text-[14px] font-semibold" style={{ color: manager.isActive ? "#34d399" : "#475569" }}>
-                                            {manager.isActive ? "Active" : "Inactive"}
+                                        <p className="text-[14px] font-semibold" style={{ color: supervisor.isActive ? "#34d399" : "#475569" }}>
+                                            {supervisor.isActive ? "Active" : "Inactive"}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Branch Access */}
+                            {/* Branch */}
                             <div className="pt-2 border-t border-white/6">
                                 <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                    Branch Access
+                                    Assigned Branch
                                 </label>
-                                <div className="mt-2 space-y-2">
-                                    <p className="text-[14px] font-semibold text-white">
-                                        {manager.branchAccess?.allBranches ? "All Branches" : "Specific Branches Only"}
-                                    </p>
-                                    {!manager.branchAccess?.allBranches && (
-                                        <p className="text-[12px] text-slate-500">
-                                            {manager.branchAccess?.specificBranches?.length || 0} branches assigned
-                                        </p>
-                                    )}
-                                </div>
+                                <p className="text-[14px] font-semibold text-white mt-1.5">
+                                    {branchData?.name ?? (typeof supervisor.branchId === "string" ? supervisor.branchId : "—")}
+                                </p>
+                                {branchData?.code && (
+                                    <p className="text-[11px] text-slate-600 mt-0.5">{branchData.code}</p>
+                                )}
                             </div>
 
-                            {/* Phone Number */}
-                            {manager.phone && (
+                            {/* Permissions */}
+                            <div className="pt-2 border-t border-white/6">
+                                <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
+                                    Permissions ({supervisor.permissions.length})
+                                </label>
+                                {supervisor.permissions.length === 0 ? (
+                                    <p className="text-[13px] text-slate-600 mt-2 italic">No permissions assigned</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {supervisor.permissions.map((perm) => (
+                                            <span
+                                                key={perm}
+                                                className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium capitalize"
+                                                style={{
+                                                    background: "rgba(251,191,36,0.08)",
+                                                    border: "1px solid rgba(251,191,36,0.2)",
+                                                    color: "#fbbf24",
+                                                }}
+                                            >
+                                                {formatPermission(perm)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Work Schedule (if available) */}
+                            {supervisor.formattedSchedule && Object.keys(supervisor.formattedSchedule).length > 0 && (
                                 <div className="pt-2 border-t border-white/6">
                                     <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                        Phone Number
+                                        Work Schedule
                                     </label>
-                                    <p className="text-[14px] font-semibold text-white mt-1.5">
-                                        {manager.phone}
-                                    </p>
+                                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                                        {Object.entries(supervisor.formattedSchedule).map(([day, schedule]) => (
+                                            <div key={day} className="flex items-center justify-between px-2 py-1.5 rounded-lg"
+                                                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}
+                                            >
+                                                <span className="text-[11px] text-slate-500 capitalize">{day.slice(0, 3)}</span>
+                                                <span className="text-[11px] text-slate-300">{schedule}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Manager ID */}
+                            {/* Supervisor ID */}
                             <div className="pt-2 border-t border-white/6">
                                 <label className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                                    Manager ID
+                                    Supervisor ID
                                 </label>
                                 <p className="text-[11px] text-slate-600 font-mono mt-1.5">
-                                    {manager.id}
+                                    {supervisor._id}
                                 </p>
                             </div>
                         </div>
@@ -216,7 +279,7 @@ export default function ManagerDetailModal({
                 </div>
 
                 {/* Footer */}
-                {manager && (
+                {supervisor && (
                     <div
                         className="flex items-center justify-between px-6 py-4 border-t"
                         style={{
@@ -225,7 +288,7 @@ export default function ManagerDetailModal({
                         }}
                     >
                         <div className="text-[11px] text-slate-600">
-                            Role: Manager
+                            Role: Supervisor
                         </div>
                         <div className="flex items-center gap-2.5">
                             <button

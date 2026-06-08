@@ -61,18 +61,8 @@ export default function LoginPage() {
             const data = await loginUser(formData);
             showToast.success("Login Success! 🎉");
             console.log("Login response:", data);
-            const userData = {
-                id: data.user._id,
-                fullName: `${data.user.firstName} ${data.user.lastName}`,
-                email: data.user.email,
-                role: data.user.role,
-                phoneNumber: data.user.phone,
-                isActive: data.user.status === 'active',
-                companyId: data.associated?.companyId,
-                logisticsNodeId: data.associated?.branchId || data.associated?.hubId,
-            };
 
-            login(userData as any, data.accessToken);
+            login(data.user, data.accessToken, data.associated);
             setTimeout(() => {
                 router.push("/dashboard");
             }, 3000);

@@ -1,6 +1,6 @@
 "use client";
 
-import { IManagerResponse } from "@/types/manager";
+import { ISupervisorResponse, IUserData, IBranchData } from "@/types/supervisor";
 import { Eye, Phone, Trash2, User } from "lucide-react";
 import EmptyState from "@/components/commons/EmptyState";
 import { SkeletonList } from "@/components/commons/Skeleton";
@@ -12,26 +12,57 @@ const AMBER = "#fbbf24";
 const AMBER_BG = "rgba(251,191,36,0.09)";
 const AMBER_BD = "rgba(251,191,36,0.22)";
 
-function getInitials(name: string) {
-    return name.split(" ").slice(0, 2).map((n) => n[0]?.toUpperCase() ?? "").join("");
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+function resolveUser(userId: string | IUserData): IUserData | null {
+    return typeof userId === "object" && userId !== null ? userId : null;
 }
+
+function resolveBranch(branchId: string | IBranchData): IBranchData | null {
+    return typeof branchId === "object" && branchId !== null ? branchId : null;
+}
+
+function getFullName(userId: string | IUserData): string {
+    const u = resolveUser(userId);
+    if (!u) return "Unknown";
+    return `${u.firstName} ${u.lastName}`.trim();
+}
+
+function getInitials(userId: string | IUserData): string {
+    const u = resolveUser(userId);
+    if (!u) return "?";
+    return [u.firstName[0], u.lastName[0]]
+        .filter(Boolean)
+        .map((c) => c.toUpperCase())
+        .join("");
+}
+
+function formatPermissionsCount(count: number): string {
+    if (count === 0) return "No permissions";
+    if (count === 1) return "1 permission";
+    return `${count} permissions`;
+}
+
 // ─── Row ─────────────────────────────────────────────────────────────────
 
-function ManagerRow({
-    manager,
+function SupervisorRow({
+    supervisor,
     isLast,
-    onDelete,
+    onToggleStatus,
     onViewDetail,
 }: {
-    manager: IManagerResponse;
+    supervisor: ISupervisorResponse;
     isLast: boolean;
-    onDelete: () => void;
+    onToggleStatus: () => void;
     onViewDetail?: () => void;
 }) {
+    const userData = resolveUser(supervisor.userId);
+    const branchData = resolveBranch(supervisor.branchId);
+    const fullName = getFullName(supervisor.userId);
+
     return (
         <div
-            className={`
-                group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_300px_200px_120px_120px]
+            className={`group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_260px_200px_120px_120px]
                 gap-4 px-5 py-3.5 items-center transition-all duration-150
                 hover:bg-white/[0.018]
                 ${!isLast ? "border-b border-white/4" : ""}
@@ -43,12 +74,17 @@ function ManagerRow({
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-[12px] font-bold shrink-0 transition-transform duration-150 group-hover:scale-[1.06]"
                     style={{ background: AMBER_BG, border: `1px solid ${AMBER_BD}`, color: AMBER }}
                 >
-                    {getInitials(manager.fullName)}
+                    {getInitials(supervisor.userId)}
                 </div>
                 <div className="min-w-0">
                     <div className="text-[13.5px] font-semibold text-slate-100 truncate leading-tight">
-                        {manager.fullName}
+                        {fullName}
                     </div>
+                    {branchData && (
+                        <div className="text-[11px] text-slate-600 truncate mt-0.5">
+                            {branchData.name}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -60,9 +96,9 @@ function ManagerRow({
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 14.92z"
                             stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
-                    {manager.phoneNumber ? (
+                    {userData?.phone ? (
                         <span className="text-[12.5px] font-semibold text-slate-300 truncate">
-                            {manager.phoneNumber}
+                            {userData.phone}
                         </span>
                     ) : (
                         <span className="text-[11px] text-slate-800 italic">No phone</span>
@@ -75,13 +111,15 @@ function ManagerRow({
                             stroke="#64748b" strokeWidth="1.5" />
                         <polyline points="22,6 12,13 2,6" stroke="#64748b" strokeWidth="1.5" />
                     </svg>
-                    <span className="text-[11px] text-slate-600 truncate">{manager.email}</span>
+                    <span className="text-[11px] text-slate-600 truncate">
+                        {userData?.email ?? "—"}
+                    </span>
                 </div>
             </div>
 
-            {/* ── Access Level ────────────────────────────────────────────────── */}
+            {/* ── Permissions ─────────────────────────────────────────── */}
             <div className="hidden md:flex items-center min-w-0">
-                {manager.accessLevel ? (
+                {supervisor.permissions.length > 0 ? (
                     <div
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg min-w-0 max-w-full"
                         style={{
@@ -93,8 +131,8 @@ function ManagerRow({
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
                                 stroke={AMBER} strokeWidth="1.6" strokeLinejoin="round" />
                         </svg>
-                        <span className="text-[12px] font-semibold truncate capitalize" style={{ color: AMBER }}>
-                            {manager.accessLevel.replace('_', ' ')}
+                        <span className="text-[12px] font-semibold truncate" style={{ color: AMBER }}>
+                            {formatPermissionsCount(supervisor.permissions.length)}
                         </span>
                     </div>
                 ) : (
@@ -106,73 +144,69 @@ function ManagerRow({
                             color: "#334155",
                         }}
                     >
-                        Unknown
+                        No permissions
                     </span>
                 )}
             </div>
 
-            {/* Status dot */}
+            {/* ── Status dot ──────────────────────────────────────────── */}
             <div className="hidden md:flex items-center gap-1.5">
                 <span
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{
-                        background: manager.isActive ? "#34d399" : "#475569",
-                        boxShadow: manager.isActive ? "0 0 5px rgba(52,211,153,0.5)" : "none",
+                        background: supervisor.isActive ? "#34d399" : "#475569",
+                        boxShadow: supervisor.isActive ? "0 0 5px rgba(52,211,153,0.5)" : "none",
                     }}
                 />
-                <span className="text-[11px]" style={{ color: manager.isActive ? "#34d399" : "#475569" }}>
-                    {manager.isActive ? "Active" : "Inactive"}
+                <span className="text-[11px]" style={{ color: supervisor.isActive ? "#34d399" : "#475569" }}>
+                    {supervisor.isActive ? "Active" : "Inactive"}
                 </span>
             </div>
 
-            {/* Action buttons */}
+            {/* ── Action buttons ──────────────────────────────────────── */}
             <div className="flex items-center gap-1 opacity-35 group-hover:opacity-100 transition-opacity duration-150">
                 {onViewDetail && (
-
                     <ActionBtn revealOnHover onClick={onViewDetail} title="View Details" variant="slate">
                         <Eye size={13} />
                     </ActionBtn>
                 )}
-                {manager.phoneNumber && (
-
-
+                {userData?.phone && (
                     <ActionBtn
-                        href={`tel:${manager.phoneNumber}`}
-                        title={`Call ${manager.phoneNumber}`}
+                        href={`tel:${userData.phone}`}
+                        title={`Call ${userData.phone}`}
                         variant="sky"
                         revealOnHover
                     >
                         <Phone size={13} />
                     </ActionBtn>
                 )}
-                <ActionBtn revealOnHover onClick={onDelete} title="Remove manager" variant="red">
+                <ActionBtn revealOnHover onClick={onToggleStatus} title="Toggle status" variant="red">
                     <Trash2 size={13} />
                 </ActionBtn>
             </div>
-
         </div>
     );
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────
 
-interface ManagerListProps {
-    managers: IManagerResponse[];
+interface SupervisorListProps {
+    supervisors: ISupervisorResponse[];
     loading?: boolean;
-    onDelete: (m: IManagerResponse) => void;
+    onToggleStatus: (s: ISupervisorResponse) => void;
     onAddClick?: () => void;
-    onViewDetail?: (managerId: string) => void;
+    onViewDetail?: (supervisorId: string) => void;
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────
 
-export default function ManagerList({
-    managers,
+export default function SupervisorList({
+    supervisors,
     loading,
-    onDelete,
+    onToggleStatus,
     onAddClick,
     onViewDetail,
-}: ManagerListProps) {
+}: SupervisorListProps) {
     const tableStyle: React.CSSProperties = {
         background: "#060a10",
         border: "1px solid rgba(255,255,255,0.05)",
@@ -183,14 +217,14 @@ export default function ManagerList({
 
     if (loading) return <div style={tableStyle}><SkeletonList rows={5} /></div>;
 
-    if (managers.length === 0) {
+    if (supervisors.length === 0) {
         return (
             <div style={tableStyle}>
                 <EmptyState
-                    title="No managers yet"
-                    description="Add your first manager and assign them to a logistics node."
+                    title="No supervisors yet"
+                    description="Add your first supervisor and assign them to a branch."
                     icon={User}
-                    actionLabel="+ Add Manager"
+                    actionLabel="+ Add Supervisor"
                     tone="warning"
                     onAction={onAddClick}
                 />
@@ -202,23 +236,23 @@ export default function ManagerList({
         <div className="flex-1 overflow-y-auto" style={tableStyle}>
             {/* Column headers */}
             <div
-                className="hidden md:grid grid-cols-[1fr_300px_200px_120px_120px] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid grid-cols-[1fr_260px_200px_120px_120px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Manager", "Contact", "Access", "Status", "Actions"].map((h, i) => (
+                {["Supervisor", "Contact", "Permissions", "Status", "Actions"].map((h, i) => (
                     <div key={i} className="text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold">
                         {h}
                     </div>
                 ))}
             </div>
 
-            {managers.map((m, idx) => (
-                <ManagerRow
-                    key={m.id}
-                    manager={m}
-                    isLast={idx === managers.length - 1}
-                    onDelete={() => onDelete(m)}
-                    onViewDetail={onViewDetail ? () => onViewDetail(m.id) : undefined}
+            {supervisors.map((s, idx) => (
+                <SupervisorRow
+                    key={s._id}
+                    supervisor={s}
+                    isLast={idx === supervisors.length - 1}
+                    onToggleStatus={() => onToggleStatus(s)}
+                    onViewDetail={onViewDetail ? () => onViewDetail(s._id) : undefined}
                 />
             ))}
         </div>
