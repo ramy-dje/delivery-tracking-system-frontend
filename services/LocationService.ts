@@ -2,8 +2,9 @@ import api from "@/lib/api";
 import { ICommune, ICommuneFilter, IWilaya, IWilayaFilter } from "@/types/common";
 import { IBaseFilter } from "@/types/paginate";
 
-export const getWilayas = async (params?: IWilayaFilter): Promise<IWilaya[]> => {
-    const res = await api.get("/locations/wilayas", { params });
+export const getWilayas = async (): Promise<{ data: IWilaya[], count: number, success: boolean }> => {
+    const res = await api.get("/manager/wilayas");
+    console.log("Fetched wilayas: ", res.data);
     return res.data;
 };
 

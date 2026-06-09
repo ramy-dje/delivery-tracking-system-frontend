@@ -52,7 +52,7 @@ export default function DeliveryFeeList({
     return (
         <div style={tableStyle}>
             <div
-                className="hidden md:grid grid-cols-[200px_1fr_1fr_140px] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid md:grid-cols-[1fr_200px_200px_140px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
                 {["Wilaya Pair", "Stopdesk Price", "Domicile Price", "Actions"].map((h, i) => (
@@ -63,7 +63,7 @@ export default function DeliveryFeeList({
             </div>
             {fees.map((fee, idx) => (
                 <DeliveryFeeRow
-                    key={`${fee.wilayaA}-${fee.wilayaB}`}
+                    key={`${fee.from.id}-${fee.to.id}`}
                     fee={fee}
                     isLast={idx === fees.length - 1}
                     onViewDetail={onViewDetail ? () => onViewDetail(fee) : undefined}

@@ -1,47 +1,30 @@
 "use client";
-import RoleGuard from "@/lib/RoleGuard";
-import { ROLES } from "@/lib/roles";
-import OwnerDashboard from "@/components/dashboard/OwnerDashboard";
-import ManagerDashboard from "@/components/dashboard/ManagerDashboard";
+
+
+import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDashboard";
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
-import AdminDashboard from "@/components/dashboard/AdminDashboard";
+import { ROLES } from "@/lib/roles";
 import userStore from "@/stores/userStore";
 
-export default function OverviewPage() {
+
+
+export default function DashboardPage() {
   const { user } = userStore();
-  const role = user?.role;
+  const role = user?.role?.toUpperCase();
+  console.log("User role:", role);
+
+  if (role === "MANAGER") return <ManagerOverviewDashboard />;
+  if (role === "CACHIER") return <ReceptionistDashboard />;
 
   return (
-    <RoleGuard allowedRoles={[ROLES.ADMIN, ROLES.OWNER, ROLES.MANAGER, ROLES.RECEPTIONIST]}>
-      <div className="p-4 h-full overflow-y-auto">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-white">Overview</h1>
-          <p className="text-sm text-slate-400">High-level operational overview and quick stats.</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          {role === ROLES.ADMIN && (
-            <div className="rounded-lg border border-white/6 p-4">
-              <AdminDashboard />
-            </div>
-          )}
-          {role === ROLES.MANAGER && (
-            <div className="rounded-lg border border-white/6 p-4">
-              <ManagerDashboard />
-            </div>
-          )}
-          {role === ROLES.OWNER && (
-            <div className="rounded-lg border border-white/6 p-4">
-              <OwnerDashboard />
-            </div>
-          )}
-          {role === ROLES.RECEPTIONIST && (
-            <div className="rounded-lg border border-white/6 p-4">
-              <ReceptionistDashboard />
-            </div>
-          )}
-        </div>
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center space-y-2">
+        <p className="text-slate-400 text-sm">
+          No dashboard for role:{" "}
+          <span className="text-white font-mono">{user?.role ?? "unknown"}</span>
+        </p>
+        <p className="text-slate-600 text-xs">Contact your administrator.</p>
       </div>
-    </RoleGuard>
+    </div>
   );
 }

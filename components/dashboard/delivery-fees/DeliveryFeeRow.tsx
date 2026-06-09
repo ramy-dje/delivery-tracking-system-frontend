@@ -22,7 +22,7 @@ const DeliveryFeeRow = ({
     return (
         <div
             className={`
-                group grid grid-cols-[1fr_auto] md:grid-cols-[200px_1fr_1fr_140px]
+                group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_200px_200px_140px]
                 gap-4 px-5 py-4 items-center transition-all duration-150
                 hover:bg-white/2.5
                 ${!isLast ? "border-b border-white/4" : ""}
@@ -38,9 +38,9 @@ const DeliveryFeeRow = ({
                 </div>
                 <div className="min-w-0">
                     <div className="text-[13.5px] font-semibold text-slate-100 truncate leading-tight">
-                        {fee.wilayaAName}
+                        {fee.from.name}
                         <span className="mx-1.5 text-slate-700">↔</span>
-                        {fee.wilayaBName}
+                        {fee.to.name}
                     </div>
                 </div>
             </div>
@@ -54,7 +54,7 @@ const DeliveryFeeRow = ({
 
             {/* Domicile Price */}
             <div className="hidden md:flex flex-col gap-1 min-w-0">
-                 <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
                     <span className="text-[13.5px] font-semibold text-emerald-400">{formatFee(fee.domicile)}</span>
                 </div>
             </div>

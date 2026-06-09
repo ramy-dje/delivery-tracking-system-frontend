@@ -3,7 +3,8 @@ import { Role } from "@/lib/roles";
 
 export interface IUser {
   id: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: Role;
   companyId?: string;
@@ -15,7 +16,8 @@ export interface IUser {
 
 export interface IUserSummary {
   id: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
 }

@@ -5,13 +5,37 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import userStore from "@/stores/userStore";
 import { ROLES } from "@/lib/roles";
-import { Building2, DollarSign, Droplet, FileLineChartIcon, KeySquare, LayoutDashboard, Package, PenLine, Truck, User, UserCog } from "lucide-react";
+import { Award, Bell, Building2, DollarSign, Droplet, FileLineChartIcon, KeySquare, LayoutDashboard, Package, PenLine, Truck, User, UserCog } from "lucide-react";
 import Image from "next/image";
 
 const NAV_GROUPS = [
     {
         label: "Main",
         routes: [
+            {
+                path: "/dashboard/overview",
+                label: "Overview",
+                icon: (
+                    <LayoutDashboard size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
+            },
+            {
+                path: "/dashboard/analytics",
+                label: "Analytics",
+                icon: (
+                    <FileLineChartIcon size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+            },
+            {
+                path: "/dashboard/performance",
+                label: "Performance",
+                icon: (
+                    <Award size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+            },
             {
                 path: "/dashboard/branches",
                 label: "Branches",
@@ -109,36 +133,12 @@ const NAV_GROUPS = [
                 allowed: [ROLES.SUPERVISOR],
             },
             {
-                path: "/dashboard/freelancers",
-                label: "Freelancers",
-                icon: (
-                    <User size={14} />
-                ),
-                allowed: [ROLES.MANAGER, ROLES.SUPERVISOR],
-            },
-            {
                 path: "/dashboard/bulk-import",
                 label: "Bulk Import",
                 icon: (
                     <FileLineChartIcon size={14} />
                 ),
                 allowed: [ROLES.MERCHANT],
-            },
-            {
-                path: "/dashboard/overview",
-                label: "Overview",
-                icon: (
-                    <LayoutDashboard size={14} />
-                ),
-                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
-            },
-            {
-                path: "/dashboard/routes",
-                label: "Routes",
-                icon: (
-                    <FileLineChartIcon size={14} />
-                ),
-                allowed: [ROLES.MANAGER, ROLES.ADMIN, ROLES.RECEPTIONIST],
             },
             {
                 path: "/dashboard/company",
@@ -149,6 +149,16 @@ const NAV_GROUPS = [
                 allowed: [ROLES.MANAGER, ROLES.ADMIN],
             },
         ],
+    }, {
+        label: "Settings",
+        routes: [{
+            path: "/dashboard/notifications",
+            label: "Notifications",
+            icon: (
+                <Bell size={14} />
+            ),
+            allowed: [ROLES.MANAGER],
+        },],
     }];
 
 export default function Sidebar() {
@@ -157,7 +167,7 @@ export default function Sidebar() {
     const role = user?.role ?? "";
     const [collapsed, setCollapsed] = useState(false);
 
-    const initials = user?.fullName
+    const initials = (user?.firstName + " " + user?.lastName)
         ?.split(" ")
         .map((n: string) => n[0])
         .slice(0, 2)
@@ -168,7 +178,7 @@ export default function Sidebar() {
         <aside
             className={`
                 hidden md:flex flex-col
-                bg-background-surface border border-white/10
+                bg-background-surface
                 rounded-lg
                 transition-all duration-300 ease-in-out
                 ${collapsed ? "w-16" : "w-55"}
@@ -251,7 +261,7 @@ export default function Sidebar() {
                         {initials}
                     </div>
                     <div className="overflow-hidden">
-                        <div className="text-[13px] font-medium text-slate-200 truncate">{user?.fullName ?? "Guest"}</div>
+                        <div className="text-[13px] font-medium text-slate-200 truncate">{user?.firstName + " " + user?.lastName}</div>
                         <div className="text-[10px] text-slate-500 font-mono">{role}</div>
                     </div>
                 </div>

@@ -1,6 +1,4 @@
 import React from "react";
-import RoleGuard from "@/lib/RoleGuard";
-import { ROLES } from "@/lib/roles";
 import TopNav from "@/components/dashboard/TopNav";
 import Sidebar from "@/components/dashboard/sidebar";
 
@@ -9,22 +7,27 @@ export const metadata = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    // Roles allowed to access the dashboard (exclude mobile-only roles)
-
-
     return (
-        /*role guard removedd now for easy work <RoleGuard allowedRoles={allowed}>*/
-        <div className="h-dvh overflow-hidden p-3 bg-[#020816] text-white selection:bg-amber-500/30">
-            <div className="w-full h-full flex flex-col gap-3">
+        <div className="h-dvh overflow-hidden bg-[#020816] text-white p-3">
+
+            {/* TOP NAV */}
+            <div className="h-15">
                 <TopNav />
+            </div>
 
-                <div className="flex-1 min-h-0 flex flex-col gap-3 md:flex-row">
+            {/* BODY */}
+            <div className="h-[calc(100dvh-74px)] flex gap-3 py-3">
+
+                {/* SIDEBAR */}
+                <aside className="w-fit h-full rounded-lg border border-white/10 bg-background-surface">
                     <Sidebar />
+                </aside>
 
-                    <main className="w-full min-h-0 h-full p-3 border border-white/10 rounded-lg bg-background-surface">
-                        {children}
-                    </main>
-                </div>
+                {/* MAIN */}
+                <main className="flex-1 h-full overflow-y-auto rounded-lg border border-white/10 bg-background-surface p-3">
+                    {children}
+                </main>
+
             </div>
         </div>
     );
