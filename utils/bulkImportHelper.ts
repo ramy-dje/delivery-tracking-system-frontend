@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { IBulkShipmentRow } from "@/types/bulk";
-import { DeliveryType } from "@/types/shipment";
+import { DeliveryType, PackageType, ICreatePackageBody } from "@/types/shipment";
 
 // ─── Column aliases ───────────────────────────────────────────────────────────
 
@@ -11,18 +11,37 @@ const COLUMN_MAP: Record<string, keyof IBulkShipmentRow> = {
     "phone": "customerPhone",
     "phone number": "customerPhone",
     "customer phone": "customerPhone",
+    "alternative phone": "alternativePhone",
+    "alt phone": "alternativePhone",
     "commune": "communeRaw",
     "commune id": "communeId",
+    "city": "communeRaw",
     "wilaya": "wilayaRaw",
+    "state": "wilayaRaw",
+    "address": "address",
+    "street": "address",
+    "postal code": "postalCode",
+    "delivery notes": "deliveryNotes",
+    "notes": "deliveryNotes",
     "cod": "codAmount",
     "cod amount": "codAmount",
     "amount": "codAmount",
+    "total price": "codAmount",
     "description": "description",
     "product": "description",
     "weight": "weightKg",
     "weight kg": "weightKg",
     "delivery type": "deliveryType",
     "type": "deliveryType",
+    "delivery priority": "deliveryPriority",
+    "priority": "deliveryPriority",
+    "package type": "packageType",
+    "fragile": "isFragile",
+    "declared value": "declaredValue",
+    "insurance": "declaredValue",
+    "payment method": "paymentMethod",
+    "estimated delivery": "estimatedDeliveryTime",
+    "destination branch": "destinationBranchId",
 };
 
 // ─── Template ─────────────────────────────────────────────────────────────────
@@ -30,23 +49,45 @@ const COLUMN_MAP: Record<string, keyof IBulkShipmentRow> = {
 export const TEMPLATE_COLUMNS = [
     "Full Name",
     "Phone Number",
-    "Commune",
-    "Wilaya",
-    "COD Amount",
+    "Alternative Phone",
+    "Address",
+    "City/Commune",
+    "State/Wilaya",
+    "Postal Code",
+    "Delivery Notes",
+    "COD Amount (DZD)",
     "Description",
-    "Weight Kg",
+    "Weight (kg)",
+    "Package Type",
+    "Fragile (yes/no)",
+    "Declared Value (DZD)",
     "Delivery Type",
+    "Delivery Priority",
+    "Payment Method",
+    "Destination Branch ID (for branch pickup)",
+    "Estimated Delivery Time (YYYY-MM-DD HH:MM)",
 ];
 
 export const TEMPLATE_EXAMPLE_ROW = [
     "Ahmed Bensalem",
     "0555123456",
+    "0555987654",
+    "12 Rue Didouche Mourad",
     "Alger Centre",
     "Alger",
+    "16000",
+    "Call before delivery",
     "2500",
     "Smartphone",
     "0.5",
+    "electronic",
+    "yes",
+    "5000",
     "home",
+    "express",
+    "cod",
+    "",
+    "2024-12-25 14:00",
 ];
 
 export function downloadTemplate() {
@@ -84,25 +125,24 @@ export async function parseBulkFile(file: File): Promise<Record<string, string>[
 // ─── Validate rows ────────────────────────────────────────────────────────────
 
 const PHONE_RE = /^0[5-7]\d{8}$/;
-
-function normalizeKey(raw: string): keyof IBulkShipmentRow | null {
-    return COLUMN_MAP[raw.toLowerCase().trim()] ?? null;
-}
-
-function parseBool(val: string): boolean {
-    return ["true", "yes", "1", "oui"].includes(val.toLowerCase().trim());
-}
-
+const PACKAGE_TYPES: PackageType[] = ["document", "parcel", "fragile", "heavy", "perishable", "electronic", "clothing"];
 const DELIVERY_TYPE_MAP: Record<string, DeliveryType> = {
     "home": "home",
     "domicile": "home",
     "branch_pickup": "branch_pickup",
     "relais": "branch_pickup",
     "stopdesk": "branch_pickup",
-    "locker": "locker"
 };
+const DELIVERY_PRIORITIES = ["standard", "express", "same_day"];
+const PAYMENT_METHODS = ["cash", "card", "cod", "wallet", "bank_transfer", "branch_payment"];
 
-const DELIVERY_TYPE_VALUES = ["home", "branch_pickup", "locker"];
+function normalizeKey(raw: string): keyof IBulkShipmentRow | null {
+    return COLUMN_MAP[raw.toLowerCase().trim()] ?? null;
+}
+
+function parseBool(val: string): boolean {
+    return ["true", "yes", "1", "oui", "y"].includes(val.toLowerCase().trim());
+}
 
 export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRow[] {
     return raw.map((rawRow, idx) => {
@@ -114,6 +154,7 @@ export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRo
 
         const errors: string[] = [];
 
+        // Recipient info
         const customerFullName = (norm.customerFullName as string | undefined)?.trim() ?? "";
         if (!customerFullName) errors.push("Full name is required");
 
@@ -122,18 +163,31 @@ export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRo
         else if (!PHONE_RE.test(customerPhone))
             errors.push("Phone must be a valid Algerian number (e.g. 0555123456)");
 
+        const alternativePhone = (norm.alternativePhone as string | undefined)?.trim() ?? "";
+        if (alternativePhone && !PHONE_RE.test(alternativePhone))
+            errors.push("Alternative phone must be a valid Algerian number");
+
+        // Address info
+        const address = (norm.address as string | undefined)?.trim() ?? "";
+        if (!address) errors.push("Address is required");
+
         const communeRaw = (norm.communeRaw as string | undefined)?.trim() ?? "";
-        if (!communeRaw) errors.push("Commune is required");
+        if (!communeRaw) errors.push("City/Commune is required");
 
         const wilayaRaw = (norm.wilayaRaw as string | undefined)?.trim() ?? "";
-        if (!wilayaRaw) errors.push("Wilaya is required");
+        if (!wilayaRaw) errors.push("State/Wilaya is required");
 
+        const postalCode = (norm.postalCode as string | undefined)?.trim() ?? "";
+        const deliveryNotes = (norm.deliveryNotes as string | undefined)?.trim() ?? "";
+
+        // Pricing
         const codRaw = (norm.codAmount as string | undefined)?.trim() ?? "";
         const codAmount = parseFloat(codRaw);
         if (!codRaw) errors.push("COD amount is required");
         else if (isNaN(codAmount) || codAmount < 0)
             errors.push("COD amount must be a positive number");
 
+        // Package details
         const description = (norm.description as string | undefined)?.trim() ?? "";
 
         const weightRaw = (norm.weightKg as string | undefined)?.trim() ?? "";
@@ -142,24 +196,63 @@ export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRo
         else if (isNaN(weightKg) || weightKg <= 0)
             errors.push("Weight must be a positive number");
 
+        const packageType = ((norm.packageType as string | undefined) ?? "parcel").toLowerCase().trim();
+        if (!PACKAGE_TYPES.includes(packageType as PackageType)) {
+            errors.push(`Package type "${packageType}" is invalid. Use: ${PACKAGE_TYPES.join(", ")}`);
+        }
+
+        const isFragile = parseBool((norm.isFragile as string) ?? "false");
+
+        const declaredValueRaw = (norm.declaredValue as string | undefined)?.trim() ?? "";
+        const declaredValue = declaredValueRaw ? parseFloat(declaredValueRaw) : undefined;
+        if (declaredValueRaw && (isNaN(declaredValue) || declaredValue < 0))
+            errors.push("Declared value must be a positive number");
+
+        // Delivery options
         const dtRaw = ((norm.deliveryType as string | undefined) ?? "home").toLowerCase().trim();
         const deliveryType = DELIVERY_TYPE_MAP[dtRaw] ?? "home";
         if (!DELIVERY_TYPE_MAP[dtRaw]) {
-            errors.push(
-                `Delivery type "${dtRaw}" is invalid. Use: ${DELIVERY_TYPE_VALUES.join(", ")}`
-            );
+            errors.push(`Delivery type "${dtRaw}" is invalid. Use: home, branch_pickup`);
         }
+
+        const deliveryPriority = ((norm.deliveryPriority as string | undefined) ?? "standard").toLowerCase().trim();
+        if (!DELIVERY_PRIORITIES.includes(deliveryPriority)) {
+            errors.push(`Delivery priority "${deliveryPriority}" is invalid. Use: standard, express, same_day`);
+        }
+
+        const paymentMethod = ((norm.paymentMethod as string | undefined) ?? "").toLowerCase().trim();
+        if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod)) {
+            errors.push(`Payment method "${paymentMethod}" is invalid. Use: cash, card, cod, wallet, bank_transfer, branch_payment`);
+        }
+
+        const destinationBranchId = (norm.destinationBranchId as string | undefined)?.trim() ?? "";
+        if (deliveryType === "branch_pickup" && !destinationBranchId) {
+            errors.push("Destination branch ID is required for branch_pickup delivery type");
+        }
+
+        const estimatedDeliveryTime = (norm.estimatedDeliveryTime as string | undefined)?.trim() ?? "";
 
         return {
             customerFullName,
             customerPhone,
-            communeId: "",          // filled by resolveCommuneIds()
+            alternativePhone,
+            address,
             communeRaw,
             wilayaRaw,
+            postalCode,
+            deliveryNotes,
+            communeId: "",
             codAmount: isNaN(codAmount) ? 0 : codAmount,
             description,
             weightKg: isNaN(weightKg) ? 0 : weightKg,
+            packageType: packageType as PackageType,
+            isFragile,
+            declaredValue: isNaN(declaredValue) ? undefined : declaredValue,
             deliveryType,
+            deliveryPriority: deliveryPriority as "standard" | "express" | "same_day",
+            paymentMethod: paymentMethod || undefined,
+            destinationBranchId: destinationBranchId || undefined,
+            estimatedDeliveryTime: estimatedDeliveryTime || undefined,
             _rowIndex: idx + 2,
             _valid: errors.length === 0,
             _errors: errors,
@@ -168,28 +261,16 @@ export function validateBulkRows(raw: Record<string, string>[]): IBulkShipmentRo
 }
 
 // ─── Commune normalisation ────────────────────────────────────────────────────
-// Strips accents, lowercases, collapses spaces/hyphens/underscores so that
-// "Alger-Centre", "alger center", "Alger centre" all become "alger centre".
 
 function normalizeCommune(name: string): string {
     return name
-        .normalize("NFD")                          // decompose accented chars
-        .replace(/[\u0300-\u036f]/g, "")          // strip accent marks
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
-        .replace(/[-_]+/g, " ")                    // hyphens/underscores → space
-        .replace(/\s+/g, " ")                      // collapse whitespace
+        .replace(/[-_]+/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
 }
-
-// ─── Commune resolution ───────────────────────────────────────────────────────
-// Fetches all available communes once, builds a normalised lookup map, then
-// matches each row's communeRaw against it (with optional wilaya scoping).
-//
-// listDisponibleCommunes returns an array like:
-//   { id: string; name: string; wilayaName?: string }[]
-//
-// If the commune name alone is ambiguous (same name in multiple wilayas) we
-// try to narrow by wilayaRaw before falling back to the first match.
 
 export interface ICommuneOption {
     id: string;
@@ -201,12 +282,10 @@ export async function resolveCommuneIds(
     rows: IBulkShipmentRow[],
     listDisponibleCommunes: () => Promise<ICommuneOption[]>,
 ): Promise<IBulkShipmentRow[]> {
-    // Fetch the full list once.
     let communes: ICommuneOption[] = [];
     try {
         communes = await listDisponibleCommunes();
     } catch {
-        // If the fetch fails, mark every previously-valid row as unresolvable.
         return rows.map((row) => {
             if (!row._valid || !row.communeRaw) return row;
             return {
@@ -217,8 +296,6 @@ export async function resolveCommuneIds(
         });
     }
 
-    // Build a normalised map: normalisedName → matching communes.
-    // We keep an array per key so we can handle duplicates across wilayas.
     const index = new Map<string, ICommuneOption[]>();
     for (const c of communes) {
         const key = normalizeCommune(c.name);
@@ -227,7 +304,6 @@ export async function resolveCommuneIds(
     }
 
     return rows.map((row) => {
-        // Skip rows that already failed validation or have no commune text.
         if (!row._valid || !row.communeRaw) return row;
 
         const normInput = normalizeCommune(row.communeRaw);
@@ -244,12 +320,10 @@ export async function resolveCommuneIds(
             };
         }
 
-        // If there's exactly one match, use it immediately.
         if (candidates.length === 1) {
             return { ...row, communeId: candidates[0].id };
         }
 
-        // Multiple wilayas share this commune name — try to narrow by wilayaRaw.
         if (row.wilayaRaw) {
             const normWilaya = normalizeCommune(row.wilayaRaw);
             const scoped = candidates.find(
@@ -258,25 +332,46 @@ export async function resolveCommuneIds(
             if (scoped) return { ...row, communeId: scoped.id };
         }
 
-        // Fall back to the first match and accept it (ambiguous but best effort).
         return { ...row, communeId: candidates[0].id };
     });
 }
 
-// ─── Build ICreateShipment payload ───────────────────────────────────────────
+// ─── Build ICreatePackageBody payload ─────────────────────────────────────────
 
-export function rowToPayload(row: IBulkShipmentRow) {
-    return {
+export function rowToPayload(row: IBulkShipmentRow): ICreatePackageBody {
+    const payload: ICreatePackageBody = {
         recipientName: row.customerFullName,
         recipientPhone: row.customerPhone,
-        recipientAddress: row.communeRaw, // default to commune
+        alternativePhone: row.alternativePhone || undefined,
+        recipientAddress: row.address,
         recipientCity: row.communeRaw,
         recipientState: row.wilayaRaw,
-        totalPrice: row.codAmount,
+        recipientPostalCode: row.postalCode || undefined,
+        deliveryNotes: row.deliveryNotes || undefined,
+
         weight: row.weightKg,
+        isFragile: row.isFragile,
+        type: row.packageType,
         description: row.description || undefined,
+        declaredValue: row.declaredValue,
+
         deliveryType: row.deliveryType,
+        deliveryPriority: row.deliveryPriority,
+        destinationBranchId: row.destinationBranchId,
+
+        totalPrice: row.codAmount,
+        paymentMethod: row.paymentMethod,
+
+        estimatedDeliveryTime: row.estimatedDeliveryTime,
+        originBranchId: "", // Will be set by the API or ignored for freelancer
     };
+
+    // Add dimensions if provided (you can add this to the template if needed)
+    if (row.dimensions) {
+        payload.dimensions = row.dimensions;
+    }
+
+    return payload;
 }
 
 // ─── Error report export ──────────────────────────────────────────────────────
@@ -289,7 +384,7 @@ export function downloadErrorReport(rows: IBulkShipmentRow[]) {
         "Row #": r._rowIndex,
         "Full Name": r.customerFullName,
         "Phone": r.customerPhone,
-        "Commune": r.communeRaw,
+        "City": r.communeRaw,
         "Errors": r._errors.join("; "),
     }));
 

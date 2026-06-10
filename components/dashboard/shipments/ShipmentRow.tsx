@@ -13,9 +13,10 @@ const SWAPPABLE_STATUSES = new Set([
     'failed_delivery',
 ]);
 
-const CANCELLABLE_STATUSES = new Set([
-    'pending',
-]);
+// Supervisor: only pending
+// Freelancer (MERCHANT role): pending, accepted, at_origin_branch — mirrors backend FREELANCER_CANCELLABLE_STATUSES
+const SUPERVISOR_CANCELLABLE_STATUSES = new Set(['pending']);
+const FREELANCER_CANCELLABLE_STATUSES = new Set(['pending', 'accepted', 'at_origin_branch']);
 
 interface ShipmentRowProps {
     shipment: IPackage;
@@ -50,7 +51,10 @@ export default function ShipmentRow({
     ].includes(shipment.status);
 
     const canSwap = onSwaplClick && SWAPPABLE_STATUSES.has(shipment.status);
-    const canCancel = onCancelClick && CANCELLABLE_STATUSES.has(shipment.status);
+    const cancellableSet = userRole === ROLES.MERCHANT
+        ? FREELANCER_CANCELLABLE_STATUSES
+        : SUPERVISOR_CANCELLABLE_STATUSES;
+    const canCancel = onCancelClick && cancellableSet.has(shipment.status);
 
     return (
         <div

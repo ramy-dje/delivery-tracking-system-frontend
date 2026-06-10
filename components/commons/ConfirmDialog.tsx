@@ -10,6 +10,8 @@ interface ConfirmDialogProps {
     loading?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
+    /** Optional extra content rendered below the message (e.g. a reason input) */
+    extra?: React.ReactNode;
 }
 
 export default function ConfirmDialog({
@@ -20,6 +22,7 @@ export default function ConfirmDialog({
     loading = false,
     onConfirm,
     onCancel,
+    extra,
 }: ConfirmDialogProps) {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
@@ -50,6 +53,7 @@ export default function ConfirmDialog({
                     </div>
                     <h3 className="font-display text-[15px] font-bold text-white mb-2">{title}</h3>
                     <p className="text-[13px] text-slate-400 leading-relaxed">{message}</p>
+                    {extra && <div className="mt-3">{extra}</div>}
                 </div>
                 <div className="px-6 pb-6 flex gap-3">
                     <button

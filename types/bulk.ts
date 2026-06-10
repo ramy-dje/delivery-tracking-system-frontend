@@ -1,21 +1,37 @@
 import { DeliveryType } from "@/types/deliveryFee";
-import { IShipmentDetail } from "./shipment";
+import { IShipmentDetail, PackageType } from "./shipment";
 
 export interface IBulkShipmentRow {
-    // Customer fields
+    // Recipient info
     customerFullName: string;
     customerPhone: string;
-    communeId: string;          // resolved from commune name lookup
-    communeRaw: string;         // original text from CSV, shown in UI
-    wilayaRaw: string;          // original text from CSV, shown in UI
+    alternativePhone?: string;
+    address: string;
+    communeRaw: string;
+    wilayaRaw: string;
+    postalCode?: string;
+    deliveryNotes?: string;
 
-    // Shipment fields
+    // Package details
     codAmount: number;
-    description: string;
+    description?: string;
     weightKg: number;
-    deliveryType: DeliveryType;
+    packageType: PackageType;
+    isFragile: boolean;
+    declaredValue?: number;
 
-    // Validation meta
+    // Delivery options
+    deliveryType: DeliveryType;
+    deliveryPriority: 'standard' | 'express' | 'same_day';
+    paymentMethod?: string;
+    destinationBranchId?: string;
+    estimatedDeliveryTime?: string;
+
+    // Internal fields
+    communeId: string;
+    dimensions?: { length: number; width: number; height: number };
+
+    // Validation fields
     _rowIndex: number;
     _valid: boolean;
     _errors: string[];

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { IPackage } from "@/types/shipment";
 import { Package, Phone, MapPin, Clock, CheckCircle, AlertCircle, RotateCcw, Weight, DollarSign } from "lucide-react";
-import { getShipmentById } from "@/services/ShipmentService";
+import { getShipmentById, trackFreelancerPackage } from "@/services/ShipmentService";
 import { GlassStatCard } from "@/components/commons/GlassStatCard";
 import GlassEffectCard from "@/components/commons/GlassEffectCard";
 import LoadingSpinner from "@/components/commons/LoadingSpinner";
@@ -10,7 +10,8 @@ import ErrorBaner from "@/components/commons/ErrorBaner";
 import { format } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
 import { GlassHero } from "@/components/commons/GlassHero";
-import { getNodeId } from "@/hooks/useAuth";
+import { getNodeId, getUserRole } from "@/hooks/useAuth";
+import { ROLES } from "@/lib/roles";
 
 interface ShipmentDetailModalProps {
     shipmentId: string;
@@ -20,22 +21,34 @@ interface ShipmentDetailModalProps {
 
 export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: ShipmentDetailModalProps) {
     const hubId = getNodeId() ?? "";
+    const userRole = getUserRole();
+    const isFreelancer = userRole === ROLES.MERCHANT; // or 'freelancer' depending on your role constant
+    
     const [shipment, setShipment] = useState<IPackage | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isOpen || !shipmentId || !hubId) return;
+        if (!isOpen || !shipmentId) return;
         let active = true;
 
         const fetchShipment = async () => {
             setLoading(true);
             setError(null);
             try {
-                const res = await getShipmentById(hubId, shipmentId);
+                let res;
+                if (isFreelancer) {
+                    // For freelancer: use track endpoint which doesn't need branchId
+                    const trackingData = await trackFreelancerPackage(shipmentId);
+                    res = { data: trackingData.package };
+                } else {
+                    // For supervisor/receptionist: need branchId
+                    if (!hubId) throw new Error("Branch ID not found");
+                    res = await getShipmentById(hubId, shipmentId);
+                }
                 if (active) setShipment(res.data);
             } catch (e: any) {
-                if (active) setError(e?.message ?? "Failed to load shipment details");
+                if (active) setError(e?.response?.data?.message || e?.message || "Failed to load shipment details");
             } finally {
                 if (active) setLoading(false);
             }
@@ -43,7 +56,7 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
 
         fetchShipment();
         return () => { active = false; };
-    }, [isOpen, shipmentId, hubId]);
+    }, [isOpen, shipmentId, hubId, isFreelancer]);
 
     const items = [
         {
@@ -130,6 +143,22 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
                     <div className="grid grid-cols-2 gap-2.5">
                         <GlassStatCard icon={<Package size={11} />} label="Total Price" value={`${shipment.totalPrice.toFixed(2)} DA`} accentColor="cyan" />
                         <GlassStatCard icon={<Weight size={11} />} label="Weight" value={`${shipment.weight} kg`} accentColor="violet" />
+                    </div>
+
+                    {/* Delivery Type & Priority */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <GlassStatCard 
+                            icon={<MapPin size={11} />} 
+                            label="Delivery Type" 
+                            value={shipment.deliveryType === 'home' ? 'Home Delivery' : 'Branch Pickup'} 
+                            accentColor="cyan" 
+                        />
+                        <GlassStatCard 
+                            icon={<Clock size={11} />} 
+                            label="Priority" 
+                            value={shipment.deliveryPriority || 'Standard'} 
+                            accentColor="violet" 
+                        />
                     </div>
 
                     {/* Issues/RTO Info */}

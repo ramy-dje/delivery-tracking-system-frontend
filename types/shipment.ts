@@ -215,6 +215,7 @@ export interface IPackageHistoryResponse {
 
 // ── Request payloads ──────────────────────────────────────────────────────────
 
+// Update ICreatePackageBody in shipment.ts
 export interface ICreatePackageBody {
   recipientName: string;
   recipientPhone: string;
@@ -222,19 +223,33 @@ export interface ICreatePackageBody {
   recipientAddress: string;
   recipientCity: string;
   recipientState: string;
+  recipientPostalCode?: string;
+  deliveryNotes?: string;
 
+  // Home delivery GPS coordinates
+  deliveryLat?: number;
+  deliveryLon?: number;
+
+  // Package details
   weight: number;
+  dimensions?: { length: number; width: number; height: number };
   isFragile?: boolean;
-  type?: PackageType;
+  type: PackageType;
   description?: string;
   declaredValue?: number;
 
-  originBranchId: string;
-  destinationBranchId?: string;
-
-  deliveryType?: DeliveryType;
+  // Delivery options
+  deliveryType: DeliveryType;
   deliveryPriority?: 'standard' | 'express' | 'same_day';
+  destinationBranchId?: string; // Required for branch_pickup
+
+  // Pricing
   totalPrice: number;
+  paymentMethod?: PaymentMethod;
+
+  // Optional
+  estimatedDeliveryTime?: string;
+  originBranchId: string; // Added for the API
 }
 
 export interface ISwapRequest {

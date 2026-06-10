@@ -48,7 +48,7 @@ export default function LoginPage() {
         // Basic Validation
         const newErrors: Record<string, string> = {};
         if (!formData.email.includes("@")) newErrors.email = "Invalid email address";
-        if (formData.password.length < 8) newErrors.password = "Min 8 characters";
+        if (formData.password.length < 6) newErrors.password = "Min 6 characters";
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);

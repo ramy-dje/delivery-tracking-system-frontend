@@ -10,7 +10,7 @@ import {
     ICommuneOption,
 } from "@/utils/bulkImportHelper";
 import { IBulkShipmentRow, IBulkImportResult } from "@/types/bulk";
-import { createBulkShipments } from "@/services/ShipmentService";
+import { createBulkShipments, createFreelancerShipment } from "@/services/ShipmentService";
 import { listDisponibleCommunes } from "@/services/LocationService";
 import { showToast } from "nextjs-toast-notify";
 import { parseApiError } from "@/utils/apiErrorHandler";
@@ -43,10 +43,7 @@ export default function BulkImportPage() {
 
     const handleFileParsed = async (file: File) => {
         try {
-
             const raw = await parseBulkFile(file);
-
-
             const validated = validateBulkRows(raw);
             setRows(validated);
             setStep("resolving");
@@ -62,20 +59,37 @@ export default function BulkImportPage() {
 
     const handleSubmit = async () => {
         setStep("submitting");
+        setSubmitProgress(0);
 
         const valid = rows.filter((r) => r._valid);
+        const total = valid.length;
+        let completed = 0;
+        const results: { success: boolean; index: number; error?: string }[] = [];
 
         try {
-            const result = await createBulkShipments(
-                getNodeId() ?? "",
-                valid.map(rowToPayload)
-            );
+            // Process each shipment one by one with progress tracking
+            for (let i = 0; i < valid.length; i++) {
+                try {
+                    const payload = rowToPayload(valid[i]);
+                    await createFreelancerShipment(payload);
+                    results.push({ success: true, index: i });
+                } catch (e: any) {
+                    results.push({
+                        success: false,
+                        index: i,
+                        error: e.response?.data?.message || e.message || "Unknown error"
+                    });
+                }
 
-            const succeeded: IBulkShipmentRow[] = result
+                completed++;
+                setSubmitProgress(Math.round((completed / total) * 100));
+            }
+
+            const succeeded: IBulkShipmentRow[] = results
                 .filter((r) => r.success)
                 .map((r) => valid[r.index]);
 
-            const failed: { row: IBulkShipmentRow; reason: string }[] = result
+            const failed: { row: IBulkShipmentRow; reason: string }[] = results
                 .filter((r) => !r.success)
                 .map((r) => ({
                     row: valid[r.index],
@@ -91,18 +105,15 @@ export default function BulkImportPage() {
             setStep("done");
 
             if (failed.length === 0) {
-                showToast.success(
-                    `${succeeded.length} shipments created successfully!`
-                );
+                showToast.success(`${succeeded.length} shipments created successfully!`);
             } else {
-                showToast.error(
-                    `${failed.length} shipments failed.`
-                );
+                showToast.warning(`${succeeded.length} succeeded, ${failed.length} failed.`);
             }
         } catch (err) {
             const error = parseApiError(err);
             console.error("Bulk import failed:", error);
-            showToast.error("Bulk import failed.");
+            showToast.error("Bulk import failed: " + error.message);
+            setStep("preview");
         }
     };
 
