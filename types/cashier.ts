@@ -19,7 +19,6 @@ export interface ICreateCashierBody {
     firstName: string;
     lastName: string;
     counterNumber?: number;
-    employeeCode: string;
 }
 
 export interface IUpdateCashierBody {

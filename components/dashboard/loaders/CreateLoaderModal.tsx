@@ -18,7 +18,7 @@ function Field({
 }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+            <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
                 {label}
                 {required && <span className="text-amber-400 ml-0.5">*</span>}
             </label>
@@ -84,7 +84,6 @@ function validate(f: {
     fullName: string;
     email: string;
     password: string;
-    employeeCode: string;
 }): FormErrors {
     const e: FormErrors = {};
     if (!f.fullName.trim()) e.fullName = "Full name is required";
@@ -93,7 +92,6 @@ function validate(f: {
         e.email = "Invalid email address";
     if (!f.password) e.password = "Password is required";
     else if (f.password.length < 8) e.password = "Must be at least 8 characters";
-    if (!f.employeeCode.trim()) e.employeeCode = "Employee code is required";
     return e;
 }
 
@@ -116,7 +114,6 @@ export default function CreateLoaderModal({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
-    const [employeeCode, setEmployeeCode] = useState("");
 
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
@@ -124,16 +121,16 @@ export default function CreateLoaderModal({
 
     const revalidate = (patch: Partial<{ fullName: string; email: string; password: string; employeeCode: string }>) => {
         if (!touched) return;
-        setErrors(validate({ fullName, email, password, employeeCode, ...patch }));
+        setErrors(validate({ fullName, email, password, ...patch }));
     };
 
-    const _currentValidation = validate({ fullName, email, password, employeeCode });
+    const _currentValidation = validate({ fullName, email, password });
     const isFormValid = Object.keys(_currentValidation).length === 0;
 
     const handleSubmit = async () => {
         setTouched(true);
 
-        const errs = validate({ fullName, email, password, employeeCode });
+        const errs = validate({ fullName, email, password });
         setErrors(errs);
         if (Object.keys(errs).length > 0) return;
 
@@ -146,8 +143,7 @@ export default function CreateLoaderModal({
             lastName,
             email,
             password,
-            phone: phoneNumber.trim() || undefined || "",
-            employeeCode: employeeCode.trim(),
+            phone: phoneNumber.trim() || undefined || ""
         });
     };
 
@@ -231,28 +227,6 @@ export default function CreateLoaderModal({
                                 hasError={!!errors.fullName}
                             />
                         </Field>
-                        <Field label="Email" required error={errors.email}>
-                            <TextInput
-                                type="email"
-                                value={email}
-                                onChange={(v) => { setEmail(v); revalidate({ email: v }); }}
-                                placeholder="mohamed@company.com"
-                                autoComplete="off"
-                                hasError={!!errors.email}
-                            />
-                        </Field>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <Field label="Employee Code" required error={errors.employeeCode}>
-                            <TextInput
-                                value={employeeCode}
-                                onChange={(v) => { setEmployeeCode(v); revalidate({ employeeCode: v }); }}
-                                placeholder="LDR-456"
-                                hasError={!!errors.employeeCode}
-                            />
-                        </Field>
-                        {/* Phone */}
                         <Field label="Phone Number (Optional)">
                             <TextInput
                                 type="tel"
@@ -261,8 +235,19 @@ export default function CreateLoaderModal({
                                 placeholder="+213 xxx xxx xxx"
                             />
                         </Field>
+
                     </div>
 
+                    <Field label="Email" required error={errors.email}>
+                        <TextInput
+                            type="email"
+                            value={email}
+                            onChange={(v) => { setEmail(v); revalidate({ email: v }); }}
+                            placeholder="mohamed@company.com"
+                            autoComplete="off"
+                            hasError={!!errors.email}
+                        />
+                    </Field>
                     {/* Password */}
                     <Field label="Password" required error={errors.password}>
                         <div className="relative">

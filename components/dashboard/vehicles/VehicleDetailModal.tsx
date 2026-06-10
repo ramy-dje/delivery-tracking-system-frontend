@@ -13,11 +13,12 @@ import GlassEffectCard from "@/components/commons/GlassEffectCard";
 
 interface VehicleDetailModalProps {
     vehicleId: string;
+    companyId: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
-export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: VehicleDetailModalProps) {
+export default function VehicleDetailModal({ vehicleId, companyId, isOpen, onClose }: VehicleDetailModalProps) {
     const [vehicle, setVehicle] = useState<IVehicleDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
             setLoading(true);
             setError(null);
             try {
-                const data = await getVehicle(vehicleId);
+                const data = await getVehicle(companyId, vehicleId);
                 if (mounted) setVehicle(data);
             } catch (e: any) {
                 if (mounted) setError(e?.message ?? "Failed to load vehicle details");
@@ -38,14 +39,36 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
             }
         })();
         return () => { mounted = false; };
-    }, [isOpen, vehicleId]);
+    }, [isOpen, vehicleId, companyId]);
 
-    // Meta items for the Hero section
+    // Derive helpers from the new shape
+    const isAvailable = vehicle?.status === "available";
+    const assignedUserName = vehicle?.assignedUser
+        ? `${vehicle.assignedUser.firstName} ${vehicle.assignedUser.lastName}`
+        : null;
+
+    // Derive a simple document status label from the documents object
+    const docStatus = (() => {
+        if (!vehicle?.documents) return "missing";
+        const { insurance, insuranceExpiry, technicalInspection, inspectionExpiry } = vehicle.documents;
+        if (!insurance && !technicalInspection) return "missing";
+        const now = new Date();
+        const insExpired = insuranceExpiry && new Date(insuranceExpiry) < now;
+        const inspExpired = inspectionExpiry && new Date(inspectionExpiry) < now;
+        if (insExpired || inspExpired) return "expired";
+        return "valid";
+    })();
+
+    const docStatusColor =
+        docStatus === "valid" ? "emerald" : docStatus === "expired" ? "red" : "amber";
+
+
+
     const metaItems = vehicle
         ? [
             { icon: <ReceiptText size={10} />, value: vehicle.registrationNumber, muted: false },
             { icon: <Truck size={10} />, value: `${vehicle.maxWeight.toLocaleString()} kg`, muted: false },
-            { icon: <Activity size={10} />, value: vehicle.status.replace("_", " "), muted: false },
+            { icon: <Activity size={10} />, value: vehicle.status.replace(/_/g, " "), muted: false },
         ]
         : [];
 
@@ -86,21 +109,18 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
                             <GlassHero
                                 title={`${vehicle.brand || "Unknown"} ${vehicle.modelName || ""}`}
                                 subtitle={vehicle.category || "Commercial Vehicle"}
-                                statusLabel={vehicle.status.replace("_", " ")}
-                                isActive={vehicle.isAvailable}
+                                statusLabel={vehicle.status.replace(/_/g, " ")}
+                                isActive={isAvailable}
                                 metaItems={metaItems}
                                 accentColor="amber"
                             />
 
-                            {/* ─── Specifications Section ─── */}
+                            {/* ─── Specifications ─── */}
                             <div>
                                 <div className="flex items-center gap-2.5 mb-3">
                                     <div
                                         className="w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0"
-                                        style={{
-                                            background: "rgba(251,191,36,0.1)",
-                                            border: "1px solid rgba(251,191,36,0.15)",
-                                        }}
+                                        style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.15)" }}
                                     >
                                         <ReceiptText size={10} style={{ color: "#fbbf24" }} />
                                     </div>
@@ -134,15 +154,12 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
                                 </div>
                             </div>
 
-                            {/* ─── Details Section ─── */}
+                            {/* ─── Details & Documents ─── */}
                             <div>
                                 <div className="flex items-center gap-2.5 mb-3">
                                     <div
                                         className="w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0"
-                                        style={{
-                                            background: "rgba(251,191,36,0.1)",
-                                            border: "1px solid rgba(251,191,36,0.15)",
-                                        }}
+                                        style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.15)" }}
                                     >
                                         <FileText size={10} style={{ color: "#fbbf24" }} />
                                     </div>
@@ -155,11 +172,8 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
                                     <GlassStatCard
                                         icon={<FileText size={11} style={{ color: "#fbbf24" }} />}
                                         label="Document Status"
-                                        value={vehicle.documentStatus.replace("_", " ")}
-                                        badge={{
-                                            label: vehicle.documentStatus.toUpperCase(),
-                                            color: vehicle.documentStatus === "valid" ? "emerald" : vehicle.documentStatus === "expired" || vehicle.documentStatus === "missing" ? "red" : "amber"
-                                        }}
+                                        value={docStatus.replace(/_/g, " ")}
+                                        badge={{ label: docStatus.toUpperCase(), color: docStatusColor }}
                                         accentColor="amber"
                                     />
                                     <GlassStatCard
@@ -172,15 +186,12 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
                                 </div>
                             </div>
 
-                            {/* ─── Assignment Section ─── */}
+                            {/* ─── Assignment ─── */}
                             <div>
                                 <div className="flex items-center gap-2.5 mb-3">
                                     <div
                                         className="w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0"
-                                        style={{
-                                            background: "rgba(251,191,36,0.1)",
-                                            border: "1px solid rgba(251,191,36,0.15)",
-                                        }}
+                                        style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.15)" }}
                                     >
                                         <User size={10} style={{ color: "#fbbf24" }} />
                                     </div>
@@ -193,8 +204,8 @@ export default function VehicleDetailModal({ vehicleId, isOpen, onClose }: Vehic
                                     <GlassStatCard
                                         icon={<User size={11} style={{ color: vehicle.isAssigned ? "#34d399" : "#475569" }} />}
                                         label="Current Assignment"
-                                        value={vehicle.assignedUserName || null}
-                                        secondaryValue={vehicle.isAssigned
+                                        value={assignedUserName}
+                                        secondaryValue={vehicle.isAssigned && vehicle.assignedUserRole
                                             ? `Role: ${vehicle.assignedUserRole}`
                                             : undefined
                                         }

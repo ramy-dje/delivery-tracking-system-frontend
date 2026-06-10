@@ -12,7 +12,8 @@ import {
     X,
     ChevronDown,
     Calendar,
-    Palette
+    Palette,
+    FileText,
 } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import { ICreateVehicleRequest, VehicleType } from "@/types/vehicle";
@@ -23,26 +24,22 @@ interface FormErrors {
     registrationNumber?: string;
     maxWeight?: string;
     maxVolume?: string;
-    brand?: string;
-    modelName?: string;
     year?: string;
     type?: string;
 }
 
 function validate(f: ICreateVehicleRequest): FormErrors {
     const e: FormErrors = {};
-
     const pattern = /^[A-Z0-9\s\-]{5,20}$/i;
 
     if (!f.registrationNumber.trim()) {
         e.registrationNumber = "Registration number is required";
     } else if (!pattern.test(f.registrationNumber)) {
-        e.registrationNumber = "Format must be valid alphanumeric registration (5-20 chars)";
+        e.registrationNumber = "Format must be valid alphanumeric registration (5–20 chars)";
     }
 
     if (f.maxWeight < 1) e.maxWeight = "Must be at least 1 kg";
     if (f.maxVolume < 0.1) e.maxVolume = "Must be at least 0.1 m³";
-
     if (!f.type) e.type = "Select a vehicle type";
     if (f.year && (f.year < 1900 || f.year > new Date().getFullYear() + 1)) {
         e.year = "Please enter a valid year";
@@ -78,6 +75,7 @@ export default function CreateVehicleModal({
         year: new Date().getFullYear(),
         color: "",
         supportsFragile: false,
+        notes: "",
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
@@ -87,20 +85,15 @@ export default function CreateVehicleModal({
 
     const set = <K extends keyof ICreateVehicleRequest>(key: K, value: ICreateVehicleRequest[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));
-        if (touched) {
-            setErrors(validate({ ...form, [key]: value }));
-        }
+        if (touched) setErrors(validate({ ...form, [key]: value }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setTouched(true);
-
         const errs = validate(form);
         setErrors(errs);
-
         if (Object.keys(errs).length > 0) return;
-
         await onSubmit(form);
     };
 
@@ -175,7 +168,12 @@ export default function CreateVehicleModal({
                             <label className="block text-sm font-medium text-slate-300 mb-2">
                                 Vehicle Type *
                             </label>
-                            <div className={`relative rounded-xl border ${errors.type && touched ? 'border-red-500/50 bg-red-500/5' : 'border-white/10 bg-white/5'} focus-within:border-amber-500/50 transition`}>
+                            <div
+                                className={`relative rounded-xl border transition ${errors.type && touched
+                                        ? "border-red-500/50 bg-red-500/5"
+                                        : "border-white/10 bg-white/5"
+                                    } focus-within:border-amber-500/50`}
+                            >
                                 <Truck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                                 <select
                                     value={form.type}
@@ -192,7 +190,9 @@ export default function CreateVehicleModal({
                                     <ChevronDown size={18} />
                                 </div>
                             </div>
-                            {touched && errors.type && <p className="mt-1 text-sm text-red-400">{errors.type}</p>}
+                            {touched && errors.type && (
+                                <p className="mt-1 text-sm text-red-400">{errors.type}</p>
+                            )}
                         </div>
                     </div>
 
@@ -246,10 +246,10 @@ export default function CreateVehicleModal({
                         <div className="h-px bg-white/10" />
                     </div>
 
-                    {/* Capacity + Volume */}
+                    {/* Max Weight + Max Volume */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <InputField
-                            label="Max Weight (kg)"
+                            label="Max Weight (kg) *"
                             type="number"
                             placeholder="0"
                             icon={Package}
@@ -259,7 +259,7 @@ export default function CreateVehicleModal({
                             error={touched ? errors.maxWeight : undefined}
                         />
                         <InputField
-                            label="Max Volume (m³)"
+                            label="Max Volume (m³) *"
                             type="number"
                             placeholder="0"
                             icon={Boxes}
@@ -271,46 +271,66 @@ export default function CreateVehicleModal({
                     </div>
 
                     {/* Fragile Toggle */}
-                    <div className="pt-2">
-                        <button
-                            type="button"
-                            onClick={() => set("supportsFragile", !form.supportsFragile)}
-                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all"
+                    <button
+                        type="button"
+                        onClick={() => set("supportsFragile", !form.supportsFragile)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all"
+                        style={{
+                            background: form.supportsFragile ? "rgba(56,189,248,0.08)" : "rgba(255,255,255,0.03)",
+                            border: form.supportsFragile
+                                ? "1px solid rgba(56,189,248,0.3)"
+                                : "1px solid rgba(255,255,255,0.08)",
+                        }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <Snowflake className={`w-4 h-4 ${form.supportsFragile ? "text-sky-400" : "text-slate-500"}`} />
+                            <span className={`text-[13px] font-medium ${form.supportsFragile ? "text-sky-400" : "text-slate-300"}`}>
+                                Supports Fragile Transport
+                            </span>
+                            {form.supportsFragile && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/30 font-semibold">
+                                    ENABLED
+                                </span>
+                            )}
+                        </div>
+                        <div
+                            className="w-11 h-6 rounded-full transition-all duration-200 relative flex items-center shrink-0"
                             style={{
-                                background: form.supportsFragile ? "rgba(56,189,248,0.08)" : "rgba(255,255,255,0.03)",
-                                border: form.supportsFragile
-                                    ? "1px solid rgba(56,189,248,0.3)"
-                                    : "1px solid rgba(255,255,255,0.08)"
+                                background: form.supportsFragile ? "rgba(56,189,248,0.25)" : "rgba(255,255,255,0.1)",
+                                border: `1px solid ${form.supportsFragile ? "rgba(56,189,248,0.4)" : "rgba(255,255,255,0.15)"}`,
                             }}
                         >
-                            <div className="flex items-center gap-3">
-                                <Snowflake className={`w-4 h-4 ${form.supportsFragile ? "text-sky-400" : "text-slate-500"}`} />
-                                <span className={`text-[13px] font-medium ${form.supportsFragile ? "text-sky-400" : "text-slate-300"}`}>
-                                    Supports Fragile Transport
-                                </span>
-                                {form.supportsFragile && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/30 font-semibold">
-                                        ENABLED
-                                    </span>
-                                )}
-                            </div>
                             <div
-                                className="w-11 h-6 rounded-full transition-all duration-200 relative flex items-center"
+                                className="absolute w-5 h-5 rounded-full transition-all duration-200 shadow-sm"
                                 style={{
-                                    background: form.supportsFragile ? "rgba(56,189,248,0.25)" : "rgba(255,255,255,0.1)",
-                                    border: `1px solid ${form.supportsFragile ? "rgba(56,189,248,0.4)" : "rgba(255,255,255,0.15)"}`
+                                    left: form.supportsFragile ? "calc(100% - 22px)" : "2px",
+                                    background: form.supportsFragile ? "#38bdf8" : "#64748b",
+                                    boxShadow: form.supportsFragile ? "0 0 12px rgba(56,189,248,0.5)" : "none",
                                 }}
-                            >
-                                <div
-                                    className="absolute w-5 h-5 rounded-full transition-all duration-200 shadow-sm"
-                                    style={{
-                                        left: form.supportsFragile ? "calc(100% - 22px)" : "2px",
-                                        background: form.supportsFragile ? "#38bdf8" : "#64748b",
-                                        boxShadow: form.supportsFragile ? "0 0 12px rgba(56,189,248,0.5)" : "none",
-                                    }}
-                                />
-                            </div>
-                        </button>
+                            />
+                        </div>
+                    </button>
+
+                    {/* Section: Notes */}
+                    <div className="space-y-1 pt-2">
+                        <h3 className="text-[11px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+                            <FileText className="w-3 h-3" />
+                            Additional Notes
+                        </h3>
+                        <div className="h-px bg-white/10" />
+                    </div>
+
+                    <div
+                        className="relative rounded-xl border border-white/10 bg-white/5 focus-within:border-amber-500/50 transition"
+                    >
+                        <FileText className="absolute left-4 top-3.5 w-4 h-4 text-slate-500 pointer-events-none" />
+                        <textarea
+                            rows={3}
+                            placeholder="Any remarks about this vehicle (condition, restrictions, etc.)"
+                            value={form.notes ?? ""}
+                            onChange={(e) => set("notes", e.target.value)}
+                            className="w-full bg-transparent pl-11 pr-4 py-3 text-[13px] text-white placeholder:text-slate-600 focus:outline-none resize-none custom-scrollbar"
+                        />
                     </div>
                 </form>
 
@@ -335,7 +355,7 @@ export default function CreateVehicleModal({
                         className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold text-black transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                         style={{
                             background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-                            boxShadow: "0 4px 16px rgba(251,191,36,0.2)"
+                            boxShadow: "0 4px 16px rgba(251,191,36,0.2)",
                         }}
                     >
                         {loading ? (

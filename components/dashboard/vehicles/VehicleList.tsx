@@ -43,10 +43,10 @@ export default function VehicleList({ vehicles, loading, onAddClick, onViewDetai
     return (
         <div style={tableStyle}>
             <div
-                className="hidden md:grid grid-cols-[180px_1fr_150px_150px_auto] gap-4 px-5 py-2.5 border-b border-white/5"
+                className="hidden md:grid grid-cols-[180px_1fr_150px_150px_80px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
             >
-                {["Vehicle", "Brand & Model", "Capacity", "Status", ""].map((h, i) => (
+                {["Vehicle", "Brand & Model", "Capacity", "Status", "Actions"].map((h, i) => (
                     <div key={i} className="text-[9.5px] uppercase tracking-[0.14em] text-slate-800 font-semibold">
                         {h}
                     </div>
@@ -54,10 +54,10 @@ export default function VehicleList({ vehicles, loading, onAddClick, onViewDetai
             </div>
             {vehicles.map((v, idx) => (
                 <VehicleRow
-                    key={v.id}
+                    key={v._id}
                     vehicle={v}
                     isLast={idx === vehicles.length - 1}
-                    onViewDetail={onViewDetail ? () => onViewDetail(v.id) : undefined}
+                    onViewDetail={onViewDetail ? () => onViewDetail(v._id) : undefined}
                 />
             ))}
         </div>

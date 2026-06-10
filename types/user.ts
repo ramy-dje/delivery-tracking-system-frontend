@@ -12,6 +12,7 @@ export interface IUser {
   email: string;
   role: Role;
   companyId?: string;
+  branchId?: string;
   logisticsNodeId?: string;
   phoneNumber?: string;
   isActive?: boolean;

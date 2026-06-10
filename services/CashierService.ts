@@ -1,5 +1,4 @@
 import api from "@/lib/api";
-import { IPaginatedResponse } from "./paginate";
 import { ICashier, ICreateCashierBody, IUpdateCashierBody } from "@/types/cashier";
 
 const SUPERVISOR_BASE = "/supervisor";

@@ -59,8 +59,8 @@ export interface IBranchData {
 
 export interface ISupervisorResponse {
     _id: string;
-
     userId: string | IUserData;
+
     companyId: string;
     branchId: string | IBranchData;
 

@@ -11,7 +11,7 @@ import {
 import { ILoader, ICreateLoaderBody, IUpdateLoaderBody } from "@/types/loader";
 import { showToast } from "nextjs-toast-notify";
 import EmptyState from "@/components/commons/EmptyState";
-import { Truck, Plus, Search, X, Pencil, Trash2 } from "lucide-react";
+import { Truck, Plus, Search, X, Lock, Unlock, Edit, Trash } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
 import { SkeletonList } from "@/components/commons/Skeleton";
 import ErrorBaner from "@/components/commons/ErrorBaner";
@@ -19,25 +19,23 @@ import ActionBtn from "@/components/commons/ActionButton";
 import CreateLoaderModal from "@/components/dashboard/loaders/CreateLoaderModal";
 import EditLoaderModal from "@/components/dashboard/loaders/EditLoaderModal";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
-import userStore from "@/stores/userStore";
+import { getBranchId } from "@/hooks/useAuth";
 
 export default function LoadersPage() {
-    const { user, associated } = userStore();
-    // For supervisor context, branchId is stored in the associated profile
-    const branchId = (associated as any)?.branchId || (user as any)?.branchId; 
+
+    const branchId = getBranchId();
 
     const [loaders, setLoaders] = useState<ILoader[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const [search, setSearch] = useState("");
+    const [editTarget, setEditTarget] = useState<ILoader | null>(null);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    
-    const [editTarget, setEditTarget] = useState<ILoader | null>(null);
-    const [deleteTarget, setDeleteTarget] = useState<ILoader | null>(null);
     const [toggleTarget, setToggleTarget] = useState<ILoader | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<ILoader | null>(null);
 
     // ── Fetching ─────────────────────────────────────────────────────────
 
@@ -207,13 +205,13 @@ export default function LoadersPage() {
                 }}
             >
                 <div
-                    className="hidden md:grid grid-cols-[1fr_120px_120px_120px_auto] gap-4 px-5 py-2.5 border-b border-white/4"
+                    className="hidden md:grid grid-cols-[1fr_180px_120px_120px_120px] gap-4 px-5 py-2.5 border-b border-white/4"
                     style={{ background: "rgba(255,255,255,0.015)" }}
                 >
                     {["Loader", "Employee Code", "Status", "Created", "Actions"].map((h, i) => (
                         <div
                             key={i}
-                            className="text-[9.5px] uppercase tracking-[0.14em] text-slate-700 font-semibold"
+                            className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-700 font-semibold ${i !== 0 ? "text-center" : ""}`}
                         >
                             {h}
                         </div>
@@ -236,7 +234,7 @@ export default function LoadersPage() {
                 ) : (
                     <div>
                         {loaders.map((loader, idx) => (
-                            <div key={loader._id} className={`grid grid-cols-[1fr_120px_120px_120px_auto] items-center gap-4 px-5 py-3 ${idx !== loaders.length - 1 ? 'border-b border-white/5' : ''}`}>
+                            <div key={loader._id} className={`grid grid-cols-[1fr_180px_120px_120px_120px] items-center gap-4 px-5 py-3 ${idx !== loaders.length - 1 ? 'border-b border-white/5' : ''}`}>
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-white/10 text-[12px] font-medium text-slate-300">
                                         {loader.userId?.firstName?.charAt(0) || 'L'}
@@ -250,38 +248,39 @@ export default function LoadersPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-[12.5px] text-slate-400 font-mono">
+                                <div className="text-[12.5px] text-center text-slate-400 font-mono">
                                     {loader.employeeCode}
                                 </div>
-                                <div>
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${loader.status === "active" ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                <div className="flex items-center justify-center">
+                                    <span className={`inline-flex items-center px-0 text-center py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${loader.status === "active" ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                         {loader.status}
                                     </span>
                                 </div>
-                                <div className="text-[12.5px] text-slate-400">
+                                <div className="text-[12.5px] text-center text-slate-400">
                                     {new Date(loader.createdAt).toLocaleDateString()}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
+                                <div className="flex items-center justify-center gap-2">
+                                    <ActionBtn
                                         onClick={() => setEditTarget(loader)}
-                                        className="text-[11px] p-1.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
-                                        title="Edit Loader"
+                                        variant="emerald"
+                                        revealOnHover
                                     >
-                                        <Pencil size={14} />
-                                    </button>
-                                    <button
+                                        <Edit size={14} />
+                                    </ActionBtn>
+                                    <ActionBtn
                                         onClick={() => setToggleTarget(loader)}
-                                        className="text-[11px] px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
+                                        variant={loader.status === "active" ? "slate" : "emerald"}
+                                        revealOnHover
                                     >
-                                        {loader.status === "active" ? "Block" : "Unblock"}
-                                    </button>
-                                    <button
+                                        {loader.status === "active" ? <Lock size={14} /> : <Unlock size={14} />}
+                                    </ActionBtn>
+                                    <ActionBtn
                                         onClick={() => setDeleteTarget(loader)}
-                                        className="text-[11px] p-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
-                                        title="Delete Loader"
+                                        variant="red"
+                                        revealOnHover
                                     >
-                                        <Trash2 size={14} />
-                                    </button>
+                                        <Trash size={14} />
+                                    </ActionBtn>
                                 </div>
                             </div>
                         ))}
