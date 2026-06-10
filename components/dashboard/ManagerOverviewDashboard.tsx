@@ -105,7 +105,7 @@ function KpiCard({ label, value, sub, color = C.amber, colorDim = C.amberDim, ic
             )}
             {/* Subtle glow strip */}
             <div
-                className="absolute bottom-0 left-0 right-0 h-[2px]"
+                className="absolute bottom-0 left-0 right-0 h-0.5"
                 style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }}
             />
         </div>
@@ -280,7 +280,7 @@ function BranchTable({ branches }: { branches: IManagerDashboardBranchPerformanc
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">
                                         <span className="text-slate-300">{b.deliveredPackages.toLocaleString()}</span>
-                                        <div className="flex-1 h-1.5 rounded-full max-w-[60px]" style={{ background: "rgba(255,255,255,0.07)" }}>
+                                        <div className="flex-1 h-1.5 rounded-full max-w-15" style={{ background: "rgba(255,255,255,0.07)" }}>
                                             <div
                                                 className="h-full rounded-full"
                                                 style={{ width: `${rate}%`, background: rate >= 80 ? C.green : rate >= 60 ? C.amber : C.red }}
@@ -414,7 +414,7 @@ function ActivityFeed({ activities }: { activities: IManagerDashboardActivity[] 
                             {/* Timeline connector */}
                             {i < activities.length - 1 && (
                                 <div
-                                    className="absolute left-[27px] top-[42px] bottom-0 w-px"
+                                    className="absolute left-6.75 top-10.5 bottom-0 w-px"
                                     style={{ background: C.border }}
                                 />
                             )}
@@ -600,7 +600,7 @@ export default function ManagerOverviewDashboard() {
 
     return (
         <div className="h-full min-h-screen overflow-y-auto" style={{ background: C.surface }}>
-            <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-8 space-y-8">
+            <div className="max-w-7xl mx-auto py-6 px-4 space-y-8">
 
                 {/* ── Header ────────────────────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

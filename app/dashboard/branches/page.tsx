@@ -249,7 +249,7 @@ export default function BranchesPage() {
 
             {/* ── Table ────────────────────────────────────────────────────── */}
             <div
-                className="rounded-xl flex-col flex-1 p-10 overflow-y-auto"
+                className="rounded-xl flex-col flex-1 p-2 overflow-y-auto"
                 style={{
                     background: "#060a10",
                     border: "1px solid rgba(255,255,255,0.05)",

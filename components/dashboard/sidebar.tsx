@@ -157,8 +157,15 @@ const NAV_GROUPS = [
             icon: (
                 <Bell size={14} />
             ),
-            allowed: [ROLES.MANAGER],
-        },],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST, ROLES.MERCHANT, ROLES.ADMIN],
+        }, {
+            path: "/dashboard/profile",
+            label: "Profile",
+            icon: (
+                <User size={14} />
+            ),
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST, ROLES.MERCHANT, ROLES.ADMIN],
+        }],
     }];
 
 export default function Sidebar() {
@@ -166,6 +173,10 @@ export default function Sidebar() {
     const { user, logout } = userStore();
     const role = user?.role ?? "";
     const [collapsed, setCollapsed] = useState(false);
+
+    console.log("User Image :", user?.imageUrl);
+
+    const imageUrl = user?.imageUrl?.url;
 
     const initials = (user?.firstName + " " + user?.lastName)
         ?.split(" ")
@@ -256,10 +267,27 @@ export default function Sidebar() {
             {!collapsed && (
                 <div className="mx-3 my-3 px-3 py-2.5 rounded-xl border border-white/6 flex items-center gap-2.5"
                     style={{ background: "rgba(255,255,255,0.02)" }}>
-                    <div className="w-7 h-7 rounded-full border shrink-0 flex items-center justify-center text-[11px] font-semibold text-amber-400"
-                        style={{ borderColor: "rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)" }}>
-                        {initials}
-                    </div>
+                    {imageUrl ? (
+                        <div className="flex justify-center py-3 border-b border-white/5">
+                            <img
+                                src={imageUrl}
+                                alt="User"
+                                className="w-8 h-8 rounded-full object-cover"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex justify-center py-3 border-b border-white/5">
+                            <div
+                                className="w-10 h-10 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
+                                style={{
+                                    borderColor: "rgba(251,191,36,0.3)",
+                                    background: "rgba(251,191,36,0.08)",
+                                }}
+                            >
+                                {initials}
+                            </div>
+                        </div>
+                    )}
                     <div className="overflow-hidden">
                         <div className="text-[13px] font-medium text-slate-200 truncate">{user?.firstName + " " + user?.lastName}</div>
                         <div className="text-[10px] text-slate-500 font-mono">{role}</div>
@@ -267,12 +295,27 @@ export default function Sidebar() {
                 </div>
             )}
             {collapsed && (
-                <div className="flex justify-center py-3 border-b border-white/5">
-                    <div className="w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
-                        style={{ borderColor: "rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)" }}>
-                        {initials}
+                imageUrl ? (
+                    <div className="flex justify-center py-3 border-b border-white/5">
+                        <img
+                            src={imageUrl}
+                            alt="User"
+                            className="w-10 h-10 rounded-full object-cover"
+                        />
                     </div>
-                </div>
+                ) : (
+                    <div className="flex justify-center py-3 border-b border-white/5">
+                        <div
+                            className="w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
+                            style={{
+                                borderColor: "rgba(251,191,36,0.3)",
+                                background: "rgba(251,191,36,0.08)",
+                            }}
+                        >
+                            {initials}
+                        </div>
+                    </div>
+                )
             )}
 
             {/* Nav groups */}

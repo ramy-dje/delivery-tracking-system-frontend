@@ -121,7 +121,7 @@ export default function LoginPage() {
                         <InputField
                             label="Email Address"
                             type="email"
-                            placeholder="john@company.com"
+                            placeholder="mohamed@company.com"
                             icon={Mail}
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -138,7 +138,14 @@ export default function LoginPage() {
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 error={errors.password}
                             />
-                            <PasswordStrength password={formData.password} />
+
+                            <p className="text-slate-500 text-xs mt-1.5 text-right pr-1.5">
+                                You Forgot Your Password?{" "}
+                                <Link href="/forget-password" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+                                    Reset it
+                                </Link>
+                            </p>
+
                         </div>
 
                         <ActionBtn type="submit" disabled={isLoading} className="w-full" label="Sign In" variant="primary" size="action" />

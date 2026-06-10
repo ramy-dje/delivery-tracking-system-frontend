@@ -89,7 +89,7 @@ export default function MerchantsPage() {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.OWNER, ROLES.RECEPTIONIST]}>
+        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}

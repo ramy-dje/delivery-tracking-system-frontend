@@ -299,7 +299,7 @@ export default function CreateSupervisorModal({
                             <TextInput
                                 value={lastName}
                                 onChange={(v) => { setLastName(v); revalidate({ lastName: v }); }}
-                                placeholder="Doe"
+                                placeholder="Bekk"
                                 hasError={!!errors.lastName}
                             />
                         </Field>

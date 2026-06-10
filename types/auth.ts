@@ -12,7 +12,7 @@ export interface IRegisterRequest {
 export interface IAuthResponseDto {
   accessToken: string;
   message?: string;
-  user: any;
+  user: IUser;
   associated?: IManager | null;
 }
 
