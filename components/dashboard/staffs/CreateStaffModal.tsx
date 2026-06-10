@@ -167,7 +167,7 @@ export default function CreateStaffModal({ isOpen, onClose, onSubmit, loading, d
                             <TextInput value={firstName} onChange={(v) => { setFirstName(v); revalidate({ firstName: v }); }} placeholder="Jane" hasError={!!errors.firstName} />
                         </Field>
                         <Field label="Last Name" required error={errors.lastName}>
-                            <TextInput value={lastName} onChange={(v) => { setLastName(v); revalidate({ lastName: v }); }} placeholder="Doe" hasError={!!errors.lastName} />
+                            <TextInput value={lastName} onChange={(v) => { setLastName(v); revalidate({ lastName: v }); }} placeholder="Bekk" hasError={!!errors.lastName} />
                         </Field>
                     </div>
 

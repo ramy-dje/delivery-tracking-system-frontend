@@ -157,7 +157,7 @@ export default function RegisterPage() {
                             <InputField
                                 type="text"
                                 label="First Name"
-                                placeholder="John"
+                                placeholder="Mohamed"
                                 icon={User}
                                 value={formData.firstName}
                                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -167,7 +167,7 @@ export default function RegisterPage() {
                             <InputField
                                 type="text"
                                 label="Last Name"
-                                placeholder="Doe"
+                                placeholder="Bekk"
                                 icon={User}
                                 value={formData.lastName}
                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -178,7 +178,7 @@ export default function RegisterPage() {
                         <InputField
                             label="Email Address"
                             type="email"
-                            placeholder="john@company.com"
+                            placeholder="mohamed@company.com"
                             icon={Mail}
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -207,7 +207,7 @@ export default function RegisterPage() {
                             />
                             <PasswordStrength password={formData.password} />
                         </div>
-                        <ActionBtn type="submit" disabled={isLoading} label="Register" variant="primary" size="action" />
+                        <ActionBtn type="submit" className="w-full" disabled={isLoading} label="Register" variant="primary" size="action" />
                     </form>
 
                     {/* Footer */}

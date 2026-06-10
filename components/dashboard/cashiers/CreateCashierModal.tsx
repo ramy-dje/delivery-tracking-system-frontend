@@ -233,7 +233,7 @@ export default function CreateCashierModal({
                             <TextInput
                                 value={fullName}
                                 onChange={(v) => { setFullName(v); revalidate({ fullName: v }); }}
-                                placeholder="Jane Doe"
+                                placeholder="Jane Bekk"
                                 hasError={!!errors.fullName}
                             />
                         </Field>

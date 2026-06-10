@@ -227,7 +227,7 @@ export default function CreateLoaderModal({
                             <TextInput
                                 value={fullName}
                                 onChange={(v) => { setFullName(v); revalidate({ fullName: v }); }}
-                                placeholder="John Smith"
+                                placeholder="Mohamed Smith"
                                 hasError={!!errors.fullName}
                             />
                         </Field>
@@ -236,7 +236,7 @@ export default function CreateLoaderModal({
                                 type="email"
                                 value={email}
                                 onChange={(v) => { setEmail(v); revalidate({ email: v }); }}
-                                placeholder="john@company.com"
+                                placeholder="mohamed@company.com"
                                 autoComplete="off"
                                 hasError={!!errors.email}
                             />

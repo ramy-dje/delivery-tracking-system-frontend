@@ -302,7 +302,7 @@ export default function ManagerAnalyticsDashboard({ companyId }: { companyId?: s
   }
 
   return (
-    <div className="min-h-screen space-y-8 bg-background-surface px-4 py-6 md:px-8 md:py-8">
+    <div className="min-h-screen space-y-8 bg-background-surface px-2 py-6">
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>

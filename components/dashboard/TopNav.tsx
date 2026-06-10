@@ -232,10 +232,27 @@ export default function TopNav() {
                                 <div className="text-[13px] font-medium text-slate-200 leading-none">{user?.firstName + " " + user?.lastName}</div>
                                 <div className="text-[10px] text-slate-500 font-mono mt-0.5">{role}</div>
                             </div>
-                            <div className="w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold text-amber-400 shrink-0"
-                                style={{ borderColor: "rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)" }}>
-                                {initials}
-                            </div>
+                            {user?.imageUrl ? (
+                                <div className="flex justify-center py-3 border-b border-white/5">
+                                    <img
+                                        src={user?.imageUrl?.url}
+                                        alt="User"
+                                        className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex justify-center py-3 border-b border-white/5">
+                                    <div
+                                        className="w-10 h-10 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
+                                        style={{
+                                            borderColor: "rgba(251,191,36,0.3)",
+                                            background: "rgba(251,191,36,0.08)",
+                                        }}
+                                    >
+                                        {initials}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

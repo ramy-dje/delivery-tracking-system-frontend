@@ -382,7 +382,7 @@ function KpiCard({ label, value, sub, color = C.amber, colorDim = C.amberDim, ic
             )}
             {/* Subtle glow strip */}
             <div
-                className="absolute bottom-0 left-0 right-0 h-[2px]"
+                className="absolute bottom-0 left-0 right-0 h-0.5"
                 style={{ background: `linear-gradient(90deg, transparent, ${color}35, transparent)` }}
             />
         </div>
@@ -548,7 +548,7 @@ export default function ManagerPerformanceDashboard({ companyId }: { companyId?:
 
     return (
         <div className="h-full min-h-screen overflow-y-auto" style={{ background: C.surface }}>
-            <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-8 space-y-8">
+            <div className="max-w-7xl mx-auto px-2 py-6 space-y-8">
 
                 {/* ── Header ────────────────────────────────────────────────────── */}
                 <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between border-b border-white/5 pb-6">
@@ -799,7 +799,7 @@ export default function ManagerPerformanceDashboard({ companyId }: { companyId?:
                                     {sortedBranches.map((b, i) => (
                                         <tr
                                             key={b.branchId}
-                                            className="transition-colors hover:bg-white/[0.02] border-b border-white/5 last:border-none"
+                                            className="transition-colors hover:bg-white/2 border-b border-white/5 last:border-none"
                                         >
                                             <td className="px-5 py-3.5 font-bold text-slate-400">
                                                 {b.rank === 1 ? (
@@ -941,7 +941,7 @@ export default function ManagerPerformanceDashboard({ companyId }: { companyId?:
                                     {data.delivererLeaderboard.slice(0, 10).map((d) => (
                                         <tr
                                             key={d.delivererId}
-                                            className="transition-colors hover:bg-white/[0.02] border-b border-white/5 last:border-none"
+                                            className="transition-colors hover:bg-white/2 border-b border-white/5 last:border-none"
                                         >
                                             <td className="px-5 py-3.5 font-bold text-slate-400">
                                                 {d.rank === 1 ? (
