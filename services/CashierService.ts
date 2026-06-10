@@ -36,3 +36,11 @@ export async function toggleBlockCashier(
     const { data } = await api.patch(`${SUPERVISOR_BASE}/branches/${branchId}/cashiers/${cashierId}/toggle-block`);
     return data;
 }
+
+export async function deleteCashier(
+    branchId: string,
+    cashierId: string,
+): Promise<{ success: boolean; message: string }> {
+    const { data } = await api.delete(`${SUPERVISOR_BASE}/branches/${branchId}/cashiers/${cashierId}`);
+    return data;
+}

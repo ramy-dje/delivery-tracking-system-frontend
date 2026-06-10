@@ -35,3 +35,11 @@ export async function toggleBlockLoader(
     const { data } = await api.patch(`${SUPERVISOR_BASE}/branches/${branchId}/loaders/${loaderId}/toggle-block`);
     return data;
 }
+
+export async function deleteLoader(
+    branchId: string,
+    loaderId: string,
+): Promise<{ success: boolean; message: string }> {
+    const { data } = await api.delete(`${SUPERVISOR_BASE}/branches/${branchId}/loaders/${loaderId}`);
+    return data;
+}

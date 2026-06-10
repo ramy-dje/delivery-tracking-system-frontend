@@ -137,11 +137,11 @@ export default function CreateCashierModal({
         const errs = validate({ fullName, email, password, employeeCode });
         setErrors(errs);
         if (Object.keys(errs).length > 0) return;
-
         // Split fullName → firstName + lastName
         const [firstName, ...rest] = fullName.trim().split(" ");
         const lastName = rest.join(" ") || firstName;
-
+        try{
+            console.log("submit");
         await onSubmit({
             firstName,
             lastName,
@@ -151,6 +151,10 @@ export default function CreateCashierModal({
             employeeCode: employeeCode.trim(),
             counterNumber: counterNumber ? parseInt(counterNumber) : undefined,
         });
+        }
+        catch(err){
+            console.log(err);
+        }
     };
 
     return (
@@ -345,7 +349,7 @@ export default function CreateCashierModal({
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={loading || !isFormValid}
+                            disabled={loading}
                             className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                             style={{
                                 background: "linear-gradient(135deg,#fbbf24,#f59e0b)",

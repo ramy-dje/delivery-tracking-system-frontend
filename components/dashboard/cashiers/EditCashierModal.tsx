@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ICreateLoaderBody } from "@/types/loader";
+import { useEffect, useState } from "react";
+import { IUpdateCashierBody, ICashier } from "@/types/cashier";
 
 // ─── Field wrapper ────────────────────────────────────────────────────────
 
@@ -76,14 +76,12 @@ function TextInput({
 interface FormErrors {
     fullName?: string;
     email?: string;
-    password?: string;
     employeeCode?: string;
 }
 
 function validate(f: {
     fullName: string;
     email: string;
-    password: string;
     employeeCode: string;
 }): FormErrors {
     const e: FormErrors = {};
@@ -91,49 +89,58 @@ function validate(f: {
     if (!f.email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))
         e.email = "Invalid email address";
-    if (!f.password) e.password = "Password is required";
-    else if (f.password.length < 8) e.password = "Must be at least 8 characters";
     if (!f.employeeCode.trim()) e.employeeCode = "Employee code is required";
     return e;
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────
 
-interface CreateLoaderModalProps {
+interface EditCashierModalProps {
+    cashier: ICashier;
     onClose: () => void;
-    onSubmit: (data: ICreateLoaderBody) => Promise<void>;
+    onSubmit: (data: IUpdateCashierBody) => Promise<void>;
     loading?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export default function CreateLoaderModal({
+export default function EditCashierModal({
+    cashier,
     onClose,
     onSubmit,
     loading,
-}: CreateLoaderModalProps) {
+}: EditCashierModalProps) {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [employeeCode, setEmployeeCode] = useState("");
+    const [counterNumber, setCounterNumber] = useState<string>("");
 
-    const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState(false);
 
-    const revalidate = (patch: Partial<{ fullName: string; email: string; password: string; employeeCode: string }>) => {
+    useEffect(() => {
+        if (cashier) {
+            setFullName(`${cashier.userId?.firstName || ""} ${cashier.userId?.lastName || ""}`.trim());
+            setEmail(cashier.userId?.email || "");
+            setPhoneNumber((cashier.userId as any)?.phone || "");
+            setEmployeeCode(cashier.employeeCode || "");
+            setCounterNumber(cashier.counterNumber?.toString() || "");
+        }
+    }, [cashier]);
+
+    const revalidate = (patch: Partial<{ fullName: string; email: string; employeeCode: string }>) => {
         if (!touched) return;
-        setErrors(validate({ fullName, email, password, employeeCode, ...patch }));
+        setErrors(validate({ fullName, email, employeeCode, ...patch }));
     };
 
-    const _currentValidation = validate({ fullName, email, password, employeeCode });
+    const _currentValidation = validate({ fullName, email, employeeCode });
     const isFormValid = Object.keys(_currentValidation).length === 0;
 
     const handleSubmit = async () => {
         setTouched(true);
 
-        const errs = validate({ fullName, email, password, employeeCode });
+        const errs = validate({ fullName, email, employeeCode });
         setErrors(errs);
         if (Object.keys(errs).length > 0) return;
 
@@ -145,9 +152,9 @@ export default function CreateLoaderModal({
             firstName,
             lastName,
             email,
-            password,
-            phone: phoneNumber.trim() || undefined || "",
+            phone: phoneNumber.trim() || undefined,
             employeeCode: employeeCode.trim(),
+            counterNumber: counterNumber ? parseInt(counterNumber) : undefined,
         });
     };
 
@@ -180,19 +187,15 @@ export default function CreateLoaderModal({
                         >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                 <path
-                                    d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"
-                                    stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                                />
-                                <path
-                                    d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                     stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
                                 />
                             </svg>
                         </div>
                         <div>
-                            <div className="text-[14px] font-semibold text-white">Create Loader</div>
+                            <div className="text-[14px] font-semibold text-white">Edit Cashier</div>
                             <div className="text-[11px] text-slate-600">
-                                Add a new loader to this branch
+                                Update cashier details
                             </div>
                         </div>
                     </div>
@@ -216,7 +219,7 @@ export default function CreateLoaderModal({
                     <div className="flex items-center gap-3 py-0.5 mt-2">
                         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
                         <span className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
-                            Loader Details
+                            Cashier Details
                         </span>
                         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
                     </div>
@@ -227,7 +230,7 @@ export default function CreateLoaderModal({
                             <TextInput
                                 value={fullName}
                                 onChange={(v) => { setFullName(v); revalidate({ fullName: v }); }}
-                                placeholder="John Smith"
+                                placeholder="Jane Doe"
                                 hasError={!!errors.fullName}
                             />
                         </Field>
@@ -236,7 +239,7 @@ export default function CreateLoaderModal({
                                 type="email"
                                 value={email}
                                 onChange={(v) => { setEmail(v); revalidate({ email: v }); }}
-                                placeholder="john@company.com"
+                                placeholder="jane@company.com"
                                 autoComplete="off"
                                 hasError={!!errors.email}
                             />
@@ -248,71 +251,29 @@ export default function CreateLoaderModal({
                             <TextInput
                                 value={employeeCode}
                                 onChange={(v) => { setEmployeeCode(v); revalidate({ employeeCode: v }); }}
-                                placeholder="LDR-456"
+                                placeholder="EMP-123"
                                 hasError={!!errors.employeeCode}
                             />
                         </Field>
-                        {/* Phone */}
-                        <Field label="Phone Number (Optional)">
+                        <Field label="Counter Number (Optional)">
                             <TextInput
-                                type="tel"
-                                value={phoneNumber}
-                                onChange={setPhoneNumber}
-                                placeholder="+213 xxx xxx xxx"
+                                type="number"
+                                value={counterNumber}
+                                onChange={setCounterNumber}
+                                placeholder="1"
                             />
                         </Field>
                     </div>
 
-                    {/* Password */}
-                    <Field label="Password" required error={errors.password}>
-                        <div className="relative">
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => {
-                                    setPassword(e.target.value);
-                                    revalidate({ password: e.target.value });
-                                }}
-                                placeholder="Min. 8 characters"
-                                autoComplete="new-password"
-                                className="w-full pl-3 pr-10 py-2.5 rounded-lg text-[13px] text-white placeholder:text-slate-700 focus:outline-none transition-all"
-                                style={{
-                                    background: "rgba(255,255,255,0.03)",
-                                    border: errors.password
-                                        ? "1px solid rgba(239,68,68,0.45)"
-                                        : "1px solid rgba(255,255,255,0.08)",
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.border = "1px solid rgba(251,191,36,0.35)";
-                                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(251,191,36,0.07)";
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.border = errors.password
-                                        ? "1px solid rgba(239,68,68,0.45)"
-                                        : "1px solid rgba(255,255,255,0.08)";
-                                    e.currentTarget.style.boxShadow = "none";
-                                }}
-                            />
-                            <button
-                                type="button"
-                                tabIndex={-1}
-                                onClick={() => setShowPassword((v) => !v)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
-                            >
-                                {showPassword ? (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
-                                ) : (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.5" />
-                                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
-                                    </svg>
-                                )}
-                            </button>
-                        </div>
+                    {/* Phone */}
+                    <Field label="Phone Number (Optional)">
+                        <TextInput
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={setPhoneNumber}
+                            placeholder="+213 xxx xxx xxx"
+                        />
                     </Field>
-
                 </div>
 
                 {/* ── Footer ────────────────────────────────────────────── */}
@@ -347,14 +308,11 @@ export default function CreateLoaderModal({
                                     <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none">
                                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.4" strokeDashoffset="10" />
                                     </svg>
-                                    Creating…
+                                    Saving…
                                 </>
                             ) : (
                                 <>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                    </svg>
-                                    Create Loader
+                                    Save Changes
                                 </>
                             )}
                         </button>

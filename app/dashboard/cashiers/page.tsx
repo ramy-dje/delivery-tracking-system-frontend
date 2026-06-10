@@ -4,25 +4,27 @@ import { useCallback, useEffect, useState } from "react";
 import {
     getBranchCashiers,
     createCashier,
+    updateCashier,
+    deleteCashier,
     toggleBlockCashier,
 } from "@/services/CashierService";
-import { ICashier, ICreateCashierBody } from "@/types/cashier";
+import { ICashier, ICreateCashierBody, IUpdateCashierBody } from "@/types/cashier";
 import { showToast } from "nextjs-toast-notify";
 import EmptyState from "@/components/commons/EmptyState";
-import { Users, Plus, Search, X } from "lucide-react";
+import { Users, Plus, Search, X, Pencil, Trash2 } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
 import { SkeletonList } from "@/components/commons/Skeleton";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import ActionBtn from "@/components/commons/ActionButton";
 import CreateCashierModal from "@/components/dashboard/cashiers/CreateCashierModal";
+import EditCashierModal from "@/components/dashboard/cashiers/EditCashierModal";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import userStore from "@/stores/userStore";
 
 export default function CashiersPage() {
-    const { user } = userStore();
-    // Assuming supervisor is assigned to a branch in their context or we fetch it
-    // Wait, the API requires branchId. Let's assume we extract it from user profile if supervisor
-    const branchId = user?.branchId || "TODO_BRANCH_ID"; 
+    const { user, associated } = userStore();
+    // For supervisor and loader/cashier context, branchId is stored in the associated profile
+    const branchId = (associated as any)?.branchId || (user as any)?.branchId; 
 
     const [cashiers, setCashiers] = useState<ICashier[]>([]);
     const [loading, setLoading] = useState(true);
@@ -33,6 +35,8 @@ export default function CashiersPage() {
     const [modalOpen, setModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     
+    const [editTarget, setEditTarget] = useState<ICashier | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<ICashier | null>(null);
     const [toggleTarget, setToggleTarget] = useState<ICashier | null>(null);
 
     // ── Fetching ─────────────────────────────────────────────────────────
@@ -63,10 +67,12 @@ export default function CashiersPage() {
     // ── CRUD ─────────────────────────────────────────────────────────────
 
     const handleCreate = async (payload: ICreateCashierBody) => {
+        console.log("branchId", branchId);
         if (!branchId || branchId === "TODO_BRANCH_ID") return;
         setSubmitting(true);
         try {
-            await createCashier(branchId, payload);
+            const res = await createCashier(branchId, payload);
+            console.log("res", res);
             setModalOpen(false);
             showToast.success("Cashier created successfully");
             fetchCashiers();
@@ -89,6 +95,38 @@ export default function CashiersPage() {
         } catch (e: any) {
             setError(e?.message ?? "Failed to update cashier status");
             showToast.error(e?.message ?? "Failed to update cashier status");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleUpdate = async (payload: IUpdateCashierBody) => {
+        if (!editTarget || !branchId || branchId === "TODO_BRANCH_ID") return;
+        setSubmitting(true);
+        try {
+            await updateCashier(branchId, editTarget._id, payload);
+            setEditTarget(null);
+            showToast.success("Cashier updated successfully");
+            fetchCashiers();
+        } catch (e: any) {
+            setError(e?.message ?? "Failed to update cashier");
+            showToast.error(e?.message ?? "Failed to update cashier");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !branchId || branchId === "TODO_BRANCH_ID") return;
+        setSubmitting(true);
+        try {
+            await deleteCashier(branchId, deleteTarget._id);
+            setDeleteTarget(null);
+            showToast.success("Cashier deleted successfully");
+            fetchCashiers();
+        } catch (e: any) {
+            setError(e?.message ?? "Failed to delete cashier");
+            showToast.error(e?.message ?? "Failed to delete cashier");
         } finally {
             setSubmitting(false);
         }
@@ -230,10 +268,24 @@ export default function CashiersPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
+                                        onClick={() => setEditTarget(cashier)}
+                                        className="text-[11px] p-1.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
+                                        title="Edit Cashier"
+                                    >
+                                        <Pencil size={14} />
+                                    </button>
+                                    <button
                                         onClick={() => setToggleTarget(cashier)}
-                                        className="text-[11px] px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
+                                        className="text-[11px] px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
                                     >
                                         {cashier.status === "active" ? "Block" : "Unblock"}
+                                    </button>
+                                    <button
+                                        onClick={() => setDeleteTarget(cashier)}
+                                        className="text-[11px] p-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
+                                        title="Delete Cashier"
+                                    >
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             </div>
@@ -251,6 +303,15 @@ export default function CashiersPage() {
                 />
             )}
 
+            {editTarget && (
+                <EditCashierModal
+                    cashier={editTarget}
+                    onClose={() => setEditTarget(null)}
+                    onSubmit={handleUpdate}
+                    loading={submitting}
+                />
+            )}
+
             {toggleTarget && (
                 <ConfirmDialog
                     title={`${toggleTarget.status === "active" ? "Block" : "Unblock"} Cashier`}
@@ -260,6 +321,18 @@ export default function CashiersPage() {
                     loading={submitting}
                     onConfirm={handleToggleStatus}
                     onCancel={() => setToggleTarget(null)}
+                />
+            )}
+
+            {deleteTarget && (
+                <ConfirmDialog
+                    title="Delete Cashier"
+                    message={`Are you sure you want to delete ${deleteTarget.userId?.firstName}? This action cannot be undone.`}
+                    confirmLabel="Delete"
+                    danger={true}
+                    loading={submitting}
+                    onConfirm={handleDelete}
+                    onCancel={() => setDeleteTarget(null)}
                 />
             )}
         </div>
