@@ -140,17 +140,12 @@ export default function CreateDeliveryFeeModal({
                             required
                             error={errors.wilayaFrom}
                             placeholder="Select origin"
-                            fetchData={() =>
-                                getWilayas({
-                                    search: originSearch,
-                                    pageNumber: 1,
-                                    pageSize: 30,
-                                })
+                            fetchData={async () =>
+                                (await getWilayas()).data
                             }
                             onSearchChange={setOriginSearch}
                             getId={(w) => w.code.toString()}
-                            getLabel={(w) => w.code + " - " + w.nameFr}
-                            getSubLabel={(w) => " " + w.nameAr}
+                            getLabel={(w) => w.code + " - " + w.name}
                         />
 
                         {/* DESTINATION */}
@@ -164,17 +159,12 @@ export default function CreateDeliveryFeeModal({
                             required
                             error={errors.wilayaTo}
                             placeholder="Select destination"
-                            fetchData={() =>
-                                getWilayas({
-                                    search: destinationSearch,
-                                    pageNumber: 1,
-                                    pageSize: 30,
-                                })
+                            fetchData={async () =>
+                                (await getWilayas()).data
                             }
                             onSearchChange={setDestinationSearch}
                             getId={(w) => w.code.toString()}
-                            getLabel={(w) => w.code + " - " + w.nameFr}
-                            getSubLabel={(w) => " " + w.nameAr}
+                            getLabel={(w) => w.code + " - " + w.name}
                         />
                     </div>
 

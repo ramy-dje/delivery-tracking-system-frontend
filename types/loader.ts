@@ -17,7 +17,6 @@ export interface ICreateLoaderBody {
     password?: string;
     firstName: string;
     lastName: string;
-    employeeCode: string;
 }
 
 export interface IUpdateLoaderBody {

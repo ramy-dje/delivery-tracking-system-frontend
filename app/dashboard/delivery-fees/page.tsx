@@ -50,7 +50,7 @@ export default function DeliveryFeesPage() {
                 limit: PAGE_SIZE,
                 search: search || undefined
             });
-            setFees(res.entries);
+            setFees(res.tariffs);
             setTotalCount(res.pagination.total);
             setTotalPages(res.pagination.pages);
         } catch (e: any) {
@@ -62,7 +62,7 @@ export default function DeliveryFeesPage() {
         }
     }, [page, search]);
 
-    useEffect(() => { 
+    useEffect(() => {
         const timeout = setTimeout(() => {
             fetchFees();
         }, 300);
@@ -115,7 +115,7 @@ export default function DeliveryFeesPage() {
         if (!selectedFee) return;
         setDeleteLoading(true);
         try {
-            await deleteTariff(selectedFee.wilayaA, selectedFee.wilayaB);
+            await deleteTariff(selectedFee.from.id, selectedFee.to.id);
             showToast.success("Tariff removed successfully");
             setConfirmOpen(false);
             setSelectedFee(null);
@@ -186,11 +186,11 @@ export default function DeliveryFeesPage() {
                         type="text"
                         placeholder="Search by wilaya name…"
                         value={search}
-                        onChange={(e) => {setSearch(e.target.value); setPage(1)}}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                         className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
                     />
                     {search && (
-                        <button onClick={() => {setSearch(""); setPage(1)}} className="text-slate-700 hover:text-slate-500">
+                        <button onClick={() => { setSearch(""); setPage(1) }} className="text-slate-700 hover:text-slate-500">
                             <X size={13} />
                         </button>
                     )}
@@ -241,7 +241,7 @@ export default function DeliveryFeesPage() {
             {confirmOpen && selectedFee && (
                 <ConfirmDialog
                     title={`Remove Tariff`}
-                    message={`Are you sure you want to remove the tariff for "${selectedFee.wilayaAName} ↔ ${selectedFee.wilayaBName}"?`}
+                    message={`Are you sure you want to remove the tariff for "${selectedFee.from.name} ↔ ${selectedFee.to.name}"?`}
                     confirmLabel="Delete"
                     danger={true}
                     loading={deleteLoading}

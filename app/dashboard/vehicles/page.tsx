@@ -1,26 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { IPaginatedResponse } from "@/types/paginate";
+import { IVehicleListResponse, ICreateVehicleRequest, IVehicleResponse } from "@/types/vehicle";
 import { ROLES } from "@/lib/roles";
 import { showToast } from "nextjs-toast-notify";
 import Pagination from "@/components/commons/Pagination";
 import { Plus, Search, X } from "lucide-react";
 import RoleGuard from "@/lib/RoleGuard";
 import StatCard from "@/components/commons/StatCard";
-import { ICreateVehicleRequest, IVehicleResponse } from "@/types/vehicle";
-import { createVehicle, listVehicles } from "@/services/VehicleService";
+import { createVehicle, getCompanyVehicles } from "@/services/VehicleService";
 import VehicleList from "@/components/dashboard/vehicles/VehicleList";
 import CreateVehicleModal from "@/components/dashboard/vehicles/CreateVehicleModal";
 import VehicleDetailModal from "@/components/dashboard/vehicles/VehicleDetailModal";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
+import { getCompanyId } from "@/hooks/useAuth";
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 20;
 
 export default function VehiclesPage() {
-    const [pagination, setPagination] = useState<IPaginatedResponse<IVehicleResponse> | null>(null);
-    const vehicles = pagination?.items ?? [];
+    const companyId = getCompanyId(); // ← replace with your actual companyId source
+
+    const [listResponse, setListResponse] = useState<IVehicleListResponse | null>(null);
+    const vehicles: IVehicleResponse[] = listResponse?.data ?? [];
+    const pagination = listResponse?.pagination ?? null;
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -36,44 +39,52 @@ export default function VehiclesPage() {
     // ── Fetch ─────────────────────────────────────────────────────────────
 
     const fetchVehicles = useCallback(async () => {
+        if (!companyId) return;
         setLoading(true);
         setError(null);
         try {
-            const res = await listVehicles({ search, pageNumber: page, pageSize: PAGE_SIZE });
-            setPagination(res);
+            const res = await getCompanyVehicles(companyId, {
+                search,
+                page,
+                limit: PAGE_SIZE,
+            });
+            setListResponse(res);
         } catch (e: any) {
-            const error = parseApiError(e);
-            console.error("Failed to fetch vehicles:", error);
-            const msg = error?.message ?? "Failed to fetch vehicles";
+            const err = parseApiError(e);
+            console.error("Failed to fetch vehicles:", err);
+            const msg = err?.message ?? "Failed to fetch vehicles";
             setError(msg);
             showToast.error(msg);
         } finally {
             setLoading(false);
         }
-    }, [page, search]);
+    }, [companyId, page, search]);
 
     useEffect(() => {
-        const delay = setTimeout(() => {
-            fetchVehicles();
-        }, 400);
+        const delay = setTimeout(() => { fetchVehicles(); }, 400);
         return () => clearTimeout(delay);
     }, [fetchVehicles]);
 
+    // Derived stats
+    const totalCount = pagination?.total ?? 0;
     const fragileSupportCount = vehicles.filter((v) => v.supportsFragile).length;
-    const totalCount = pagination?.totalCount ?? 0;
+    const availableCount = listResponse?.summary?.byStatus?.available ?? 0;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
 
     const handleCreate = async (data: ICreateVehicleRequest) => {
+        if (!companyId) return;
         setCreateLoading(true);
         try {
-            await createVehicle(data);
+            await createVehicle(companyId, data);
             setCreateOpen(false);
             showToast.success("Vehicle added to fleet");
             fetchVehicles();
         } catch (e: any) {
             const serverErrors = e?.response?.data?.errors;
-            const firstServerError = serverErrors ? Object.values(serverErrors).flat().find(Boolean) : null;
+            const firstServerError = serverErrors
+                ? Object.values(serverErrors).flat().find(Boolean)
+                : null;
             const msg =
                 firstServerError ??
                 e?.response?.data?.message ??
@@ -89,7 +100,7 @@ export default function VehiclesPage() {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER]}>
+        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}
@@ -119,11 +130,11 @@ export default function VehiclesPage() {
                     </button>
                 </div>
 
-                {/* Stats */}
+                {/* Stats — now uses summary from backend */}
                 <div className="grid grid-cols-3 gap-3">
                     <StatCard label="Total" value={totalCount} accent="#94a3b8" />
-                    <StatCard label="Fragile Supported" value={fragileSupportCount} accent="#38bdf8" />
-                    <StatCard label="Showing" value={vehicles.length} accent="#fbbf24" />
+                    <StatCard label="Available" value={availableCount} accent="#34d399" />
+                    <StatCard label="Fragile Ready" value={fragileSupportCount} accent="#38bdf8" />
                 </div>
 
                 {error && <ErrorBaner error={error} setError={setError} />}
@@ -142,7 +153,7 @@ export default function VehiclesPage() {
                             type="text"
                             placeholder="Search by registration, brand, or model…"
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                             className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
                         />
                         {search && (
@@ -163,13 +174,13 @@ export default function VehiclesPage() {
                     onViewDetail={(id) => { setSelectedVehicleId(id); setDetailOpen(true); }}
                 />
 
-                {/* Pagination */}
+                {/* Pagination — new shape uses total/totalPages/hasNextPage/hasPrevPage */}
                 {pagination && pagination.totalPages > 1 && (
                     <Pagination
-                        pageNumber={pagination.pageNumber}
+                        pageNumber={pagination.page}
                         totalPages={pagination.totalPages}
                         hasNext={pagination.hasNextPage}
-                        hasPrev={pagination.hasPreviousPage}
+                        hasPrev={pagination.hasPrevPage}
                         onChange={(p) => setPage(p)}
                     />
                 )}
@@ -182,10 +193,11 @@ export default function VehiclesPage() {
                     loading={createLoading}
                 />
 
-                {selectedVehicleId && (
+                {selectedVehicleId && companyId && (
                     <VehicleDetailModal
                         isOpen={detailOpen}
                         vehicleId={selectedVehicleId}
+                        companyId={companyId}
                         onClose={() => { setDetailOpen(false); setSelectedVehicleId(null); }}
                     />
                 )}

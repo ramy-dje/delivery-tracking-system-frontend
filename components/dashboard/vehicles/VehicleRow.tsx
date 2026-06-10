@@ -58,7 +58,7 @@ const VehicleRow = ({
     return (
         <div
             className={`
-                group grid grid-cols-[1fr_auto] md:grid-cols-[180px_1fr_150px_150px_auto]
+                group grid grid-cols-[1fr_auto] md:grid-cols-[180px_1fr_150px_150px_80px]
                 gap-4 px-5 py-4 items-center transition-all duration-150
                 hover:bg-white/2.5
                 ${!isLast ? "border-b border-white/4" : ""}
@@ -113,7 +113,7 @@ const VehicleRow = ({
                 </div>
                 {vehicle.supportsFragile && (
                     <div className="flex items-center gap-1.5 opacity-80">
-                        <svg className="w-3 h-3 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z"/></svg>
+                        <svg className="w-3 h-3 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z" /></svg>
                         <span className="text-[10px] uppercase tracking-wider font-semibold text-sky-400">Fragile Ok</span>
                     </div>
                 )}

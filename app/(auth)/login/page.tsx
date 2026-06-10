@@ -61,18 +61,8 @@ export default function LoginPage() {
             const data = await loginUser(formData);
             showToast.success("Login Success! 🎉");
             console.log("Login response:", data);
-            const userData = {
-                id: data.user._id,
-                fullName: `${data.user.firstName} ${data.user.lastName}`,
-                email: data.user.email,
-                role: data.user.role,
-                phoneNumber: data.user.phone,
-                isActive: data.user.status === 'active',
-                companyId: data.associated?.companyId,
-                logisticsNodeId: data.associated?.branchId || data.associated?.hubId,
-            };
 
-            login(userData as any, data.accessToken);
+            login(data.user, data.accessToken, data.associated);
             setTimeout(() => {
                 router.push("/dashboard");
             }, 3000);
@@ -131,7 +121,7 @@ export default function LoginPage() {
                         <InputField
                             label="Email Address"
                             type="email"
-                            placeholder="john@company.com"
+                            placeholder="mohamed@company.com"
                             icon={Mail}
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -148,7 +138,14 @@ export default function LoginPage() {
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 error={errors.password}
                             />
-                            <PasswordStrength password={formData.password} />
+
+                            <p className="text-slate-500 text-xs mt-1.5 text-right pr-1.5">
+                                You Forgot Your Password?{" "}
+                                <Link href="/forget-password" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+                                    Reset it
+                                </Link>
+                            </p>
+
                         </div>
 
                         <ActionBtn type="submit" disabled={isLoading} className="w-full" label="Sign In" variant="primary" size="action" />

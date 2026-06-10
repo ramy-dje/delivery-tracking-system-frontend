@@ -1,10 +1,14 @@
 export interface ITariffEntry {
-    wilayaA: number;
-    wilayaB: number;
-    wilayaAName: string;
-    wilayaBName: string;
-    stopdesk: number;
     domicile: number;
+    stopdesk: number;
+    from: {
+        id: number;
+        name: string;
+    },
+    to: {
+        id: number;
+        name: string;
+    }
 }
 
 export interface IUpsertTariffPayload {
@@ -16,8 +20,8 @@ export interface IUpsertTariffPayload {
 
 export interface ITariffResponse {
     companyId: string;
-    entries: ITariffEntry[];
-    lastUpdated: string | null;
+    tariffs: ITariffEntry[];
+    success: boolean;
     pagination: {
         total: number;
         page: number;

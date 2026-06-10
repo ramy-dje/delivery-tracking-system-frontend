@@ -6,7 +6,7 @@ export interface GlassStatCardProps {
     label: string;
     value: ReactNode;
     secondaryValue?: ReactNode;
-    badge?: { label: string; color?: "amber" | "emerald" | "slate" };
+    badge?: { label: string; color?: "amber" | "emerald" | "slate" | "red" };
     emptyState?: { label: string; icon?: ReactNode };
     accentColor?: "amber" | "emerald" | "violet" | "rose" | "cyan";
     className?: string;
@@ -34,6 +34,7 @@ export function GlassStatCard({
         amber: { bg: "rgba(251,191,36,0.07)", color: "rgba(251,191,36,0.65)", border: "rgba(251,191,36,0.1)" },
         emerald: { bg: "rgba(52,211,153,0.07)", color: "rgba(52,211,153,0.65)", border: "rgba(52,211,153,0.1)" },
         slate: { bg: "rgba(100,116,139,0.07)", color: "rgba(148,163,184,0.65)", border: "rgba(100,116,139,0.1)" },
+        red: { bg: "rgba(239,68,68,0.07)", color: "rgba(239,68,68,0.65)", border: "rgba(239,68,68,0.1)" },
     };
 
     if (emptyState && !value) {

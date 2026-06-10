@@ -3,17 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
     listBranches,
-    getDeletedBranches,
+    toggleBlockBranch,
     createBranch,
     updateBranch,
-    deleteBranch,
-    restoreBranch,
+    IBranchFilter,
 } from "@/services/BranchService";
 import {
     IBranchResponse,
     ICreateBranchPayload,
     IUpdateBranchPayload,
-    NodeType,
 } from "@/types/branch";
 import BranchModal from "@/components/dashboard/branches/BranchModal";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
@@ -23,72 +21,55 @@ import EmptyState from "@/components/commons/EmptyState";
 import { Package, Plus, Search, X } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
 import { SkeletonList } from "@/components/commons/Skeleton";
-import { IPaginatedResponse } from "@/types/paginate";
-import Pagination from "@/components/commons/Pagination";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import ActionBtn from "@/components/commons/ActionButton";
+import { parseApiError } from "@/utils/apiErrorHandler";
 
-type Tab = "active" | "deleted";
+// Status options that match the backend BranchStatus type
+type StatusFilter = "" | "active" | "inactive" | "maintenance" | "pending";
 
 export default function BranchesPage() {
-
-    const PAGE_SIZE = 7;
-    const [pagination, setPagination] = useState<IPaginatedResponse<IBranchResponse> | null>(null);
-    const branches = pagination?.items ?? [];
-
-    const [tab, setTab] = useState<Tab>("active");
-    const [deleted, setDeleted] = useState<IBranchResponse[]>([]);
+    const [branches, setBranches] = useState<IBranchResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Filters — all sent to the backend directly
     const [search, setSearch] = useState("");
-    const [filterType, setFilterType] = useState<NodeType | "">("");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
+    const [cityFilter, setCityFilter] = useState("");
 
-    const [page, setPage] = useState(1);
-
+    // Modals
     const [modalOpen, setModalOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<IBranchResponse | null>(null);
-    const [deleteTarget, setDeleteTarget] = useState<IBranchResponse | null>(null);
-    const [restoreTarget, setRestoreTarget] = useState<IBranchResponse | null>(null);
+    const [toggleTarget, setToggleTarget] = useState<IBranchResponse | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    // ── Fetching ─────────────────────────────────────────────────────────
+    // ── Fetch ─────────────────────────────────────────────────────────────────
 
-    const fetchActive = useCallback(async () => {
+    const fetchBranches = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const params: Record<string, any> = { pageNumber: page, pageSize: PAGE_SIZE };
+            const params: IBranchFilter = {};
             if (search) params.search = search;
-            if (filterType) params.branchType = filterType;
+            if (statusFilter) params.status = statusFilter;
+            if (cityFilter) params.city = cityFilter;
             const res = await listBranches(params);
-            setPagination(res);
+            setBranches(res);
         } catch (e: any) {
+            const error = parseApiError(e);
+            console.log("Failed to fetch branches:", error);
             setError(e?.message ?? "Failed to load branches");
         } finally {
             setLoading(false);
         }
-    }, [page, search, filterType]);
-
-    const fetchDeleted = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await getDeletedBranches();
-            setDeleted(res);
-        } catch (e: any) {
-            setError(e?.message ?? "Failed to load deleted branches");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    }, [search, statusFilter, cityFilter]);
 
     useEffect(() => {
-        if (tab === "active") fetchActive();
-        else fetchDeleted();
-    }, [tab, fetchActive, fetchDeleted]);
+        fetchBranches();
+    }, [fetchBranches]);
 
-    // ── CRUD ─────────────────────────────────────────────────────────────
+    // ── CRUD ──────────────────────────────────────────────────────────────────
 
     const handleCreate = async (payload: ICreateBranchPayload | IUpdateBranchPayload) => {
         setSubmitting(true);
@@ -96,10 +77,11 @@ export default function BranchesPage() {
             await createBranch(payload as ICreateBranchPayload);
             setModalOpen(false);
             showToast.success("Branch created successfully");
-            fetchActive();
+            fetchBranches();
         } catch (e: any) {
-            setError(e?.message ?? "Failed to create branch");
-            showToast.error(e?.message ?? "Failed to create branch");
+            const error = parseApiError(e);
+            console.log("Failed to create branch:", error);
+            showToast.error(error.message ?? "Failed to create branch");
         } finally {
             setSubmitting(false);
         }
@@ -109,66 +91,51 @@ export default function BranchesPage() {
         if (!editTarget) return;
         setSubmitting(true);
         try {
-            await updateBranch(editTarget.id, payload as IUpdateBranchPayload);
+            await updateBranch(editTarget._id ?? editTarget.id, payload as IUpdateBranchPayload);
             setEditTarget(null);
             showToast.success("Branch updated successfully");
-            fetchActive();
+            fetchBranches();
         } catch (e: any) {
-            setError(e?.message ?? "Failed to update branch");
-            showToast.error(e?.message ?? "Failed to update branch");
+            const error = parseApiError(e);
+            console.log("Failed to update branch:", error);
+            showToast.error(error.message ?? "Failed to update branch");
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDelete = async () => {
-        if (!deleteTarget) return;
+    const handleToggleBlock = async () => {
+        if (!toggleTarget) return;
         setSubmitting(true);
         try {
-            await deleteBranch(deleteTarget.id);
-            setDeleteTarget(null);
-            showToast.success("Branch deleted successfully");
-            fetchActive();
+            const { newStatus } = await toggleBlockBranch(toggleTarget._id ?? toggleTarget.id);
+            setToggleTarget(null);
+            showToast.success(
+                `Branch ${newStatus === "active" ? "activated" : "deactivated"} successfully`,
+            );
+            fetchBranches();
         } catch (e: any) {
-            setError(e?.message ?? "Failed to delete branch");
-            showToast.error(e?.message ?? "Failed to delete branch");
+            showToast.error(e?.message ?? "Failed to update branch status");
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleRestore = async () => {
-        if (!restoreTarget) return;
-        setSubmitting(true);
-        try {
-            await restoreBranch(restoreTarget.id);
-            setRestoreTarget(null);
-            showToast.success("Branch restored successfully");
-            fetchDeleted();
-        } catch (e: any) {
-            setError(e?.message ?? "Failed to restore branch");
-            showToast.error(e?.message ?? "Failed to restore branch");
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    // ── Derived counts (from loaded data only) ────────────────────────────────
 
-    const displayedBranches = tab === "active" ? branches : deleted;
+    const hubCount = branches.filter((b) => b.branchType === "regional_main_hub").length;
+    const branchCount = branches.filter((b) => b.branchType === "local_branch").length;
+    const activeCount = branches.filter((b) => b.status === "active").length;
 
-    const hubCount = branches.filter((b) => b.branchType === NodeType.RegionalMainHub).length;
-    const branchCount = branches.filter((b) => b.branchType === NodeType.LocalBranch).length;
-
-    // ── Render ───────────────────────────────────────────────────────────
-
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className=" flex h-full min-h-0 flex-col gap-3">
+        <div className="flex h-full min-h-0 flex-col gap-3">
 
-            {/* ── Header ────────────────────────────────────────────────── */}
+            {/* ── Header ──────────────────────────────────────────────────── */}
             <div className="flex items-start justify-between gap-4 pt-1">
                 <div>
                     <div className="flex items-center gap-2.5 mb-1">
-                        {/* Accent line */}
                         <div
                             className="w-1 h-6 rounded-full"
                             style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b66)" }}
@@ -178,137 +145,124 @@ export default function BranchesPage() {
                         </h1>
                     </div>
                     <p className="text-[13px] text-slate-500 ml-3.5 pl-0.5">
-                        Manage hubs, branches, and Main Hubs across your network.
+                        Manage hubs and branches across your network.
                     </p>
                 </div>
-                {tab === "active" && (
-                    <ActionBtn onClick={() => setModalOpen(true)} variant="primary" size="action" label="New Node" title="Create new logistics node">
-                        <Plus className="w-4 h-4" />
-                    </ActionBtn>
-                )}
+                <ActionBtn
+                    onClick={() => setModalOpen(true)}
+                    variant="primary"
+                    size="action"
+                    label="New Node"
+                    title="Create new logistics node"
+                >
+                    <Plus className="w-4 h-4" />
+                </ActionBtn>
             </div>
 
-            {/* ── Stat cards ────────────────────────────────────────────── */}
-            {tab === "active" && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <StatCard label="Total" value={pagination?.totalCount || 0} accent="#94a3b8" />
-                    <StatCard label="Hubs" value={hubCount} accent="#fbbf24" />
-                    <StatCard label="Branches" value={branchCount} accent="#22d3ee" />
-                </div>
-            )}
+            {/* ── Stat cards ──────────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard label="Total" value={branches.length} accent="#94a3b8" />
+                <StatCard label="Active" value={activeCount} accent="#22c55e" />
+                <StatCard label="Hubs" value={hubCount} accent="#fbbf24" />
+                <StatCard label="Branches" value={branchCount} accent="#22d3ee" />
+            </div>
 
-            {/* ── Error banner ──────────────────────────────────────────── */}
-            {error && (
-                <ErrorBaner error={error} setError={setError} />
-            )}
+            {/* ── Error banner ─────────────────────────────────────────────── */}
+            {error && <ErrorBaner error={error} setError={setError} />}
 
-            {/* ── Tabs + Filters row ────────────────────────────────────── */}
+            {/* ── Filters row ──────────────────────────────────────────────── */}
             <div className="flex flex-wrap items-center gap-3">
-                {/* Tabs */}
+                {/* Search */}
                 <div
-                    className="flex items-center gap-0.5 p-0.5 rounded-lg"
+                    className="flex items-center gap-2 flex-1 min-w-45 px-3 py-2 rounded-lg transition-colors"
                     style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: "rgba(255,255,255,0.025)",
+                        border: "1px solid rgba(255,255,255,0.07)",
                     }}
                 >
-                    {(["active", "deleted"] as Tab[]).map((t) => (
+                    <Search size={13} className="text-slate-700 shrink-0" />
+                    <input
+                        type="text"
+                        placeholder="Search name or code…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
+                    />
+                    {search && (
                         <button
-                            key={t}
-                            onClick={() => { setTab(t); setPage(1); }}
-                            className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-all duration-150 ${tab === t ? "text-white" : "text-slate-600 hover:text-slate-400"
-                                }`}
-                            style={
-                                tab === t
-                                    ? {
-                                        background:
-                                            t === "deleted"
-                                                ? "rgba(239,68,68,0.1)"
-                                                : "rgba(251,191,36,0.1)",
-                                        border: `1px solid ${t === "deleted"
-                                            ? "rgba(239,68,68,0.18)"
-                                            : "rgba(251,191,36,0.18)"
-                                            }`,
-                                        color: t === "deleted" ? "#f87171" : "#fbbf24",
-                                    }
-                                    : {}
-                            }
+                            onClick={() => setSearch("")}
+                            className="text-slate-700 hover:text-slate-500"
                         >
-                            {t === "active" ? "Active" : "Deleted"}
-                            {t === "deleted" && deleted.length > 0 && (
-                                <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold bg-red-500/20 text-red-400">
-                                    {deleted.length}
-                                </span>
-                            )}
+                            <X size={13} />
                         </button>
-                    ))}
+                    )}
                 </div>
 
-                {/* Filters — active tab only */}
-                {tab === "active" && (
-                    <>
-                        {/* Search */}
-                        <div
-                            className="flex items-center gap-2 flex-1 min-w-45 px-3 py-2 rounded-lg transition-colors"
-                            style={{
-                                background: "rgba(255,255,255,0.025)",
-                                border: "1px solid rgba(255,255,255,0.07)",
-                            }}
+                {/* City filter */}
+                <div
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                    style={{
+                        background: "rgba(255,255,255,0.025)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                    }}
+                >
+                    <input
+                        type="text"
+                        placeholder="Filter by city…"
+                        value={cityFilter}
+                        onChange={(e) => setCityFilter(e.target.value)}
+                        className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none w-28"
+                    />
+                    {cityFilter && (
+                        <button
+                            onClick={() => setCityFilter("")}
+                            className="text-slate-700 hover:text-slate-500"
                         >
-                            <Search size={13} className="text-slate-700 shrink-0" />
-                            <input
-                                type="text"
-                                placeholder="Search name or code…"
-                                value={search}
-                                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
-                            />
-                            {search && (
-                                <button onClick={() => setSearch("")} className="text-slate-700 hover:text-slate-500">
-                                    <X size={13} />
-                                </button>
-                            )}
-                        </div>
+                            <X size={13} />
+                        </button>
+                    )}
+                </div>
 
-                        {/* Type filter */}
-                        <select
-                            value={filterType}
-                            onChange={(e) => { setFilterType(e.target.value as NodeType | ""); setPage(1); }}
-                            className="px-3 py-2 rounded-lg text-[12.5px] text-slate-400 focus:outline-none transition-colors"
-                            style={{
-                                appearance: "none",
-                                background: "rgba(255,255,255,0.025)",
-                                border: "1px solid rgba(255,255,255,0.07)",
-                                minWidth: "110px",
-                            }}
-                        >
-                            <option value="" style={{ background: "#0d1117" }}>All types</option>
-                            <option value={NodeType.RegionalMainHub} style={{ background: "#0d1117" }}>Hub</option>
-                            <option value={NodeType.LocalBranch} style={{ background: "#0d1117" }}>Branch</option>
-                        </select>
+                {/* Status filter */}
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                    className="px-3 py-2 rounded-lg text-[12.5px] text-slate-400 focus:outline-none transition-colors"
+                    style={{
+                        appearance: "none",
+                        background: "rgba(255,255,255,0.025)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        minWidth: "110px",
+                    }}
+                >
+                    <option value="" style={{ background: "#0d1117" }}>All statuses</option>
+                    <option value="active" style={{ background: "#0d1117" }}>Active</option>
+                    <option value="inactive" style={{ background: "#0d1117" }}>Inactive</option>
+                    <option value="maintenance" style={{ background: "#0d1117" }}>Maintenance</option>
+                    <option value="pending" style={{ background: "#0d1117" }}>Pending</option>
+                </select>
 
-                        <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
-                            {pagination?.totalCount || 0} node{pagination?.totalCount !== 1 ? "s" : ""}
-                        </span>
-                    </>
-                )}
+                <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
+                    {branches.length} node{branches.length !== 1 ? "s" : ""}
+                </span>
             </div>
 
-            {/* ── Table ─────────────────────────────────────────────────── */}
+            {/* ── Table ────────────────────────────────────────────────────── */}
             <div
-                className="rounded-xl flex-col flex-1 p-10 overflow-y-auto"
+                className="rounded-xl flex-col flex-1 p-2 overflow-y-auto"
                 style={{
                     background: "#060a10",
                     border: "1px solid rgba(255,255,255,0.05)",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)",
+                    boxShadow:
+                        "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)",
                 }}
             >
                 {/* Column headers */}
                 <div
-                    className="hidden md:grid grid-cols-[1fr_120px_270px_160px_auto] gap-4 px-5 py-2.5 border-b border-white/4"
+                    className="hidden md:grid grid-cols-[1fr_270px_120px_120px_160px_auto] gap-4 px-5 py-2.5 border-b border-white/4"
                     style={{ background: "rgba(255,255,255,0.015)" }}
                 >
-                    {["Node", "Type", "Location", "Created", "Actions"].map((h, i) => (
+                    {["Node", "Location", "Type", "Status", "Created", "Actions"].map((h, i) => (
                         <div
                             key={i}
                             className="text-[9.5px] uppercase tracking-[0.14em] text-slate-700 font-semibold"
@@ -322,53 +276,31 @@ export default function BranchesPage() {
                     <div className="py-2">
                         <SkeletonList rows={5} />
                     </div>
-                ) : displayedBranches.length === 0 ? (
-                    tab === "deleted" ? (
-                        <EmptyState
-                            title="No deleted branches"
-                            description="Deleted branches will appear here for restoration."
-                            icon={Package}
-                            tone="default"
-                        />
-                    ) : (
-                        <EmptyState
-                            title="No branches yet"
-                            description="Create your first logistics node to get started."
-                            icon={Package}
-                            actionLabel="+ New Branch"
-                            tone="warning"
-                            onAction={() => setModalOpen(true)}
-                        />
-                    )
+                ) : branches.length === 0 ? (
+                    <EmptyState
+                        title="No branches found"
+                        description="Create your first logistics node or adjust your filters."
+                        icon={Package}
+                        actionLabel="+ New Branch"
+                        tone="warning"
+                        onAction={() => setModalOpen(true)}
+                    />
                 ) : (
-                    <div className="">
-                        {displayedBranches.map((branch, idx) => (
+                    <div>
+                        {branches.map((branch, idx) => (
                             <BranchRow
-                                key={branch.id}
+                                key={branch._id ?? branch.id}
                                 branch={branch}
-                                isLast={idx === displayedBranches.length - 1}
-                                isDeleted={tab === "deleted"}
+                                isLast={idx === branches.length - 1}
                                 onEdit={() => setEditTarget(branch)}
-                                onDelete={() => setDeleteTarget(branch)}
-                                onRestore={() => setRestoreTarget(branch)}
+                                onToggleBlock={() => setToggleTarget(branch)}
                             />
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* ── Pagination ────────────────────────────────────────────── */}
-            {tab === "active" && pagination && pagination.totalPages > 1 && (
-                <Pagination
-                    pageNumber={pagination.pageNumber}
-                    totalPages={pagination.totalPages}
-                    hasNext={pagination.hasNextPage}
-                    hasPrev={pagination.hasPreviousPage}
-                    onChange={(p) => setPage(p)}
-                />
-            )}
-
-            {/* ── Modals ────────────────────────────────────────────────── */}
+            {/* ── Modals ───────────────────────────────────────────────────── */}
             {modalOpen && (
                 <BranchModal
                     onClose={() => setModalOpen(false)}
@@ -386,26 +318,25 @@ export default function BranchesPage() {
                 />
             )}
 
-            {deleteTarget && (
+            {toggleTarget && (
                 <ConfirmDialog
-                    title="Delete Node"
-                    message={`Are you sure you want to delete "${deleteTarget.name}"? It can be restored later from the Deleted tab.`}
-                    confirmLabel="Delete"
-                    danger
+                    title={
+                        toggleTarget.status === "active"
+                            ? "Deactivate Branch"
+                            : "Activate Branch"
+                    }
+                    message={
+                        toggleTarget.status === "active"
+                            ? `Deactivate "${toggleTarget.name}"? It will stop being available.`
+                            : `Activate "${toggleTarget.name}"? It will become available again.`
+                    }
+                    confirmLabel={
+                        toggleTarget.status === "active" ? "Deactivate" : "Activate"
+                    }
+                    danger={toggleTarget.status === "active"}
                     loading={submitting}
-                    onConfirm={handleDelete}
-                    onCancel={() => setDeleteTarget(null)}
-                />
-            )}
-
-            {restoreTarget && (
-                <ConfirmDialog
-                    title="Restore Node"
-                    message={`Restore "${restoreTarget.name}" and make it active again?`}
-                    confirmLabel="Restore"
-                    loading={submitting}
-                    onConfirm={handleRestore}
-                    onCancel={() => setRestoreTarget(null)}
+                    onConfirm={handleToggleBlock}
+                    onCancel={() => setToggleTarget(null)}
                 />
             )}
         </div>

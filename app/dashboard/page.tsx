@@ -1,8 +1,9 @@
 "use client";
 
-import ManagerDashboard from "@/components/dashboard/ManagerDashboard";
-import OwnerDashboard from "@/components/dashboard/OwnerDashboard";
+
+import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDashboard";
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
+import { ROLES } from "@/lib/roles";
 import userStore from "@/stores/userStore";
 
 /**
@@ -11,9 +12,9 @@ import userStore from "@/stores/userStore";
 export default function DashboardPage() {
     const { user } = userStore();
     const role = user?.role?.toUpperCase();
+    console.log("User role:", role);
 
-    if (role === "OWNER") return <OwnerDashboard />;
-    if (role === "MANAGER") return <OwnerDashboard />;
+    if (role === ROLES.MANAGER) return <ManagerOverviewDashboard />;
     if (role === "RECEPTIONIST") return <ReceptionistDashboard />;
 
     return (

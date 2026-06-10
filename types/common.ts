@@ -6,10 +6,8 @@ export interface ILocation {
     longitude: number
 }
 
-export interface IWilaya extends ILocation {
-    id: string,
-    nameAr: string,
-    nameFr: string,
+export interface IWilaya {
+    name: string,
     code: number,
 }
 

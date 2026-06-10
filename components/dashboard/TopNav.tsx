@@ -5,20 +5,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import userStore from "@/stores/userStore";
 import { ROLES, ROLE_ROUTES } from "@/lib/roles";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NOTIF_COLORS, PRIORITY_COLORS, timeAgo } from "@/lib/notificationUtils";
 
 const MOBILE_ROUTES = [
     { path: "/dashboard", label: "Overview", allowed: ROLE_ROUTES["/dashboard"] },
     { path: "/dashboard/operations", label: "Operations", allowed: ROLE_ROUTES["/dashboard/operations"] },
     { path: "/dashboard/management", label: "Management", allowed: ROLE_ROUTES["/dashboard/management"] },
-    { path: "/dashboard/branches", label: "Branches", allowed: [ROLES.OWNER, ROLES.ADMIN, ROLES.MANAGER] },
-    { path: "/dashboard/owner/branches", label: "Branch Managers", allowed: [ROLES.OWNER] },
-    { path: "/dashboard/overview", label: "Overview", allowed: [ROLES.ADMIN, ROLES.OWNER, ROLES.MANAGER] },
-    { path: "/dashboard/transporters", label: "Transporters", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN] },
-    { path: "/dashboard/freelancers", label: "Freelancers", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.SUPERVISOR] },
-    { path: "/dashboard/routes", label: "Routes", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN, ROLES.RECEPTIONIST] },
-    { path: "/dashboard/company", label: "Company", allowed: [ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN] },
+    { path: "/dashboard/analytics", label: "Analytics", allowed: ROLE_ROUTES["/dashboard/analytics"] },
+    { path: "/dashboard/branches", label: "Branches", allowed: [ROLES.MANAGER, ROLES.ADMIN] },
+    { path: "/dashboard/owner/branches", label: "Branch Managers", allowed: [ROLES.MANAGER] },
+    { path: "/dashboard/overview", label: "Overview", allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER] },
+    { path: "/dashboard/transporters", label: "Transporters", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN] },
+    { path: "/dashboard/freelancers", label: "Freelancers", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.SUPERVISOR] },
+    { path: "/dashboard/routes", label: "Routes", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.RECEPTIONIST] },
+    { path: "/dashboard/company", label: "Company", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN] },
     { path: "/dashboard/inventory", label: "Inventory", allowed: ROLE_ROUTES["/dashboard/operations"] },
-    { path: "/dashboard/management/users", label: "Users", allowed: [ROLES.ADMIN, ROLES.OWNER] },
+    { path: "/dashboard/management/users", label: "Users", allowed: [ROLES.ADMIN, ROLES.MANAGER] },
 ];
 
 export default function TopNav() {
@@ -37,16 +40,36 @@ export default function TopNav() {
         (r) => pathname === r.path || pathname?.startsWith(r.path + "/")
     );
 
-    const initials = user?.fullName
+    const initials = (user?.firstName + " " + user?.lastName)
         ?.split(" ")
         .map((n: string) => n[0])
         .slice(0, 2)
         .join("")
         .toUpperCase() ?? "?";
 
+    const {
+        notifications,
+        unreadCount,
+        loading,
+        hasMore,
+        fetchNotifications,
+        markAsRead,
+        markAllRead,
+        loadMore,
+    } = useNotifications();
+
+    // Fetch when dropdown opens
+    const handleNotifOpen = () => {
+        setNotifOpen(v => {
+            if (!v) fetchNotifications(1);
+            return !v;
+        });
+    };
+
+
     return (
         <>
-            <header className="border relative z-40 border-white/10 rounded-lg bg-[#06090f]/90 backdrop-blur-md w-full">
+            <header className="border relative z-40 border-white/10 rounded-lg bg-background-surface/90 backdrop-blur-md h-full w-full">
                 <div className="flex items-center justify-between px-5 h-14">
 
                     {/* Left: mobile menu + breadcrumb */}
@@ -95,7 +118,7 @@ export default function TopNav() {
                         {/* Notifications */}
                         <div className="relative">
                             <button
-                                onClick={() => setNotifOpen((v) => !v)}
+                                onClick={handleNotifOpen}
                                 className="relative p-2 rounded-lg border border-white/[0.07] bg-white/2 text-slate-400 hover:text-white hover:border-white/12 transition-all"
                                 aria-label="Notifications"
                             >
@@ -104,32 +127,101 @@ export default function TopNav() {
                                     <path d="M10.7 7a2.7 2.7 0 115.4 0v3.2l1.2 2.4a1 1 0 01-.9 1.4H6.6a1 1 0 01-.9-1.4L7 10.2V7z"
                                         stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                                 </svg>
-                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center border-2 border-[#06090f]"
-                                    style={{ background: "#fbbf24", color: "#030712" }}>
-                                    3
-                                </span>
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center border-2 border-background-surface"
+                                        style={{ background: "#fbbf24", color: "#030712" }}>
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
+                                )}
                             </button>
 
-                            {/* Notif dropdown */}
                             {notifOpen && (
-                                <div className="absolute right-0 top-10 w-72 rounded-xl border border-white/8 bg-[#0d1117] shadow-2xl z-50 overflow-hidden">
+                                <div className="absolute right-0 top-10 w-80 rounded-xl border border-white/8 bg-background-alt shadow-2xl z-50 overflow-hidden">
+                                    {/* Header */}
                                     <div className="px-4 py-3 border-b border-white/6 flex items-center justify-between">
-                                        <span className="text-[13px] font-semibold text-white">Notifications</span>
-                                        <span className="text-[11px] text-amber-400 cursor-pointer hover:text-amber-300">Mark all read</span>
-                                    </div>
-                                    {[
-                                        { title: "Shipment delayed", sub: "Route MI→RM · 2h ago", dot: "#f97316" },
-                                        { title: "New user registered", sub: "Marco Bellini · 4h ago", dot: "#a78bfa" },
-                                        { title: "Inventory audit done", sub: "Hub Milan-North · 6h ago", dot: "#22d3ee" },
-                                    ].map((n, i) => (
-                                        <div key={i} className="flex items-start gap-3 px-4 py-3 hover:bg-white/3 cursor-pointer border-b border-white/4 last:border-0 transition-colors">
-                                            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: n.dot }} />
-                                            <div>
-                                                <div className="text-[13px] text-slate-200">{n.title}</div>
-                                                <div className="text-[11px] text-slate-500 mt-0.5">{n.sub}</div>
-                                            </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] font-semibold text-white">Notifications</span>
+                                            {unreadCount > 0 && (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                                                    style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}>
+                                                    {unreadCount}
+                                                </span>
+                                            )}
                                         </div>
-                                    ))}
+                                        {unreadCount > 0 && (
+                                            <button
+                                                onClick={markAllRead}
+                                                className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors"
+                                            >
+                                                Mark all read
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* List */}
+                                    <div className="max-h-80 overflow-y-auto">
+                                        {loading && notifications.length === 0 ? (
+                                            <div className="flex items-center justify-center py-8">
+                                                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                                            </div>
+                                        ) : notifications.length === 0 ? (
+                                            <div className="text-center py-8 text-slate-500 text-[13px]">
+                                                No notifications
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {notifications.map((n) => (
+                                                    <div
+                                                        key={n._id}
+                                                        onClick={() => !n.is_read && markAsRead(n._id)}
+                                                        className={`
+                                                flex items-start gap-3 px-4 py-3 cursor-pointer
+                                                border-b border-white/4 last:border-0 transition-colors
+                                                ${n.is_read ? "opacity-50 hover:opacity-70" : "hover:bg-white/3"}
+                                            `}
+                                                    >
+                                                        {/* Color dot (type) */}
+                                                        <div className="flex flex-col items-center gap-1 mt-1 shrink-0">
+                                                            <div className="w-2 h-2 rounded-full"
+                                                                style={{ background: NOTIF_COLORS[n.notification_type] }} />
+                                                            {n.priority === "high" && (
+                                                                <div className="w-1 h-1 rounded-full"
+                                                                    style={{ background: PRIORITY_COLORS.high }} />
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <span className="text-[13px] text-slate-200 leading-snug">
+                                                                    {n.title}
+                                                                </span>
+                                                                {!n.is_read && (
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1" />
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
+                                                                {n.message}
+                                                            </p>
+                                                            <span className="text-[10px] text-slate-600 mt-1 block">
+                                                                {timeAgo(n.createdAt)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                {/* Load more */}
+                                                {hasMore && (
+                                                    <button
+                                                        onClick={loadMore}
+                                                        disabled={loading}
+                                                        className="w-full py-2.5 text-[12px] text-slate-500 hover:text-amber-400 transition-colors border-t border-white/4"
+                                                    >
+                                                        {loading ? "Loading..." : "Load more"}
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -137,13 +229,30 @@ export default function TopNav() {
                         {/* User avatar + name (desktop) */}
                         <div className="hidden md:flex items-center gap-2.5 pl-2 border-l border-white/[0.07] ml-1">
                             <div className="text-right">
-                                <div className="text-[13px] font-medium text-slate-200 leading-none">{user?.fullName ?? "Guest"}</div>
+                                <div className="text-[13px] font-medium text-slate-200 leading-none">{user?.firstName + " " + user?.lastName}</div>
                                 <div className="text-[10px] text-slate-500 font-mono mt-0.5">{role}</div>
                             </div>
-                            <div className="w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold text-amber-400 shrink-0"
-                                style={{ borderColor: "rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)" }}>
-                                {initials}
-                            </div>
+                            {user?.imageUrl ? (
+                                <div className="flex justify-center py-3 border-b border-white/5">
+                                    <img
+                                        src={user?.imageUrl?.url}
+                                        alt="User"
+                                        className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex justify-center py-3 border-b border-white/5">
+                                    <div
+                                        className="w-10 h-10 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
+                                        style={{
+                                            borderColor: "rgba(251,191,36,0.3)",
+                                            background: "rgba(251,191,36,0.08)",
+                                        }}
+                                    >
+                                        {initials}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -186,7 +295,7 @@ export default function TopNav() {
                                 {initials}
                             </div>
                             <div>
-                                <div className="text-[14px] font-medium text-white">{user?.fullName ?? "Guest"}</div>
+                                <div className="text-[14px] font-medium text-white">{user?.firstName + " " + user?.lastName}</div>
                                 <div className="text-[10px] text-slate-500 font-mono">{role}</div>
                             </div>
                         </div>
@@ -240,3 +349,5 @@ export default function TopNav() {
         </>
     );
 }
+
+

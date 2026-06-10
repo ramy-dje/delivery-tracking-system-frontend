@@ -4,25 +4,28 @@ import { useCallback, useEffect, useState } from "react";
 import {
     getBranchCashiers,
     createCashier,
+    updateCashier,
+    deleteCashier,
     toggleBlockCashier,
 } from "@/services/CashierService";
-import { ICashier, ICreateCashierBody } from "@/types/cashier";
+import { ICashier, ICreateCashierBody, IUpdateCashierBody } from "@/types/cashier";
 import { showToast } from "nextjs-toast-notify";
 import EmptyState from "@/components/commons/EmptyState";
-import { Users, Plus, Search, X } from "lucide-react";
+import { Users, Plus, Search, X, Trash2, Trash, Lock, Unlock, Edit } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
 import { SkeletonList } from "@/components/commons/Skeleton";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import ActionBtn from "@/components/commons/ActionButton";
 import CreateCashierModal from "@/components/dashboard/cashiers/CreateCashierModal";
+import EditCashierModal from "@/components/dashboard/cashiers/EditCashierModal";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
-import userStore from "@/stores/userStore";
+import { parseApiError } from "@/utils/apiErrorHandler";
+import { getBranchId } from "@/hooks/useAuth";
 
 export default function CashiersPage() {
-    const { user } = userStore();
     // Assuming supervisor is assigned to a branch in their context or we fetch it
     // Wait, the API requires branchId. Let's assume we extract it from user profile if supervisor
-    const branchId = user?.branchId || "TODO_BRANCH_ID"; 
+    const branchId = getBranchId();
 
     const [cashiers, setCashiers] = useState<ICashier[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,8 +35,9 @@ export default function CashiersPage() {
 
     const [modalOpen, setModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    
     const [toggleTarget, setToggleTarget] = useState<ICashier | null>(null);
+    const [editTarget, setEditTarget] = useState<ICashier | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<ICashier | null>(null);
 
     // ── Fetching ─────────────────────────────────────────────────────────
 
@@ -63,16 +67,20 @@ export default function CashiersPage() {
     // ── CRUD ─────────────────────────────────────────────────────────────
 
     const handleCreate = async (payload: ICreateCashierBody) => {
+        console.log("Creating cashier with payload", payload);
         if (!branchId || branchId === "TODO_BRANCH_ID") return;
         setSubmitting(true);
         try {
-            await createCashier(branchId, payload);
+            const res = await createCashier(branchId, payload);
+            console.log("res", res);
             setModalOpen(false);
             showToast.success("Cashier created successfully");
             fetchCashiers();
         } catch (e: any) {
-            setError(e?.message ?? "Failed to create cashier");
-            showToast.error(e?.message ?? "Failed to create cashier");
+            const error = parseApiError(e);
+            console.log("Failed to create cashier", error);
+            setError(error.message ?? "Failed to create cashier");
+            showToast.error(error.message ?? "Failed to create cashier");
         } finally {
             setSubmitting(false);
         }
@@ -89,6 +97,38 @@ export default function CashiersPage() {
         } catch (e: any) {
             setError(e?.message ?? "Failed to update cashier status");
             showToast.error(e?.message ?? "Failed to update cashier status");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleUpdate = async (payload: IUpdateCashierBody) => {
+        if (!editTarget || !branchId || branchId === "TODO_BRANCH_ID") return;
+        setSubmitting(true);
+        try {
+            await updateCashier(branchId, editTarget._id, payload);
+            setEditTarget(null);
+            showToast.success("Cashier updated successfully");
+            fetchCashiers();
+        } catch (e: any) {
+            setError(e?.message ?? "Failed to update cashier");
+            showToast.error(e?.message ?? "Failed to update cashier");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget || !branchId || branchId === "TODO_BRANCH_ID") return;
+        setSubmitting(true);
+        try {
+            await deleteCashier(branchId, deleteTarget._id);
+            setDeleteTarget(null);
+            showToast.success("Cashier deleted successfully");
+            fetchCashiers();
+        } catch (e: any) {
+            setError(e?.message ?? "Failed to delete cashier");
+            showToast.error(e?.message ?? "Failed to delete cashier");
         } finally {
             setSubmitting(false);
         }
@@ -171,13 +211,13 @@ export default function CashiersPage() {
                 }}
             >
                 <div
-                    className="hidden md:grid grid-cols-[1fr_120px_100px_120px_120px_auto] gap-4 px-5 py-2.5 border-b border-white/4"
+                    className="hidden md:grid grid-cols-[1fr_180px_100px_120px_120px_120px] gap-4 px-5 py-2.5 border-b border-white/4"
                     style={{ background: "rgba(255,255,255,0.015)" }}
                 >
                     {["Cashier", "Employee Code", "Counter", "Status", "Created", "Actions"].map((h, i) => (
                         <div
                             key={i}
-                            className="text-[9.5px] uppercase tracking-[0.14em] text-slate-700 font-semibold"
+                            className={`text-[9.5px] uppercase tracking-[0.14em] text-slate-700 font-semibold ${i !== 0 ? "text-center" : ""}`}
                         >
                             {h}
                         </div>
@@ -200,7 +240,7 @@ export default function CashiersPage() {
                 ) : (
                     <div>
                         {cashiers.map((cashier, idx) => (
-                            <div key={cashier._id} className={`grid grid-cols-[1fr_120px_100px_120px_120px_auto] items-center gap-4 px-5 py-3 ${idx !== cashiers.length - 1 ? 'border-b border-white/5' : ''}`}>
+                            <div key={cashier._id} className={`grid grid-cols-[1fr_180px_100px_120px_120px_120px] items-center gap-4 px-5 py-3 ${idx !== cashiers.length - 1 ? 'border-b border-white/5' : ''}`}>
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-white/10 text-[12px] font-medium text-slate-300">
                                         {cashier.userId?.firstName?.charAt(0) || 'C'}
@@ -214,54 +254,100 @@ export default function CashiersPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-[12.5px] text-slate-400 font-mono">
+                                <div className="text-[12.5px] text-center text-slate-400 font-mono">
                                     {cashier.employeeCode}
                                 </div>
-                                <div className="text-[12.5px] text-slate-400">
+                                <div className="text-[12.5px] text-center text-slate-400">
                                     {cashier.counterNumber || "-"}
                                 </div>
-                                <div>
+                                <div className="flex items-center justify-center">
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${cashier.status === "active" ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                         {cashier.status}
                                     </span>
                                 </div>
-                                <div className="text-[12.5px] text-slate-400">
+                                <div className="text-[12.5px] text-center text-slate-400">
                                     {new Date(cashier.createdAt).toLocaleDateString()}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setToggleTarget(cashier)}
-                                        className="text-[11px] px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
+                                <div className="flex items-center justify-center gap-2">
+                                    <ActionBtn
+                                        onClick={() => setEditTarget(cashier)}
+                                        variant="emerald"
+                                        revealOnHover
                                     >
-                                        {cashier.status === "active" ? "Block" : "Unblock"}
-                                    </button>
+                                        <Edit size={14} />
+                                    </ActionBtn>
+                                    <ActionBtn
+                                        onClick={() => setToggleTarget(cashier)}
+                                        variant={cashier.status === "active" ? "slate" : "emerald"}
+                                        revealOnHover
+                                    >
+                                        {cashier.status === "active" ? <Lock size={14} /> : <Unlock size={14} />}
+                                    </ActionBtn>
+                                    <ActionBtn
+                                        onClick={() => setDeleteTarget(cashier)}
+                                        variant="red"
+                                        revealOnHover
+                                    >
+                                        <Trash size={14} />
+                                    </ActionBtn>
+
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        ))
+                        }
+                    </div >
                 )}
-            </div>
+            </div >
 
             {/* ── Modals ────────────────────────────────────────────────── */}
-            {modalOpen && (
-                <CreateCashierModal
-                    onClose={() => setModalOpen(false)}
-                    onSubmit={handleCreate}
-                    loading={submitting}
-                />
-            )}
+            {
+                modalOpen && (
+                    <CreateCashierModal
+                        onClose={() => setModalOpen(false)}
+                        onSubmit={handleCreate}
+                        loading={submitting}
+                    />
+                )
+            }
 
-            {toggleTarget && (
-                <ConfirmDialog
-                    title={`${toggleTarget.status === "active" ? "Block" : "Unblock"} Cashier`}
-                    message={`Are you sure you want to ${toggleTarget.status === "active" ? "block" : "unblock"} ${toggleTarget.userId?.firstName}?`}
-                    confirmLabel={toggleTarget.status === "active" ? "Block" : "Unblock"}
-                    danger={toggleTarget.status === "active"}
-                    loading={submitting}
-                    onConfirm={handleToggleStatus}
-                    onCancel={() => setToggleTarget(null)}
-                />
-            )}
-        </div>
+            {
+                editTarget && (
+                    <EditCashierModal
+                        cashier={editTarget}
+                        onClose={() => setEditTarget(null)}
+                        onSubmit={handleUpdate}
+                        loading={submitting}
+                    />
+                )
+            }
+
+            {
+                toggleTarget && (
+                    <ConfirmDialog
+                        title={`${toggleTarget.status === "active" ? "Block" : "Unblock"} Cashier`}
+                        message={`Are you sure you want to ${toggleTarget.status === "active" ? "block" : "unblock"} ${toggleTarget.userId?.firstName}?`}
+                        confirmLabel={toggleTarget.status === "active" ? "Block" : "Unblock"}
+                        danger={toggleTarget.status === "active"}
+                        loading={submitting}
+                        onConfirm={handleToggleStatus}
+                        onCancel={() => setToggleTarget(null)}
+                    />
+                )
+            }
+
+            {
+                deleteTarget && (
+                    <ConfirmDialog
+                        title="Delete Cashier"
+                        message={`Are you sure you want to delete ${deleteTarget.userId?.firstName}? This action cannot be undone.`}
+                        confirmLabel="Delete"
+                        danger={true}
+                        loading={submitting}
+                        onConfirm={handleDelete}
+                        onCancel={() => setDeleteTarget(null)}
+                    />
+                )
+            }
+        </div >
     );
 }

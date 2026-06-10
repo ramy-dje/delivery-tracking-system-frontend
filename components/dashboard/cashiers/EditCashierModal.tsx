@@ -1,0 +1,324 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { IUpdateCashierBody, ICashier } from "@/types/cashier";
+
+// ─── Field wrapper ────────────────────────────────────────────────────────
+
+function Field({
+    label,
+    required,
+    error,
+    children,
+}: {
+    label: string;
+    required?: boolean;
+    error?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+                {label}
+                {required && <span className="text-amber-400 ml-0.5">*</span>}
+            </label>
+            {children}
+            {error && <p className="text-[11px] text-red-400 mt-0.5">{error}</p>}
+        </div>
+    );
+}
+
+function TextInput({
+    type = "text",
+    value,
+    onChange,
+    placeholder,
+    hasError,
+    autoComplete,
+}: {
+    type?: string;
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    hasError?: boolean;
+    autoComplete?: string;
+}) {
+    return (
+        <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            autoComplete={autoComplete}
+            className="w-full px-3 py-2.5 rounded-lg text-[13px] text-white placeholder:text-slate-700 focus:outline-none transition-all"
+            style={{
+                background: "rgba(255,255,255,0.03)",
+                border: hasError
+                    ? "1px solid rgba(239,68,68,0.45)"
+                    : "1px solid rgba(255,255,255,0.08)",
+            }}
+            onFocus={(e) => {
+                e.currentTarget.style.border = "1px solid rgba(251,191,36,0.35)";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(251,191,36,0.07)";
+            }}
+            onBlur={(e) => {
+                e.currentTarget.style.border = hasError
+                    ? "1px solid rgba(239,68,68,0.45)"
+                    : "1px solid rgba(255,255,255,0.08)";
+                e.currentTarget.style.boxShadow = "none";
+            }}
+        />
+    );
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────
+
+interface FormErrors {
+    fullName?: string;
+    email?: string;
+    employeeCode?: string;
+}
+
+function validate(f: {
+    fullName: string;
+    email: string;
+    employeeCode: string;
+}): FormErrors {
+    const e: FormErrors = {};
+    if (!f.fullName.trim()) e.fullName = "Full name is required";
+    if (!f.email.trim()) e.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))
+        e.email = "Invalid email address";
+    if (!f.employeeCode.trim()) e.employeeCode = "Employee code is required";
+    return e;
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────
+
+interface EditCashierModalProps {
+    cashier: ICashier;
+    onClose: () => void;
+    onSubmit: (data: IUpdateCashierBody) => Promise<void>;
+    loading?: boolean;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────
+
+export default function EditCashierModal({
+    cashier,
+    onClose,
+    onSubmit,
+    loading,
+}: EditCashierModalProps) {
+    const [fullName, setFullName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [employeeCode, setEmployeeCode] = useState("");
+    const [counterNumber, setCounterNumber] = useState<string>("");
+
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [touched, setTouched] = useState(false);
+
+    useEffect(() => {
+        if (cashier) {
+            setFullName(`${cashier.userId?.firstName || ""} ${cashier.userId?.lastName || ""}`.trim());
+            setEmail(cashier.userId?.email || "");
+            setPhoneNumber((cashier.userId as any)?.phone || "");
+            setEmployeeCode(cashier.employeeCode || "");
+            setCounterNumber(cashier.counterNumber?.toString() || "");
+        }
+    }, [cashier]);
+
+    const revalidate = (patch: Partial<{ fullName: string; email: string; employeeCode: string }>) => {
+        if (!touched) return;
+        setErrors(validate({ fullName, email, employeeCode, ...patch }));
+    };
+
+    const _currentValidation = validate({ fullName, email, employeeCode });
+    const isFormValid = Object.keys(_currentValidation).length === 0;
+
+    const handleSubmit = async () => {
+        setTouched(true);
+
+        const errs = validate({ fullName, email, employeeCode });
+        setErrors(errs);
+        if (Object.keys(errs).length > 0) return;
+
+        // Split fullName → firstName + lastName
+        const [firstName, ...rest] = fullName.trim().split(" ");
+        const lastName = rest.join(" ") || firstName;
+
+        await onSubmit({
+            firstName,
+            lastName,
+            email,
+            phone: phoneNumber.trim() || undefined,
+            employeeCode: employeeCode.trim(),
+            counterNumber: counterNumber ? parseInt(counterNumber) : undefined,
+        });
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div
+                className="w-full max-w-lg rounded-2xl overflow-hidden"
+                style={{
+                    background: "#070c15",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    boxShadow: "0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(251,191,36,0.05)",
+                }}
+            >
+                {/* ── Header ────────────────────────────────────────────── */}
+                <div
+                    className="flex items-center justify-between px-6 py-4 border-b"
+                    style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                >
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{
+                                background: "rgba(251,191,36,0.1)",
+                                border: "1px solid rgba(251,191,36,0.2)",
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                                />
+                            </svg>
+                        </div>
+                        <div>
+                            <div className="text-[14px] font-semibold text-white">Edit Cashier</div>
+                            <div className="text-[11px] text-slate-600">
+                                Update cashier details
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-400 hover:bg-white/5 transition-all"
+                    >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M18 6L6 18M6 6l12 12"
+                                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                            />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* ── Body ──────────────────────────────────────────────── */}
+                <div className="px-6 py-5 space-y-4 max-h-[68vh] overflow-y-auto">
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 py-0.5 mt-2">
+                        <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+                        <span className="text-[10px] uppercase tracking-widest text-slate-700 font-semibold">
+                            Cashier Details
+                        </span>
+                        <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+                    </div>
+
+                    {/* Name + Email */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <Field label="Full Name" required error={errors.fullName}>
+                            <TextInput
+                                value={fullName}
+                                onChange={(v) => { setFullName(v); revalidate({ fullName: v }); }}
+                                placeholder="Jane Doe"
+                                hasError={!!errors.fullName}
+                            />
+                        </Field>
+                        <Field label="Email" required error={errors.email}>
+                            <TextInput
+                                type="email"
+                                value={email}
+                                onChange={(v) => { setEmail(v); revalidate({ email: v }); }}
+                                placeholder="jane@company.com"
+                                autoComplete="off"
+                                hasError={!!errors.email}
+                            />
+                        </Field>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <Field label="Employee Code" required error={errors.employeeCode}>
+                            <TextInput
+                                value={employeeCode}
+                                onChange={(v) => { setEmployeeCode(v); revalidate({ employeeCode: v }); }}
+                                placeholder="EMP-123"
+                                hasError={!!errors.employeeCode}
+                            />
+                        </Field>
+                        <Field label="Counter Number (Optional)">
+                            <TextInput
+                                type="number"
+                                value={counterNumber}
+                                onChange={setCounterNumber}
+                                placeholder="1"
+                            />
+                        </Field>
+                    </div>
+
+                    {/* Phone */}
+                    <Field label="Phone Number (Optional)">
+                        <TextInput
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={setPhoneNumber}
+                            placeholder="+213 xxx xxx xxx"
+                        />
+                    </Field>
+                </div>
+
+                {/* ── Footer ────────────────────────────────────────────── */}
+                <div
+                    className="flex items-center justify-between px-6 py-4 border-t"
+                    style={{
+                        borderColor: "rgba(255,255,255,0.06)",
+                        background: "rgba(255,255,255,0.01)",
+                    }}
+                >
+                    <div className="flex items-center gap-2.5 ml-auto">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={loading}
+                            className="px-4 py-2 rounded-lg text-[13px] text-slate-500 hover:text-slate-300 border border-white/7 hover:border-white/13 transition-all disabled:opacity-40"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                            style={{
+                                background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+                                boxShadow: "0 4px 16px rgba(251,191,36,0.2)",
+                            }}
+                        >
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.4" strokeDashoffset="10" />
+                                    </svg>
+                                    Saving…
+                                </>
+                            ) : (
+                                <>
+                                    Save Changes
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,5 +1,4 @@
 import api from "@/lib/api";
-import { IPaginatedResponse } from "./paginate";
 import { ICashier, ICreateCashierBody, IUpdateCashierBody } from "@/types/cashier";
 
 const SUPERVISOR_BASE = "/supervisor";
@@ -34,5 +33,13 @@ export async function toggleBlockCashier(
     cashierId: string,
 ): Promise<{ success: boolean; message: string; data: { cashier: ICashier; isActive: boolean } }> {
     const { data } = await api.patch(`${SUPERVISOR_BASE}/branches/${branchId}/cashiers/${cashierId}/toggle-block`);
+    return data;
+}
+
+export async function deleteCashier(
+    branchId: string,
+    cashierId: string,
+): Promise<{ success: boolean; message: string }> {
+    const { data } = await api.delete(`${SUPERVISOR_BASE}/branches/${branchId}/cashiers/${cashierId}`);
     return data;
 }

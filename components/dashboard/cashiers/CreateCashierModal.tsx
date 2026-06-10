@@ -18,7 +18,7 @@ function Field({
 }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+            <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
                 {label}
                 {required && <span className="text-amber-400 ml-0.5">*</span>}
             </label>
@@ -84,7 +84,6 @@ function validate(f: {
     fullName: string;
     email: string;
     password: string;
-    employeeCode: string;
 }): FormErrors {
     const e: FormErrors = {};
     if (!f.fullName.trim()) e.fullName = "Full name is required";
@@ -93,7 +92,6 @@ function validate(f: {
         e.email = "Invalid email address";
     if (!f.password) e.password = "Password is required";
     else if (f.password.length < 8) e.password = "Must be at least 8 characters";
-    if (!f.employeeCode.trim()) e.employeeCode = "Employee code is required";
     return e;
 }
 
@@ -116,7 +114,6 @@ export default function CreateCashierModal({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
-    const [employeeCode, setEmployeeCode] = useState("");
     const [counterNumber, setCounterNumber] = useState<string>("");
 
     const [showPassword, setShowPassword] = useState(false);
@@ -125,32 +122,36 @@ export default function CreateCashierModal({
 
     const revalidate = (patch: Partial<{ fullName: string; email: string; password: string; employeeCode: string }>) => {
         if (!touched) return;
-        setErrors(validate({ fullName, email, password, employeeCode, ...patch }));
+        setErrors(validate({ fullName, email, password, ...patch }));
     };
 
-    const _currentValidation = validate({ fullName, email, password, employeeCode });
+    const _currentValidation = validate({ fullName, email, password });
     const isFormValid = Object.keys(_currentValidation).length === 0;
 
     const handleSubmit = async () => {
+        console.log("Submitting form with values", { fullName, email, password, phoneNumber, counterNumber });
         setTouched(true);
 
-        const errs = validate({ fullName, email, password, employeeCode });
+        const errs = validate({ fullName, email, password });
         setErrors(errs);
         if (Object.keys(errs).length > 0) return;
-
         // Split fullName → firstName + lastName
         const [firstName, ...rest] = fullName.trim().split(" ");
         const lastName = rest.join(" ") || firstName;
-
+        try{
+            console.log("submit");
         await onSubmit({
             firstName,
             lastName,
             email,
             password,
             phone: phoneNumber.trim() || undefined || "",
-            employeeCode: employeeCode.trim(),
             counterNumber: counterNumber ? parseInt(counterNumber) : undefined,
         });
+        }
+        catch(err){
+            console.log(err);
+        }
     };
 
     return (
@@ -229,7 +230,7 @@ export default function CreateCashierModal({
                             <TextInput
                                 value={fullName}
                                 onChange={(v) => { setFullName(v); revalidate({ fullName: v }); }}
-                                placeholder="Jane Doe"
+                                placeholder="Jane Bekk"
                                 hasError={!!errors.fullName}
                             />
                         </Field>
@@ -246,20 +247,23 @@ export default function CreateCashierModal({
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                        <Field label="Employee Code" required error={errors.employeeCode}>
-                            <TextInput
-                                value={employeeCode}
-                                onChange={(v) => { setEmployeeCode(v); revalidate({ employeeCode: v }); }}
-                                placeholder="EMP-123"
-                                hasError={!!errors.employeeCode}
-                            />
-                        </Field>
+
                         <Field label="Counter Number (Optional)">
                             <TextInput
                                 type="number"
                                 value={counterNumber}
                                 onChange={setCounterNumber}
                                 placeholder="1"
+                            />
+                        </Field>
+
+                        {/* Phone */}
+                        <Field label="Phone Number (Optional)">
+                            <TextInput
+                                type="tel"
+                                value={phoneNumber}
+                                onChange={setPhoneNumber}
+                                placeholder="+213 xxx xxx xxx"
                             />
                         </Field>
                     </div>
@@ -314,15 +318,6 @@ export default function CreateCashierModal({
                         </div>
                     </Field>
 
-                    {/* Phone */}
-                    <Field label="Phone Number (Optional)">
-                        <TextInput
-                            type="tel"
-                            value={phoneNumber}
-                            onChange={setPhoneNumber}
-                            placeholder="+213 xxx xxx xxx"
-                        />
-                    </Field>
                 </div>
 
                 {/* ── Footer ────────────────────────────────────────────── */}
@@ -345,7 +340,7 @@ export default function CreateCashierModal({
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={loading || !isFormValid}
+                            disabled={loading}
                             className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                             style={{
                                 background: "linear-gradient(135deg,#fbbf24,#f59e0b)",

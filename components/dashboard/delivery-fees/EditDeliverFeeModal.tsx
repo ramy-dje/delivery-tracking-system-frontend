@@ -85,8 +85,8 @@ export default function EditDeliveryFeeModal({
         if (Object.keys(errs).length > 0) return;
 
         await onSubmit({
-            wilayaFrom: fee.wilayaA,
-            wilayaTo: fee.wilayaB,
+            wilayaFrom: fee.from.id,
+            wilayaTo: fee.to.id,
             stopdesk: Number(stopdesk),
             domicile: Number(domicile),
         });
@@ -110,7 +110,7 @@ export default function EditDeliveryFeeModal({
                         Edit Tariff Prices
                     </div>
                     <div className="text-[12px] text-slate-400 mt-1">
-                        {fee.wilayaAName} ↔ {fee.wilayaBName}
+                        {fee.from.name} ↔ {fee.to.name}
                     </div>
                 </div>
 

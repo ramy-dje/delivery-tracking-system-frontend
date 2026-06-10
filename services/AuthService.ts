@@ -1,5 +1,6 @@
 import api from "@/lib/api";
 import { IAuthResponseDto } from "@/types/auth";
+import { IUpdateUser, IUpdateUserResponse, IUser } from "@/types/user";
 
 export const loginUser = async (
   data: { email: string; password: string }
@@ -34,24 +35,32 @@ export const logOutUser = async () => {
   return await api.post("/auth/logout");
 };
 
-export const updateProfile = async (data: FormData) => {
-  return await api.put("/auth/profile", data);
+export const updateProfile = async (data: IUpdateUser): Promise<IUpdateUserResponse> => {
+  const res = await api.put("/auth/update", data);
+  return res.data;
 };
 
-export const confirmEmail = async (data: {
-  activation_number: string;
-  email_token?: string;
-}) => {
-  return await api.put("/auth/confirm-email", data);
-};
+export const confirmChangeEmail = async (data: { email_token: string; activation_number: string }) => {
+  return await api.post("/auth/confirm-email", data);
+}
 
 export const passwordRecovery = async (data: { email: string }) => {
-  return await api.post("/auth/recovery", data);
+  return await api.post("/auth/password-recovery", data);
 };
 
 export const resetPassword = async (data: {
   newPassword: string;
   recovery_token: string;
 }) => {
-  return await api.post("/auth/reset", data);
+  return await api.post("/auth/reset-password", data);
 };
+
+
+export const updateProfilePicture = async (formData: FormData) => {
+  const res = await api.put("/auth/profile-picture", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+}
