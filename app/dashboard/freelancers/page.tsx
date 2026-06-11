@@ -4,19 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { showToast } from "nextjs-toast-notify";
 import { ROLES } from "@/lib/roles";
-import { getNodeId } from "@/hooks/useAuth";
+import { getBranchId } from "@/hooks/useAuth";
 import RoleGuard from "@/lib/RoleGuard";
 import StatCard from "@/components/commons/StatCard";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { ICreateFreelancer, IFreelancerResponse } from "@/types/freelancer";
-import { createFreelancer, listFreelancers, toggleBlockFreelancer } from "@/services/FreelancerService";
+import { createFreelancer, listFreelancers, toggleBlockFreelancer, updateFreelancer } from "@/services/FreelancerService";
 import FreelancerList from "@/components/dashboard/freelancers/FreelancerList";
 import CreateFreelancerModal from "@/components/dashboard/freelancers/CreateFreelancerModal";
+import EditFreelancerModal from "@/components/dashboard/freelancers/EditFreelancerModal";
 
 export default function FreelancersPage() {
-    const branchId = getNodeId() ?? "";
+    const branchId = getBranchId() ?? "";
 
     const [freelancers, setFreelancers] = useState<IFreelancerResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -25,6 +26,10 @@ export default function FreelancersPage() {
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
+
+    const [editOpen, setEditOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<IFreelancerResponse | null>(null);
+    const [editLoading, setEditLoading] = useState(false);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [selected, setSelected] = useState<IFreelancerResponse | null>(null);
@@ -43,7 +48,7 @@ export default function FreelancersPage() {
                 email: f.userId?.email ?? f.email ?? "",
                 phoneNumber: f.userId?.phone ?? f.phoneNumber,
                 role: "Freelancer",
-                isActive: f.isActive ?? true,
+                isActive: f.status === "active",
             }));
             setFreelancers(items);
         } catch (e: any) {
@@ -77,6 +82,23 @@ export default function FreelancersPage() {
             showToast.error(err.message ?? "Failed to create freelancer");
         } finally {
             setCreateLoading(false);
+        }
+    };
+
+    const handleEdit = async (data: Partial<ICreateFreelancer>) => {
+        if (!editTarget || !branchId) return;
+        setEditLoading(true);
+        try {
+            await updateFreelancer(branchId, editTarget.id, data);
+            showToast.success("Freelancer updated successfully");
+            setEditOpen(false);
+            setEditTarget(null);
+            fetchFreelancers();
+        } catch (e: any) {
+            const err = parseApiError(e);
+            showToast.error(err.message ?? "Failed to update freelancer");
+        } finally {
+            setEditLoading(false);
         }
     };
 
@@ -162,6 +184,7 @@ export default function FreelancersPage() {
                     freelancers={filtered}
                     loading={loading}
                     onAddClick={() => setCreateOpen(true)}
+                    onEdit={(f) => { setEditTarget(f); setEditOpen(true); }}
                     onToggleStatus={(f) => { setSelected(f); setConfirmOpen(true); }}
                 />
 
@@ -171,6 +194,14 @@ export default function FreelancersPage() {
                     onClose={() => setCreateOpen(false)}
                     onSubmit={handleCreate}
                     loading={createLoading}
+                />
+
+                <EditFreelancerModal
+                    isOpen={editOpen}
+                    freelancer={editTarget}
+                    onClose={() => { setEditOpen(false); setEditTarget(null); }}
+                    onSubmit={handleEdit}
+                    loading={editLoading}
                 />
 
                 {confirmOpen && selected && (

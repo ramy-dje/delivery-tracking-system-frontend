@@ -1,4 +1,4 @@
-import { Eye, Phone, Power } from "lucide-react";
+import { Eye, Pencil, Phone, Power } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
 import RoleBadge from "@/components/commons/RoleBadge";
 import { getInitials, getRoleMeta } from "../staffs/SatffRow";
@@ -8,11 +8,13 @@ const FreelancerRow = ({
   freelancer,
   isLast,
   onViewDetail,
+  onEdit,
   onToggleStatus,
 }: {
   freelancer: IFreelancerResponse;
   isLast: boolean;
   onViewDetail?: () => void;
+  onEdit?: () => void;
   onToggleStatus?: () => void;
 }) => {
   const isActive = freelancer.isActive !== false;
@@ -85,6 +87,11 @@ const FreelancerRow = ({
         {onViewDetail && (
           <ActionBtn title="View details" variant="emerald" onClick={onViewDetail} revealOnHover>
             <Eye size={13} />
+          </ActionBtn>
+        )}
+        {onEdit && (
+          <ActionBtn title="Edit freelancer" variant="amber" onClick={onEdit} revealOnHover>
+            <Pencil size={13} className="text-amber-400" />
           </ActionBtn>
         )}
         {freelancer.phoneNumber && (

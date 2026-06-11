@@ -3,14 +3,14 @@ export interface ICreateTransporter {
   lastName: string;
   email: string;
   password: string;
-  phoneNumber: string;
+  phone: string;
 }
 
 export interface ITransporterResponse {
   id: string;
   fullName: string;
   email: string;
-  phoneNumber?: string;
+  phone?: string;
   role: string;
   isActive: boolean;
   isOnline?: boolean;

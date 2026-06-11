@@ -11,6 +11,7 @@ interface FreelancerListProps {
   loading?: boolean;
   onAddClick?: () => void;
   onViewDetail?: (id: string) => void;
+  onEdit?: (freelancer: IFreelancerResponse) => void;
   onToggleStatus?: (freelancer: IFreelancerResponse) => void;
 }
 
@@ -28,6 +29,7 @@ export default function FreelancerList({
   loading,
   onAddClick,
   onViewDetail,
+  onEdit,
   onToggleStatus,
 }: FreelancerListProps) {
   if (loading) return <div style={tableStyle}><SkeletonList rows={5} /></div>;
@@ -65,6 +67,7 @@ export default function FreelancerList({
           freelancer={f}
           isLast={idx === freelancers.length - 1}
           onViewDetail={onViewDetail ? () => onViewDetail(f.id) : undefined}
+          onEdit={onEdit ? () => onEdit(f) : undefined}
           onToggleStatus={onToggleStatus ? () => onToggleStatus(f) : undefined}
         />
       ))}
