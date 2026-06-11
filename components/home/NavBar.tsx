@@ -8,6 +8,7 @@ import userStore from "@/stores/userStore";
 import { ROLES } from "@/lib/roles";
 
 const navLinks = [
+  { label: "Track Package", href: "/track" },
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Pricing", href: "#pricing" },
