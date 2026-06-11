@@ -2,22 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ROLES } from "@/lib/roles";
-import { getNodeId } from "@/hooks/useAuth";
+import { getBranchId } from "@/hooks/useAuth";
 import { showToast } from "nextjs-toast-notify";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import { Plus, Search, X } from "lucide-react";
 import RoleGuard from "@/lib/RoleGuard";
 import StatCard from "@/components/commons/StatCard";
 import { ICreateDelivererPayload, IDelivererResponse } from "@/types/driver";
-import { createDriver, listDrivers, updateDriverStatus } from "@/services/DriverService";
+import { createDriver, listDrivers, updateDriverStatus, updateDriver } from "@/services/DriverService";
 import DriverList from "@/components/dashboard/drivers/DriverList";
 import CreateDriverModal from "@/components/dashboard/drivers/CreateDriverModal";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import DriverDetailModal from "@/components/dashboard/drivers/DriverDetailModal";
+import EditDriverModal from "@/components/dashboard/drivers/EditDriverModal";
 import { parseApiError } from "@/utils/apiErrorHandler";
 
 export default function DriversPage() {
-    const managerNodeId = getNodeId() ?? "";
+    const branchId = getBranchId() ?? "";
 
     const [drivers, setDrivers] = useState<IDelivererResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -26,6 +27,10 @@ export default function DriversPage() {
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
+
+    const [editOpen, setEditOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<IDelivererResponse | null>(null);
+    const [editLoading, setEditLoading] = useState(false);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [selectedDriver, setSelectedDriver] = useState<IDelivererResponse | null>(null);
@@ -38,15 +43,15 @@ export default function DriversPage() {
 
     const fetchDrivers = useCallback(async () => {
         setLoading(true);
-        if (!managerNodeId) {
+        if (!branchId) {
             setDrivers([]);
             setLoading(false);
-            setError("No logistics node is assigned to this manager.");
+            setError("No branch is assigned to this supervisor.");
             return;
         }
         setError(null);
         try {
-            const res = await listDrivers(managerNodeId, { search: search || undefined });
+            const res = await listDrivers(branchId, { search: search || undefined });
             setDrivers(res.data);
         } catch (e: any) {
             const error = parseApiError(e);
@@ -55,7 +60,7 @@ export default function DriversPage() {
         } finally {
             setLoading(false);
         }
-    }, [managerNodeId, search]);
+    }, [branchId, search]);
 
     useEffect(() => {
         const delay = setTimeout(() => {
@@ -71,10 +76,10 @@ export default function DriversPage() {
     // ── CRUD ──────────────────────────────────────────────────────────────
 
     const handleCreate = async (data: ICreateDelivererPayload) => {
-        if (!managerNodeId) return;
+        if (!branchId) return;
         setCreateLoading(true);
         try {
-            await createDriver(managerNodeId, data);
+            await createDriver(branchId, data);
             setCreateOpen(false);
             showToast.success("Deliverer created successfully");
             fetchDrivers();
@@ -88,11 +93,28 @@ export default function DriversPage() {
         }
     };
 
+    const handleEdit = async (data: any) => {
+        if (!editTarget || !branchId) return;
+        setEditLoading(true);
+        try {
+            await updateDriver(branchId, editTarget._id, data);
+            showToast.success("Deliverer updated successfully");
+            setEditOpen(false);
+            setEditTarget(null);
+            fetchDrivers();
+        } catch (e: any) {
+            const err = parseApiError(e);
+            showToast.error(err.message ?? "Failed to update deliverer");
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
     const handleConfirmToggleActivation = async () => {
-        if (!selectedDriver || !managerNodeId) return;
+        if (!selectedDriver || !branchId) return;
         setActivationStatusLoading(true);
         try {
-            await updateDriverStatus(managerNodeId, selectedDriver._id);
+            await updateDriverStatus(branchId, selectedDriver._id);
             showToast.success(`Deliverer ${selectedDriver.isActive ? "suspended" : "activated"}`);
             setConfirmOpen(false);
             setSelectedDriver(null);
@@ -108,7 +130,7 @@ export default function DriversPage() {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER]}>
+        <RoleGuard allowedRoles={[ROLES.SUPERVISOR]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}
@@ -176,6 +198,7 @@ export default function DriversPage() {
                     loading={loading}
                     onAddClick={() => setCreateOpen(true)}
                     onViewDetail={(id) => { setSelectedDriverId(id); setDetailOpen(true); }}
+                    onEdit={(d) => { setEditTarget(d); setEditOpen(true); }}
                     onToggleStatus={(s) => { setSelectedDriver(s); setConfirmOpen(true); }}
                 />
 
@@ -185,6 +208,14 @@ export default function DriversPage() {
                     onClose={() => setCreateOpen(false)}
                     onSubmit={handleCreate}
                     loading={createLoading}
+                />
+
+                <EditDriverModal
+                    isOpen={editOpen}
+                    driver={editTarget}
+                    onClose={() => { setEditOpen(false); setEditTarget(null); }}
+                    onSubmit={handleEdit}
+                    loading={editLoading}
                 />
 
                 {confirmOpen && selectedDriver && (
@@ -199,11 +230,11 @@ export default function DriversPage() {
                     />
                 )}
 
-                {selectedDriverId && managerNodeId && (
+                {selectedDriverId && branchId && (
                     <DriverDetailModal
                         isOpen={detailOpen}
                         driverId={selectedDriverId}
-                        branchId={managerNodeId}
+                        branchId={branchId}
                         onClose={() => { setDetailOpen(false); setSelectedDriverId(null); }}
                     />
                 )}

@@ -1,4 +1,4 @@
-import { Eye, Phone, Power } from "lucide-react";
+import { Eye, Pencil, Phone, Power } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
 import RoleBadge from "@/components/commons/RoleBadge";
 import { getInitials, getRoleMeta } from "../staffs/SatffRow";
@@ -8,11 +8,13 @@ const DriverRow = ({
     driver,
     isLast,
     onViewDetail,
+    onEdit,
     onToggleStatus,
 }: {
     driver: IDelivererResponse;
     isLast: boolean;
     onViewDetail?: () => void;
+    onEdit?: () => void;
     onToggleStatus?: () => void;
 }) => {
     const isActive = driver.isActive;
@@ -101,6 +103,11 @@ const DriverRow = ({
                         revealOnHover
                     >
                         <Eye size={13} />
+                    </ActionBtn>
+                )}
+                {onEdit && (
+                    <ActionBtn title="Edit deliverer" variant="amber" onClick={onEdit} revealOnHover>
+                        <Pencil size={13} className="text-amber-400" />
                     </ActionBtn>
                 )}
                 {phoneNumber && (

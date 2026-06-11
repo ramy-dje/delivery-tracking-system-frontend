@@ -10,11 +10,12 @@ interface DriverListProps {
     drivers: IDelivererResponse[];
     loading?: boolean;
     onViewDetail?: (driverId: string) => void;
+    onEdit?: (driver: IDelivererResponse) => void;
     onToggleStatus?: (driver: IDelivererResponse) => void;
     onAddClick?: () => void;
 }
 
-export default function DriverList({ drivers, loading, onAddClick, onViewDetail, onToggleStatus }: DriverListProps) {
+export default function DriverList({ drivers, loading, onAddClick, onViewDetail, onEdit, onToggleStatus }: DriverListProps) {
     const tableStyle: React.CSSProperties = {
         background: "#060a10",
         height: "100%",
@@ -59,6 +60,7 @@ export default function DriverList({ drivers, loading, onAddClick, onViewDetail,
                     driver={s}
                     isLast={idx === drivers.length - 1}
                     onViewDetail={onViewDetail ? () => onViewDetail(s._id) : undefined}
+                    onEdit={onEdit ? () => onEdit(s) : undefined}
                     onToggleStatus={onToggleStatus ? () => onToggleStatus(s) : undefined}
                 />
             ))}
