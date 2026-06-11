@@ -3,6 +3,7 @@
 
 import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDashboard";
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
+import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
 import { ROLES } from "@/lib/roles";
 import userStore from "@/stores/userStore";
 
@@ -14,8 +15,9 @@ export default function DashboardPage() {
     const role = user?.role?.toUpperCase();
     console.log("User role:", role);
 
-    if (role === ROLES.MANAGER) return <ManagerOverviewDashboard />;
-    if (role === "RECEPTIONIST") return <ReceptionistDashboard />;
+    if (role === ROLES.MANAGER || user?.role === ROLES.MANAGER) return <ManagerOverviewDashboard />;
+    if (role === "RECEPTIONIST" || user?.role === "cachier") return <ReceptionistDashboard />;
+    if (role === ROLES.SUPERVISOR.toUpperCase() || user?.role === ROLES.SUPERVISOR) return <SupervisorDashboard />;
 
     return (
         <div className="flex items-center justify-center h-64">
