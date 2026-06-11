@@ -5,7 +5,16 @@ export const listTransporters = async (
   companyId: string
 ): Promise<{ success: boolean; data: ITransporterResponse[] }> => {
   const res = await api.get(`/manager/companies/${companyId}/transporters`);
-  return res.data;
+  const mappedData = res.data.data.map((t: any) => ({
+    id: t._id,
+    fullName: `${t.userId?.firstName || ""} ${t.userId?.lastName || ""}`.trim(),
+    email: t.userId?.email || "",
+    phone: t.userId?.phone || "",
+    role: t.userId?.role || "transporter",
+    isActive: t.isActive !== false,
+    isOnline: t.isOnline || false,
+  }));
+  return { ...res.data, data: mappedData };
 };
 
 export const createTransporter = async (
@@ -23,7 +32,16 @@ export const getTransporter = async (
   const res = await api.get(
     `/manager/companies/${companyId}/transporters/${transporterId}`
   );
-  return res.data;
+  const t = res.data.data;
+  return {
+    id: t._id,
+    fullName: `${t.userId?.firstName || ""} ${t.userId?.lastName || ""}`.trim(),
+    email: t.userId?.email || "",
+    phone: t.userId?.phone || "",
+    role: t.userId?.role || "transporter",
+    isActive: t.isActive !== false,
+    isOnline: t.isOnline || false,
+  };
 };
 
 export const updateTransporter = async (

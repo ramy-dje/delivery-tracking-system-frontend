@@ -1,4 +1,4 @@
-import { Eye, Phone, Power } from "lucide-react";
+import { Eye, Pencil, Phone, Power } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
 import RoleBadge from "@/components/commons/RoleBadge";
 import { getInitials, getRoleMeta } from "../staffs/SatffRow";
@@ -8,11 +8,13 @@ const TransporterRow = ({
   transporter,
   isLast,
   onViewDetail,
+  onEdit,
   onToggleStatus,
 }: {
   transporter: ITransporterResponse;
   isLast: boolean;
   onViewDetail?: () => void;
+  onEdit?: () => void;
   onToggleStatus?: () => void;
 }) => {
   const isActive = transporter.isActive !== false;
@@ -55,13 +57,10 @@ const TransporterRow = ({
           </svg>
           <span className="text-[11.5px] text-slate-500 truncate">{transporter.email}</span>
         </div>
-        {transporter.phoneNumber && (
-          <div className="flex items-center gap-1.5 min-w-0">
-            <svg className="shrink-0 opacity-40" width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 14.92z"
-                stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            <span className="text-[12.5px] font-medium text-slate-300 truncate">{transporter.phoneNumber}</span>
+        {transporter.phone && (
+          <div className="flex items-center gap-1.5 min-w-0" title={transporter.phone}>
+            <Phone size={13} className="text-slate-500 shrink-0" />
+            <span className="text-[12.5px] font-medium text-slate-300 truncate">{transporter.phone}</span>
           </div>
         )}
       </div>
@@ -101,9 +100,14 @@ const TransporterRow = ({
             <Eye size={13} />
           </ActionBtn>
         )}
-        {transporter.phoneNumber && (
-          <ActionBtn href={`tel:${transporter.phoneNumber}`} title="Call" variant="sky" revealOnHover>
-            <Phone size={13} />
+        {onEdit && (
+          <ActionBtn title="Edit transporter" variant="amber" onClick={onEdit} revealOnHover>
+            <Pencil size={13} className="text-amber-400" />
+          </ActionBtn>
+        )}
+        {transporter.phone && (
+          <ActionBtn href={`tel:${transporter.phone}`} title="Call" variant="sky" revealOnHover>
+            <Phone size={13} strokeWidth={2.5} />
           </ActionBtn>
         )}
         {onToggleStatus && (

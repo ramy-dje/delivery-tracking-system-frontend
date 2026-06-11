@@ -11,6 +11,7 @@ interface TransporterListProps {
   loading?: boolean;
   onAddClick?: () => void;
   onViewDetail?: (id: string) => void;
+  onEdit?: (transporter: ITransporterResponse) => void;
   onToggleStatus?: (transporter: ITransporterResponse) => void;
 }
 
@@ -28,6 +29,7 @@ export default function TransporterList({
   loading,
   onAddClick,
   onViewDetail,
+  onEdit,
   onToggleStatus,
 }: TransporterListProps) {
   if (loading) return <div style={tableStyle}><SkeletonList rows={5} /></div>;
@@ -65,6 +67,7 @@ export default function TransporterList({
           transporter={t}
           isLast={idx === transporters.length - 1}
           onViewDetail={onViewDetail ? () => onViewDetail(t.id) : undefined}
+          onEdit={onEdit ? () => onEdit(t) : undefined}
           onToggleStatus={onToggleStatus ? () => onToggleStatus(t) : undefined}
         />
       ))}

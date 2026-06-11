@@ -11,9 +11,10 @@ import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { ICreateTransporter, ITransporterResponse } from "@/types/transporter";
-import { createTransporter, listTransporters, toggleBlockTransporter } from "@/services/TransporterService";
+import { createTransporter, listTransporters, toggleBlockTransporter, updateTransporter } from "@/services/TransporterService";
 import TransporterList from "@/components/dashboard/transporters/TransporterList";
 import CreateTransporterModal from "@/components/dashboard/transporters/CreateTransporterModal";
+import EditTransporterModal from "@/components/dashboard/transporters/EditTransporterModal";
 
 export default function TransportersPage() {
     const companyId = getCompanyId() ?? "";
@@ -25,6 +26,10 @@ export default function TransportersPage() {
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
+
+    const [editOpen, setEditOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<ITransporterResponse | null>(null);
+    const [editLoading, setEditLoading] = useState(false);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [selected, setSelected] = useState<ITransporterResponse | null>(null);
@@ -74,6 +79,23 @@ export default function TransportersPage() {
         }
     };
 
+    const handleEdit = async (data: Partial<ICreateTransporter>) => {
+        if (!editTarget || !companyId) return;
+        setEditLoading(true);
+        try {
+            await updateTransporter(companyId, editTarget.id, data);
+            showToast.success("Transporter updated successfully");
+            setEditOpen(false);
+            setEditTarget(null);
+            fetchTransporters();
+        } catch (e: any) {
+            const err = parseApiError(e);
+            showToast.error(err.message ?? "Failed to update transporter");
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
     const handleToggleBlock = async () => {
         if (!selected || !companyId) return;
         setToggleLoading(true);
@@ -94,7 +116,7 @@ export default function TransportersPage() {
     // ── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.OWNER, ROLES.ADMIN]}>
+        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}
@@ -156,6 +178,7 @@ export default function TransportersPage() {
                     transporters={filtered}
                     loading={loading}
                     onAddClick={() => setCreateOpen(true)}
+                    onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
                     onToggleStatus={(t) => { setSelected(t); setConfirmOpen(true); }}
                 />
 
@@ -165,6 +188,14 @@ export default function TransportersPage() {
                     onClose={() => setCreateOpen(false)}
                     onSubmit={handleCreate}
                     loading={createLoading}
+                />
+
+                <EditTransporterModal
+                    isOpen={editOpen}
+                    transporter={editTarget}
+                    onClose={() => { setEditOpen(false); setEditTarget(null); }}
+                    onSubmit={handleEdit}
+                    loading={editLoading}
                 />
 
                 {confirmOpen && selected && (
