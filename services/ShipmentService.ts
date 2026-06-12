@@ -187,3 +187,18 @@ export async function searchBranchesForPickup(
     });
     return data;
 }
+
+// ── Public Endpoints ─────────────────────────────────────────────────────────
+
+export async function trackPublicPackage(trackingNumber: string): Promise<any> {
+    try {
+        const { data } = await api.get(`/track/${trackingNumber}`);
+        return data;
+    } catch (error: any) {
+        if (error.response?.data) {
+            return error.response.data; // Return the restricted payload instead of throwing if it's a 403 or 404
+        }
+        throw error;
+    }
+}
+

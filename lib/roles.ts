@@ -48,6 +48,7 @@ export const ROLE_ROUTES: Record<string, Role[]> = {
   "/dashboard/overview": [
     ROLES.ADMIN,
     ROLES.MANAGER,
+    ROLES.SORTER,
   ],
   "/dashboard/analytics": [
     ROLES.ADMIN,
@@ -57,6 +58,12 @@ export const ROLE_ROUTES: Record<string, Role[]> = {
     ROLES.MANAGER,
     ROLES.SORTER,
     ROLES.CASHIER,
+  ],
+  "/dashboard/manifests": [
+    ROLES.ADMIN,
+    ROLES.MANAGER,
+    ROLES.SUPERVISOR,
+    ROLES.SORTER,
   ],
   "/dashboard/management": [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
   "/dashboard/staffs": [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],

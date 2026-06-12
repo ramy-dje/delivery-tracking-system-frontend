@@ -18,7 +18,7 @@ const NAV_GROUPS = [
                 icon: (
                     <LayoutDashboard size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
+                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER, ROLES.SORTER],
             },
             {
                 path: "/dashboard/analytics",
@@ -117,6 +117,14 @@ const NAV_GROUPS = [
                 allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.CASHIER],
             },
             {
+                path: "/dashboard/manifests",
+                label: "Manifests",
+                icon: (
+                    <Truck size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.SORTER],
+            },
+            {
                 path: "/dashboard/transporters",
                 label: "Transporters",
                 icon: (
@@ -149,14 +157,14 @@ const NAV_GROUPS = [
             icon: (
                 <Bell size={14} />
             ),
-            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN, ROLES.SORTER],
         }, {
             path: "/dashboard/profile",
             label: "Profile",
             icon: (
                 <User size={14} />
             ),
-            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN, ROLES.SORTER],
         }],
     }];
 

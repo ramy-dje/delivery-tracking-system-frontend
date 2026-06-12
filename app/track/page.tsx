@@ -1,17 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, Package, MapPin, AlertCircle, Loader2, Info } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
+import { Search, Package, MapPin, AlertCircle, Loader2, Info, QrCode } from "lucide-react";
 import { trackPublicPackage } from "@/services/ShipmentService";
 import TrackingMap from "@/components/track/TrackingMap";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
 
-export default function PublicTrackingPage() {
-  const [trackingNumber, setTrackingNumber] = useState("");
+function TrackingContent() {
+  const searchParams = useSearchParams();
+  const initialTracking = searchParams.get("tracking") || "";
+  const qrPayload = searchParams.get("payload");
+
+  const [trackingNumber, setTrackingNumber] = useState(initialTracking);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-track if URL has tracking number on first load
+  useEffect(() => {
+    if (initialTracking) {
+      handleTrack();
+    }
+  }, [initialTracking]);
 
   const handleTrack = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -107,6 +120,35 @@ export default function PublicTrackingPage() {
             </div>
           </form>
 
+          {/* QR Code Section */}
+          {qrPayload && (
+            <div className="w-full mt-10 bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-32 bg-amber-500/10 rounded-full blur-3xl" />
+              
+              <div className="flex-1 space-y-4 relative z-10 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-400 text-sm font-semibold border border-amber-500/30">
+                  <QrCode size={16} />
+                  Delivery Code
+                </div>
+                <h3 className="text-2xl font-bold">Show this to your deliverer</h3>
+                <p className="text-slate-300 max-w-sm mx-auto md:mx-0">
+                  When you receive your package, present this secure QR code to the deliverer to confirm and complete the delivery safely.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-[0_0_40px_rgba(245,158,11,0.2)] relative z-10">
+                <QRCodeSVG
+                  value={qrPayload}
+                  size={160}
+                  level={"M"}
+                  bgColor={"#ffffff"}
+                  fgColor={"#0f172a"}
+                  includeMargin={false}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Results Area */}
           <div className="w-full mt-12 space-y-6">
             {/* Error / Restricted Message */}
@@ -165,5 +207,17 @@ export default function PublicTrackingPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PublicTrackingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+      </div>
+    }>
+      <TrackingContent />
+    </Suspense>
   );
 }
