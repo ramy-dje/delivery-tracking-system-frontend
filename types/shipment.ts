@@ -127,7 +127,7 @@ export interface IPackageHistory {
 }
 
 export interface IPackage {
-  _id: string;
+  id: string;
   trackingNumber: string;
   companyId: string | any;
 

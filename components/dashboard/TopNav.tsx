@@ -31,6 +31,8 @@ export default function TopNav() {
     const pathname = usePathname();
     const role = user?.role;
 
+    console.log("Current user:", user);
+
     const allowedRoutes = MOBILE_ROUTES.filter(
         (r) => !r.allowed || r.allowed.includes(role as any)
     );

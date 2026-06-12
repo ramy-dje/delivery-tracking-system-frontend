@@ -138,9 +138,18 @@ export default function ShipmentsPage() {
                 // search,
                 status: statusFilter || undefined,
             };
-            const data = await listShipments(filter);
-            console.log("API response for listShipments:", data.data.packages);
-            setPagination(data.data.packages);
+            const { data } = await listShipments(filter);
+            const paginationData: IPaginatedResponse<IPackage> = {
+                items: data.packages ?? [],
+                pageNumber: data.pagination?.page ?? page,
+                pageSize: data.pagination?.limit ?? PAGE_SIZE,
+                totalCount: data.pagination?.total ?? 0,
+                totalPages: data.pagination?.pages ?? 1,
+                hasNextPage: data.pagination?.hasMore ?? false,
+                hasPreviousPage: data.pagination?.hasPrevPage ?? false,
+            };
+            console.log("API response for listShipments:", paginationData);
+            setPagination(paginationData);
             setStats({ pending: 0, inTransit: 0, delivered: 0, failed: 0 });
         } catch (e: any) {
             const err = parseApiError(e);
@@ -218,9 +227,9 @@ export default function ShipmentsPage() {
         setCancelLoading(true);
         try {
             if (isFreelancer) {
-                await cancelFreelancerPackage(selectedShipment._id, cancelReason || undefined);
+                await cancelFreelancerPackage(selectedShipment.id, cancelReason || undefined);
             } else {
-                await cancelShipment(hubId, selectedShipment._id);
+                await cancelShipment(hubId, selectedShipment.id);
             }
             showToast.success("Shipment cancelled successfully");
             setCancelOpen(false);
