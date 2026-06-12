@@ -22,7 +22,7 @@ interface ShipmentDetailModalProps {
 export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: ShipmentDetailModalProps) {
     const hubId = getNodeId() ?? "";
     const userRole = getUserRole();
-    const isFreelancer = userRole === ROLES.MERCHANT; // or 'freelancer' depending on your role constant
+    const isFreelancer = userRole === ROLES.MERCHANT;
     
     const [shipment, setShipment] = useState<IPackage | null>(null);
     const [loading, setLoading] = useState(true);
@@ -36,18 +36,68 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
             setLoading(true);
             setError(null);
             try {
-                let res;
                 if (isFreelancer) {
-                    // For freelancer: use track endpoint which doesn't need branchId
+                    // For freelancer: use track endpoint which returns package in a different structure
                     const trackingData = await trackFreelancerPackage(shipmentId);
-                    res = { data: trackingData.package };
+                    // The track endpoint returns { package: {...}, currentState: {...}, timeline: {...} }
+                    const packageData = trackingData.package;
+                    
+                    // Transform the freelancer response to match IPackage structure
+                    if (packageData) {
+                        const transformedPackage: IPackage = {
+                            _id: shipmentId,
+                            trackingNumber: packageData.trackingNumber,
+                            companyId: packageData.companyId || "",
+                            senderId: "",
+                            senderType: "freelancer",
+                            weight: packageData.weight || 0,
+                            isFragile: packageData.isFragile || false,
+                            type: packageData.type || "parcel",
+                            description: packageData.description,
+                            declaredValue: packageData.declaredValue,
+                            originBranchId: packageData.originBranch,
+                            currentBranchId: packageData.currentBranch,
+                            destinationBranchId: packageData.destinationBranch,
+                            destination: {
+                                recipientName: packageData.recipient?.name || "",
+                                recipientPhone: packageData.recipient?.phone || "",
+                                address: packageData.recipient?.address || "",
+                                city: packageData.recipient?.city || "",
+                                state: packageData.recipient?.state || "",
+                            },
+                            status: trackingData.currentState?.status || "pending",
+                            deliveryType: packageData.deliveryType || "home",
+                            deliveryPriority: packageData.deliveryPriority || "standard",
+                            totalPrice: packageData.totalPrice || 0,
+                            paymentStatus: packageData.paymentStatus || "pending",
+                            paymentMethod: packageData.paymentMethod,
+                            attemptCount: packageData.attemptCount || 0,
+                            maxAttempts: packageData.maxAttempts || 3,
+                            issues: [],
+                            returnInfo: { isReturn: packageData.isReturn || false },
+                            trackingHistory: trackingData.timeline?.map((event: any) => ({
+                                status: event.status,
+                                timestamp: event.timestamp,
+                                notes: event.notes,
+                                location: event.location,
+                            })) || [],
+                            createdAt: packageData.createdAt || new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            estimatedDeliveryTime: packageData.estimatedDeliveryTime,
+                            deliveredAt: packageData.deliveredAt,
+                        };
+                        setShipment(transformedPackage);
+                    } else {
+                        throw new Error("No package data received");
+                    }
                 } else {
                     // For supervisor/receptionist: need branchId
                     if (!hubId) throw new Error("Branch ID not found");
-                    res = await getShipmentById(hubId, shipmentId);
+                    const res = await getShipmentById(hubId, shipmentId);
+                    setShipment(res.data);
                 }
-                if (active) setShipment(res.data);
             } catch (e: any) {
+                console.error("Error fetching shipment:", e);
                 if (active) setError(e?.response?.data?.message || e?.message || "Failed to load shipment details");
             } finally {
                 if (active) setLoading(false);
@@ -58,16 +108,25 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
         return () => { active = false; };
     }, [isOpen, shipmentId, hubId, isFreelancer]);
 
+    // Safety check: ensure destination exists
+    const destination = shipment?.destination || {
+        recipientName: "N/A",
+        recipientPhone: "N/A",
+        address: "N/A",
+        city: "N/A",
+        state: "N/A",
+    };
+
     const items = [
         {
             icon: <Phone size={10} />,
-            value: shipment?.destination.recipientPhone || "No phone",
-            muted: !shipment?.destination.recipientPhone,
+            value: destination.recipientPhone || "No phone",
+            muted: !destination.recipientPhone || destination.recipientPhone === "N/A",
         },
         {
             icon: <MapPin size={10} />,
-            value: shipment?.destination.city || "Unknown Location",
-            muted: !shipment?.destination.city,
+            value: destination.city || "Unknown Location",
+            muted: !destination.city || destination.city === "N/A",
         },
     ];
 
@@ -101,7 +160,7 @@ export default function ShipmentDetailModal({ shipmentId, isOpen, onClose }: Shi
                     {/* Identity Hero */}
                     <GlassHero
                         title={shipment.trackingNumber}
-                        subtitle={shipment.destination.recipientName}
+                        subtitle={destination.recipientName}
                         statusLabel={<StatusBadge status={shipment.status} />}
                         isActive={shipment.status === 'delivered'}
                         metaItems={items}
