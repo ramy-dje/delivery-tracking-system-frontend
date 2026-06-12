@@ -63,10 +63,10 @@ export default function FreelancerList({
       </div>
       {freelancers.map((f, idx) => (
         <FreelancerRow
-          key={f.id}
+          key={f._id}
           freelancer={f}
           isLast={idx === freelancers.length - 1}
-          onViewDetail={onViewDetail ? () => onViewDetail(f.id) : undefined}
+          onViewDetail={onViewDetail ? () => onViewDetail(f._id) : undefined}
           onEdit={onEdit ? () => onEdit(f) : undefined}
           onToggleStatus={onToggleStatus ? () => onToggleStatus(f) : undefined}
         />

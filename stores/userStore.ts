@@ -1,4 +1,5 @@
 import { IManager } from "@/types/auth";
+import { ICashier } from "@/types/cashier";
 import { ISupervisorResponse } from "@/types/supervisor";
 import { IUser } from "@/types/user";
 import { create } from "zustand";
@@ -8,11 +9,11 @@ import { persist } from "zustand/middleware";
 
 interface IUserStore {
   user: IUser | null;
-  associated: IManager | ISupervisorResponse | null;
+  associated: IManager | ISupervisorResponse | ICashier | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   hasHydrated: boolean;
-  login: (user: IUser, access_token: string, associated?: IManager | ISupervisorResponse | null) => void;
+  login: (user: IUser, access_token: string, associated?: IManager | ISupervisorResponse | ICashier | null) => void;
   setProfile: (user: IUser | null) => void;
   logout: () => void;
   setAccessToken: (access_token: string) => void;

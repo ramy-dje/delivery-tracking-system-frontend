@@ -1,19 +1,22 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
-    Phone, FileText, Weight, X, DollarSign, Package, Truck,
+    Weight, X, DollarSign, Package, Truck,
     MapPin, AlertTriangle, Ruler, Layers, Calendar, CreditCard,
     Search as SearchIcon, Building2, Navigation
 } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import SelectField from "@/components/commons/SelectField";
 import DeliveryMapPicker from "@/components/commons/DeliveryMapPicker";
-import { ICreatePackageBody, PackageType } from "@/types/shipment";
+import { ICreatePackageBody, PackageType, PaymentMethod } from "@/types/shipment";
 import { DeliveryType } from "@/types/deliveryFee";
 import { searchBranchesForPickup, IBranchPickupOption } from "@/services/ShipmentService";
-import { getNodeId, getUserRole } from "@/hooks/useAuth";
+import { getBranchId, getNodeId, getUserRole } from "@/hooks/useAuth";
 import { ROLES } from "@/lib/roles";
 import debounce from "lodash/debounce";
+import EntityPicker from "@/components/commons/EntityPicker";
+import { listFreelancers } from "@/services/FreelancerService";
+import { IFreelancerResponse } from "@/types/freelancer";
 
 interface Props {
     isOpen: boolean;
@@ -43,6 +46,9 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
     const hubId = getNodeId() ?? "";
     const userRole = getUserRole();
     const isFreelancer = userRole === ROLES.MERCHANT;
+
+    const [freelancerId, setFreelancerId] = useState("");
+    const [freelancerMap, setFreelancerMap] = useState<Record<string, IFreelancerResponse>>({});
 
     // Recipient info
     const [recipientName, setRecipientName] = useState("");
@@ -79,7 +85,7 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
 
     // Pricing
     const [totalPrice, setTotalPrice] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
 
     // Estimated delivery
     const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState("");
@@ -137,6 +143,10 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
     const validate = () => {
         const e: Record<string, string> = {};
 
+        if (mode === "receptionist" && !freelancerId) {
+            e.freelancerId = "Freelancer is required";
+        }
+
         // Recipient validation
         if (!recipientName.trim()) e.recipientName = "Recipient name is required";
         if (!recipientPhone.trim()) e.recipientPhone = "Phone number is required";
@@ -168,6 +178,8 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
         if (!validate()) return;
 
         const payload: ICreatePackageBody = {
+            freelancerId: mode === "receptionist" ? freelancerId : undefined,
+
             recipientName: recipientName.trim(),
             recipientPhone: recipientPhone.trim(),
             alternativePhone: alternativePhone.trim() || undefined,
@@ -178,24 +190,37 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
             deliveryNotes: deliveryNotes.trim() || undefined,
 
             weight: Number(weightKg),
-            dimensions: dimensions.length && dimensions.width && dimensions.height ? {
-                length: Number(dimensions.length),
-                width: Number(dimensions.width),
-                height: Number(dimensions.height),
-            } : undefined,
+            dimensions:
+                dimensions.length &&
+                    dimensions.width &&
+                    dimensions.height
+                    ? {
+                        length: Number(dimensions.length),
+                        width: Number(dimensions.width),
+                        height: Number(dimensions.height),
+                    }
+                    : undefined,
+
             isFragile,
             type: packageType,
             description: description.trim() || undefined,
-            declaredValue: declaredValue ? Number(declaredValue) : undefined,
+            declaredValue: declaredValue
+                ? Number(declaredValue)
+                : undefined,
 
             deliveryType,
             deliveryPriority,
-            destinationBranchId: deliveryType === "branch_pickup" && selectedBranch ? selectedBranch.id : undefined,
+            destinationBranchId:
+                deliveryType === "branch_pickup" && selectedBranch
+                    ? selectedBranch.id
+                    : undefined,
 
             totalPrice: Number(totalPrice),
-            paymentMethod: paymentMethod || undefined,
+            paymentMethod: paymentMethod || "cod",
 
-            estimatedDeliveryTime: estimatedDeliveryTime || undefined,
+            estimatedDeliveryTime:
+                estimatedDeliveryTime || undefined,
+
             originBranchId: hubId,
         };
 
@@ -277,6 +302,39 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                             />
                         </div>
                     </div>
+
+                    {mode === "receptionist" && (
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Package size={14} className="text-amber-400" />
+                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+                                    Freelancer
+                                </span>
+                            </div>
+
+                            <EntityPicker<IFreelancerResponse>
+                                value={freelancerId}
+                                onChange={(id) => {
+                                    setFreelancerId(id ?? "");
+                                }}
+                                label="Select Freelancer"
+                                required
+                                error={errors.freelancerId}
+                                placeholder="Select freelancer"
+                                fetchData={async () => (await listFreelancers(getBranchId() || "")).data}
+                                // onSearchChange={setOriginSearch}
+                                getId={(f) => f._id}
+                                getLabel={(f) => f.userId.firstName + " " + f.userId.lastName}
+                                getSubLabel={(f) => f.userId.phone}
+                            />
+
+                            {errors.freelancerId && (
+                                <p className="text-red-400 text-xs mt-1">
+                                    {errors.freelancerId}
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {/* Address Section */}
                     <div>
@@ -637,6 +695,7 @@ export default function CreateShipmentModal({ isOpen, onClose, onSubmit, loading
                             <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Estimated Delivery (Optional)</span>
                         </div>
                         <InputField
+                            placeholder="Select expected delivery date and time"
                             label="Expected Delivery Date"
                             type="datetime-local"
                             value={estimatedDeliveryTime}

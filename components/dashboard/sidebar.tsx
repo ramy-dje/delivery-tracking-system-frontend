@@ -90,7 +90,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Droplet size={14} />
                 ),
-                allowed: [ROLES.RECEPTIONIST],
+                allowed: [ROLES.CASHIER],
             },
             {
                 path: "/dashboard/delivery-fees",
@@ -114,7 +114,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Package size={14} />
                 ),
-                allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.RECEPTIONIST],
+                allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.CASHIER],
             },
             {
                 path: "/dashboard/transporters",
@@ -149,14 +149,14 @@ const NAV_GROUPS = [
             icon: (
                 <Bell size={14} />
             ),
-            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST, ROLES.MERCHANT, ROLES.ADMIN],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN],
         }, {
             path: "/dashboard/profile",
             label: "Profile",
             icon: (
                 <User size={14} />
             ),
-            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST, ROLES.MERCHANT, ROLES.ADMIN],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN],
         }],
     }];
 
@@ -165,8 +165,6 @@ export default function Sidebar() {
     const { user, logout } = userStore();
     const role = user?.role ?? "";
     const [collapsed, setCollapsed] = useState(false);
-
-    console.log("User Image :", user?.imageUrl);
 
     const imageUrl = user?.imageUrl?.url;
 

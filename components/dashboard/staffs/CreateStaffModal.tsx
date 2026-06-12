@@ -11,7 +11,7 @@ const ROLE_OPTIONS: { value: Role; label: string; desc: string; color: string; r
     { value: ROLES.TRUCK_DRIVER, label: "Truck Driver", desc: "Long-haul and inter-hub transport", color: "#38bdf8", rgb: "56,189,248" },
     { value: ROLES.LEAD_DRIVER, label: "Lead Driver", desc: "Coordinates driver teams and routes", color: "#a78bfa", rgb: "167,139,250" },
     { value: ROLES.SORTER, label: "Sorter", desc: "Parcel sorting and processing", color: "#fbbf24", rgb: "251,191,36" },
-    { value: ROLES.RECEPTIONIST, label: "Receptionist", desc: "Customer intake and drop-off handling", color: "#34d399", rgb: "52,211,153" },
+    { value: ROLES.CASHIER, label: "Receptionist", desc: "Customer intake and drop-off handling", color: "#34d399", rgb: "52,211,153" },
     { value: ROLES.INVENTORY_AUDITOR, label: "Inventory Auditor", desc: "Stock tracking and audit compliance", color: "#fb7185", rgb: "251,113,133" },
     { value: ROLES.SHIFT_SUPERVISOR, label: "Shift Supervisor", desc: "Oversees node operations per shift", color: "#f59e0b", rgb: "245,158,11" },
     { value: ROLES.SECURITY_OFFICER, label: "Security Officer", desc: "Facility and access security", color: "#60a5fa", rgb: "96,165,250" },

@@ -1,4 +1,6 @@
-import { getRoleLabel, getRoleMeta } from "../dashboard/staffs/SatffRow";
+import { getRoleLabel } from "../dashboard/staffs/SatffRow";
+import { getRoleMeta } from "../dashboard/staffs/SatffRow";
+
 
 const RoleBadge = ({ role }: { role: string }) => {
     const m = getRoleMeta(role);

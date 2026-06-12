@@ -88,7 +88,7 @@ export default function BranchDropScannerPage() {
 
     return (
         <RoleGuard
-            allowedRoles={[ROLES.RECEPTIONIST]}
+            allowedRoles={[ROLES.CASHIER, ROLES.MANAGER]}
             fallbackPath="/unauthorized"
         >
             <div className="min-h-screen bg-slate-950 p-6">

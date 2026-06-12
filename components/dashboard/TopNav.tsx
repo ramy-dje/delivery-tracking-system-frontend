@@ -18,7 +18,7 @@ const MOBILE_ROUTES = [
     { path: "/dashboard/overview", label: "Overview", allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER] },
     { path: "/dashboard/transporters", label: "Transporters", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN] },
     { path: "/dashboard/freelancers", label: "Freelancers", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.SUPERVISOR] },
-    { path: "/dashboard/routes", label: "Routes", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.RECEPTIONIST] },
+    { path: "/dashboard/routes", label: "Routes", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.CASHIER] },
     { path: "/dashboard/company", label: "Company", allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN] },
     { path: "/dashboard/inventory", label: "Inventory", allowed: ROLE_ROUTES["/dashboard/operations"] },
     { path: "/dashboard/management/users", label: "Users", allowed: [ROLES.ADMIN, ROLES.MANAGER] },

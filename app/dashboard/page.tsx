@@ -13,11 +13,10 @@ import userStore from "@/stores/userStore";
 export default function DashboardPage() {
     const { user } = userStore();
     const role = user?.role?.toUpperCase();
-    console.log("User role:", role);
 
-    if (role === ROLES.MANAGER || user?.role === ROLES.MANAGER) return <ManagerOverviewDashboard />;
-    if (role === "RECEPTIONIST" || user?.role === "cachier") return <ReceptionistDashboard />;
-    if (role === ROLES.SUPERVISOR.toUpperCase() || user?.role === ROLES.SUPERVISOR) return <SupervisorDashboard />;
+
+    if (role === ROLES.MANAGER) return <ManagerOverviewDashboard />;
+    if (role === "CASHIER") return <ReceptionistDashboard />;
 
     return (
         <div className="flex items-center justify-center h-64">

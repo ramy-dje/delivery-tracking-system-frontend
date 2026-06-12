@@ -14,7 +14,7 @@ export default function DashboardPage() {
   console.log("User role:", role);
 
   if (role === "MANAGER") return <ManagerOverviewDashboard />;
-  if (role === "CACHIER") return <ReceptionistDashboard />;
+  if (role === "CASHIER") return <ReceptionistDashboard />;
 
   return (
     <div className="flex items-center justify-center h-64">

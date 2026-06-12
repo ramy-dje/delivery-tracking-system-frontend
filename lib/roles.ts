@@ -8,7 +8,7 @@ export const ROLES = {
   ADMIN: "admin",
   MANAGER: "manager",
   SORTER: "loader",
-  RECEPTIONIST: "cachier",
+  CASHIER: "cashier",
 } as const;
 
 export type Role = typeof ROLES[keyof typeof ROLES];
@@ -19,7 +19,7 @@ export const ROLE_HIERARCHY: Record<Role, number> = {
   [ROLES.MANAGER]: 160,
   [ROLES.SUPERVISOR]: 140,
   [ROLES.SORTER]: 80,
-  [ROLES.RECEPTIONIST]: 80,
+  [ROLES.CASHIER]: 80,
   [ROLES.MERCHANT]: 50,
   [ROLES.CLIENT]: 30,
   [ROLES.DRIVER]: 20,
@@ -42,7 +42,7 @@ export const ROLE_ROUTES: Record<string, Role[]> = {
     ROLES.ADMIN,
     ROLES.MERCHANT,
     ROLES.MANAGER,
-    ROLES.RECEPTIONIST,
+    ROLES.CASHIER,
     ROLES.SORTER,
   ],
   "/dashboard/overview": [
@@ -56,7 +56,7 @@ export const ROLE_ROUTES: Record<string, Role[]> = {
   "/dashboard/operations": [
     ROLES.MANAGER,
     ROLES.SORTER,
-    ROLES.RECEPTIONIST,
+    ROLES.CASHIER,
   ],
   "/dashboard/management": [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
   "/dashboard/staffs": [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
