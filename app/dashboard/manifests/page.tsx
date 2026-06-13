@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loaderCreateManifest } from "@/services/LoaderService";
-import { Search, Plus, Truck, AlertCircle, Loader2 } from "lucide-react";
+import { loaderCreateManifest, loaderGetPackagesToManifestGrouped } from "@/services/LoaderService";
+import { Search, Plus, Truck, AlertCircle, Loader2, MapPin, Package } from "lucide-react";
 import userStore from "@/stores/userStore";
 
 export default function ManifestsPage() {
@@ -17,6 +17,26 @@ export default function ManifestsPage() {
   const [error, setError] = useState<string | null>(null);
   const [destBranch, setDestBranch] = useState("");
   const [vehicleId, setVehicleId] = useState("");
+  const [groupedPackages, setGroupedPackages] = useState<any[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+
+  useEffect(() => {
+    fetchGroupedPackages();
+  }, []);
+
+  const fetchGroupedPackages = async () => {
+    try {
+      setLoadingGroups(true);
+      const res = await loaderGetPackagesToManifestGrouped();
+      if (res.success) {
+        setGroupedPackages(res.data?.destinations || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +61,8 @@ export default function ManifestsPage() {
         vehicleId: vehicleId || undefined
       });
       
-      if (res.success && res.data?._id) {
-        router.push(`/dashboard/manifests/${res.data._id}`);
+      if (res.success && (res.data?.manifestId || res.data?._id)) {
+        router.push(`/dashboard/manifests/${res.data.manifestId || res.data._id}`);
       } else {
         setError("Failed to create manifest.");
       }
@@ -152,6 +172,50 @@ export default function ManifestsPage() {
                 {createLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create & Start Scanning"}
               </button>
             </form>
+          </div>
+        )}
+      </div>
+
+      {/* Packages Awaiting Manifest List */}
+      <div className="mt-8 space-y-4">
+        <h2 className="text-xl font-bold text-white mb-4">Packages Awaiting Manifest</h2>
+        {loadingGroups ? (
+          <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 flex justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+          </div>
+        ) : groupedPackages.length === 0 ? (
+          <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 text-center text-slate-500">
+            <Package className="w-10 h-10 mx-auto mb-3 opacity-20" />
+            <p>No packages waiting to be manifested at your branch right now.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {groupedPackages.map((group: any) => (
+              <div key={group.branchId} className="bg-[#0d1117] border border-white/10 rounded-xl p-5 hover:border-amber-500/50 transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="text-slate-400" size={16} />
+                    <span className="font-bold text-white">{group.branchName || group.branchId}</span>
+                  </div>
+                  <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-1 rounded font-bold">
+                    {group.packageCount} Pkgs
+                  </span>
+                </div>
+                <div className="text-sm text-slate-400 mb-4">
+                  <span className="font-medium">Total Weight:</span> {group.totalWeight}kg
+                </div>
+                <button
+                  onClick={() => {
+                    setDestBranch(group.branchId);
+                    setIsCreating(true);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} /> Create Manifest for this Branch
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>

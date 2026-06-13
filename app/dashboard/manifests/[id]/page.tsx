@@ -4,10 +4,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   loaderGetManifestDetail, loaderScanIn, loaderScanOut, 
-  loaderSealManifest, loaderDepartManifest, loaderArriveManifest, 
-  loaderCloseManifest, loaderRemovePackage
+  loaderSealManifest, loaderDepartManifest, loaderArriveManifest,
+  loaderCloseManifest, loaderRemovePackage, loaderGetPackagesToManifest
 } from "@/services/LoaderService";
-import { ArrowLeft, Package, Truck, CheckCircle2, AlertCircle, Loader2, ScanLine, XCircle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Package, Truck, CheckCircle2, AlertCircle, Loader2, ScanLine, XCircle, ShieldCheck, MapPin } from "lucide-react";
 import Link from "next/link";
 
 export default function ManifestDetailPage() {
@@ -16,6 +16,7 @@ export default function ManifestDetailPage() {
   const router = useRouter();
 
   const [manifest, setManifest] = useState<any>(null);
+  const [awaitingPackages, setAwaitingPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -30,6 +31,22 @@ export default function ManifestDetailPage() {
       const res = await loaderGetManifestDetail(manifestId);
       if (res.success) {
         setManifest(res.data);
+        
+        // Try to fetch packages awaiting transport for this manifest's destination
+        try {
+          const destId = res.data.destinationBranchId?._id || res.data.destinationBranchId || res.data.destinationBranch?.id || res.data.destinationBranch?._id || res.data.destinationBranch;
+          if (destId) {
+            const pkgsRes = await loaderGetPackagesToManifest(destId);
+            if (pkgsRes && pkgsRes.data) {
+              setAwaitingPackages(pkgsRes.data.packages || []);
+            }
+          } else {
+            console.warn("Could not determine destId from manifest:", res.data);
+          }
+        } catch (pkgErr) {
+          console.warn("Could not fetch awaiting packages:", pkgErr);
+        }
+
       } else {
         setError(res.message || "Manifest not found.");
       }
@@ -232,7 +249,7 @@ export default function ManifestDetailPage() {
           <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Destination</p>
-              <p className="text-sm font-bold text-white">{manifest.destinationBranch?.name || manifest.destinationBranch || "Unknown"}</p>
+              <p className="text-sm font-bold text-white">{manifest.destinationBranchId?.name || manifest.destinationBranch?.name || manifest.destinationBranchId || "Unknown"}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Vehicle</p>
@@ -286,6 +303,53 @@ export default function ManifestDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Packages Awaiting Manifest (Only shown if open/loading) */}
+          {(status === "pending" || status === "open" || status === "loading") && awaitingPackages.length > 0 && (
+            <div className="bg-[#0d1117] border border-amber-500/20 rounded-2xl overflow-hidden mt-6">
+              <div className="p-4 border-b border-white/5 bg-amber-500/5 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-amber-500 flex items-center gap-2">
+                  <AlertCircle size={16} /> Packages Awaiting Transport
+                </h2>
+                <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md">
+                  {awaitingPackages.length} Packages
+                </span>
+              </div>
+              <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto">
+                {awaitingPackages.map((pkg: any) => {
+                  // Don't show if it's already in this manifest
+                  if (manifest.packages?.find((mp: any) => (mp._id === pkg._id || mp.trackingNumber === pkg.trackingNumber))) return null;
+
+                  return (
+                    <div key={pkg._id} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-400">
+                          <Package size={16} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white font-mono">{pkg.trackingNumber}</p>
+                          <p className="text-xs text-slate-500">
+                            {pkg.destinationBranch?.name || 'Unknown Dest'} • {pkg.weight || 0}kg
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setScanInput(pkg.trackingNumber);
+                          setScanMode("in");
+                          // The actual scan needs to be submitted manually or we can call handleScan directly, 
+                          // but since handleScan expects an event, we just auto-fill the input so they can hit enter.
+                        }}
+                        className="text-amber-500 text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
+                      >
+                        SELECT
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

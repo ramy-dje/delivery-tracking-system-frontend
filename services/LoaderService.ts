@@ -84,9 +84,19 @@ export async function loaderGetManifestDetail(manifestId: string): Promise<any> 
     return data;
 }
 
+export async function loaderGetPackagesToManifest(destinationBranchId?: string): Promise<any> {
+    const { data } = await api.get(`${LOADER_BASE}/packages/to-manifest`, { params: { destinationBranchId } });
+    return data;
+}
+
+export async function loaderGetPackagesToManifestGrouped(): Promise<any> {
+    const { data } = await api.get(`${LOADER_BASE}/packages/to-manifest/grouped`);
+    return data;
+}
+
 // Origin Branch Operations
-export async function loaderScanIn(manifestId: string, packageId: string): Promise<any> {
-    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/scan-in`, { packageId });
+export async function loaderScanIn(manifestId: string, trackingNumber: string): Promise<any> {
+    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/scan-in`, { trackingNumber });
     return data;
 }
 
@@ -116,8 +126,8 @@ export async function loaderArriveManifest(manifestId: string): Promise<any> {
     return data;
 }
 
-export async function loaderScanOut(manifestId: string, packageId: string): Promise<any> {
-    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/scan-out`, { packageId });
+export async function loaderScanOut(manifestId: string, trackingNumber: string): Promise<any> {
+    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/scan-out`, { trackingNumber });
     return data;
 }
 
