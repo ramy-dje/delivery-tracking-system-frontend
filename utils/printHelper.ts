@@ -27,7 +27,7 @@ async function generateQrDataUrl(value: string): Promise<string> {
 }
 
 function formatDate(iso: string): string {
-  if(!iso) return "";
+  if (!iso) return "";
   return new Date(iso).toLocaleDateString("fr-DZ", {
     day: "2-digit",
     month: "2-digit",
@@ -57,7 +57,7 @@ function buildLabelHtml(
     </div>
     <div class="shipment-meta">
       <div><strong>Date:</strong> ${formatDate(shipment.createdAt)}</div>
-      <div><strong>Réf:</strong> ${shipment._id.slice(0, 8).toUpperCase()}</div>
+      <div><strong>Réf:</strong> ${shipment.id.slice(0, 8).toUpperCase()}</div>
       <div class="delivery-badge">${deliveryTypeLabel}</div>
     </div>
   </div>
