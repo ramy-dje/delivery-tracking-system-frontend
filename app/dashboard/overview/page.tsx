@@ -3,6 +3,7 @@
 
 import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDashboard";
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
+import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import { ROLES } from "@/lib/roles";
 import userStore from "@/stores/userStore";
 
@@ -15,6 +16,7 @@ export default function DashboardPage() {
 
   if (role === "MANAGER") return <ManagerOverviewDashboard />;
   if (role === "CACHIER") return <ReceptionistDashboard />;
+  if (role === "ADMIN") return <AdminDashboard />;
 
   return (
     <div className="flex items-center justify-center h-64">

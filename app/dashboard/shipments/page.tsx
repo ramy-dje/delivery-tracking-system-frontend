@@ -215,7 +215,7 @@ export default function ShipmentsPage() {
     };
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.RECEPTIONIST, ROLES.MANAGER]} fallbackPath="/unauthorized">
+        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.RECEPTIONIST, ROLES.MANAGER,ROLES.SUPERVISOR]} fallbackPath="/unauthorized">
             <div className="flex flex-col min-h-0 gap-3 h-full">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
