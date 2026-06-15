@@ -18,7 +18,7 @@ const NAV_GROUPS = [
                 icon: (
                     <LayoutDashboard size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER],
+                allowed: [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.MANAGER, ROLES.SORTER],
             },
             {
                 path: "/dashboard/analytics",
@@ -90,7 +90,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Droplet size={14} />
                 ),
-                allowed: [ROLES.RECEPTIONIST],
+                allowed: [ROLES.CASHIER],
             },
             {
                 path: "/dashboard/delivery-fees",
@@ -114,7 +114,15 @@ const NAV_GROUPS = [
                 icon: (
                     <Package size={14} />
                 ),
-                allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.RECEPTIONIST],
+                allowed: [ROLES.MERCHANT, ROLES.SUPERVISOR, ROLES.CASHIER],
+            },
+            {
+                path: "/dashboard/manifests",
+                label: "Manifests",
+                icon: (
+                    <Truck size={14} />
+                ),
+                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.SORTER],
             },
             {
                 path: "/dashboard/transporters",
@@ -157,14 +165,14 @@ const NAV_GROUPS = [
             icon: (
                 <Bell size={14} />
             ),
-            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST, ROLES.MERCHANT, ROLES.ADMIN],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN, ROLES.SORTER],
         }, {
             path: "/dashboard/profile",
             label: "Profile",
             icon: (
                 <User size={14} />
             ),
-            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.RECEPTIONIST, ROLES.MERCHANT, ROLES.ADMIN],
+            allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.CASHIER, ROLES.MERCHANT, ROLES.ADMIN, ROLES.SORTER],
         }],
     }];
 
@@ -174,8 +182,6 @@ export default function Sidebar() {
     const { user, logout } = userStore();
     const role = user?.role ?? "";
     const [collapsed, setCollapsed] = useState(false);
-
-    console.log("User Image :", user?.imageUrl);
 
     const imageUrl = user?.imageUrl?.url;
 

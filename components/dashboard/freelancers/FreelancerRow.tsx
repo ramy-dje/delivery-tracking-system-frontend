@@ -1,8 +1,7 @@
 import { Eye, Pencil, Phone, Power } from "lucide-react";
 import ActionBtn from "@/components/commons/ActionButton";
-import RoleBadge from "@/components/commons/RoleBadge";
-import { getInitials, getRoleMeta } from "../staffs/SatffRow";
 import { IFreelancerResponse } from "@/types/freelancer";
+import RoleBadge from "@/components/commons/RoleBadge";
 
 const FreelancerRow = ({
   freelancer,
@@ -17,8 +16,15 @@ const FreelancerRow = ({
   onEdit?: () => void;
   onToggleStatus?: () => void;
 }) => {
-  const isActive = freelancer.isActive !== false;
-  const m = getRoleMeta(freelancer.role);
+  const isActive = freelancer.status === "active";
+  const m = RoleBadge({ role: freelancer.userId?.role });
+
+  const initials = (freelancer?.userId?.firstName + " " + freelancer?.userId?.lastName)
+    ?.split(" ")
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() ?? "?";
 
   return (
     <div
@@ -36,14 +42,14 @@ const FreelancerRow = ({
           className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0 transition-transform duration-150 group-hover:scale-[1.06]"
           style={{ background: m.bg, border: `1px solid ${m.border}`, color: m.color }}
         >
-          {getInitials(freelancer.fullName)}
+          {initials}
         </div>
         <div className="min-w-0">
           <div className="text-[14px] font-semibold text-slate-100 truncate leading-tight">
-            {freelancer.fullName}
+            {freelancer.userId?.firstName} {freelancer.userId?.lastName}
           </div>
           <div className="mt-1">
-            <RoleBadge role={freelancer.role} />
+            <RoleBadge role={freelancer.userId?.role} />
           </div>
         </div>
       </div>
@@ -55,15 +61,15 @@ const FreelancerRow = ({
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#64748b" strokeWidth="1.5" />
             <polyline points="22,6 12,13 2,6" stroke="#64748b" strokeWidth="1.5" />
           </svg>
-          <span className="text-[11.5px] text-slate-500 truncate">{freelancer.email}</span>
+          <span className="text-[11.5px] text-slate-500 truncate">{freelancer.userId?.email}</span>
         </div>
-        {freelancer.phoneNumber && (
+        {freelancer.userId?.phone && (
           <div className="flex items-center gap-1.5 min-w-0">
             <svg className="shrink-0 opacity-40" width="12" height="12" viewBox="0 0 24 24" fill="none">
               <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 14.92z"
                 stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <span className="text-[12.5px] font-medium text-slate-300 truncate">{freelancer.phoneNumber}</span>
+            <span className="text-[12.5px] font-medium text-slate-300 truncate">{freelancer.userId?.phone}</span>
           </div>
         )}
       </div>
@@ -89,13 +95,8 @@ const FreelancerRow = ({
             <Eye size={13} />
           </ActionBtn>
         )}
-        {onEdit && (
-          <ActionBtn title="Edit freelancer" variant="amber" onClick={onEdit} revealOnHover>
-            <Pencil size={13} className="text-amber-400" />
-          </ActionBtn>
-        )}
-        {freelancer.phoneNumber && (
-          <ActionBtn href={`tel:${freelancer.phoneNumber}`} title="Call" variant="sky" revealOnHover>
+        {freelancer.userId?.phone && (
+          <ActionBtn href={`tel:${freelancer.userId?.phone}`} title="Call" variant="sky" revealOnHover>
             <Phone size={13} />
           </ActionBtn>
         )}

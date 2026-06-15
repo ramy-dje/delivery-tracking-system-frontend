@@ -8,7 +8,7 @@ import { parseApiError } from "@/utils/apiErrorHandler";
 import { showToast } from "nextjs-toast-notify";
 import RoleGuard from "@/lib/RoleGuard";
 import { ROLES } from "@/lib/roles";
-import { getNodeId } from "@/hooks/useAuth";
+import { getBranchId } from "@/hooks/useAuth";
 
 export default function BranchDropScannerPage() {
     const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -42,7 +42,7 @@ export default function BranchDropScannerPage() {
         try {
             setLoading(true);
 
-            await markDroppedAtBranch(getNodeId() ?? "", [id]);
+            await markDroppedAtBranch(getBranchId() ?? "", [id]);
 
             setLastScanned(id);
             showToast.success("Shipment marked as dropped at branch");
@@ -88,7 +88,7 @@ export default function BranchDropScannerPage() {
 
     return (
         <RoleGuard
-            allowedRoles={[ROLES.RECEPTIONIST]}
+            allowedRoles={[ROLES.CASHIER, ROLES.MANAGER]}
             fallbackPath="/unauthorized"
         >
             <div className="min-h-screen bg-slate-950 p-6">

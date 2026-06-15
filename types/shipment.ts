@@ -127,7 +127,7 @@ export interface IPackageHistory {
 }
 
 export interface IPackage {
-  _id: string;
+  id: string;
   trackingNumber: string;
   companyId: string | any;
 
@@ -217,6 +217,8 @@ export interface IPackageHistoryResponse {
 
 // Update ICreatePackageBody in shipment.ts
 export interface ICreatePackageBody {
+  freelancerId?: string;
+
   recipientName: string;
   recipientPhone: string;
   alternativePhone?: string;
@@ -226,11 +228,9 @@ export interface ICreatePackageBody {
   recipientPostalCode?: string;
   deliveryNotes?: string;
 
-  // Home delivery GPS coordinates
   deliveryLat?: number;
   deliveryLon?: number;
 
-  // Package details
   weight: number;
   dimensions?: { length: number; width: number; height: number };
   isFragile?: boolean;
@@ -238,18 +238,15 @@ export interface ICreatePackageBody {
   description?: string;
   declaredValue?: number;
 
-  // Delivery options
   deliveryType: DeliveryType;
-  deliveryPriority?: 'standard' | 'express' | 'same_day';
-  destinationBranchId?: string; // Required for branch_pickup
+  deliveryPriority?: "standard" | "express" | "same_day";
+  destinationBranchId?: string;
 
-  // Pricing
   totalPrice: number;
   paymentMethod?: PaymentMethod;
 
-  // Optional
   estimatedDeliveryTime?: string;
-  originBranchId: string; // Added for the API
+  originBranchId: string;
 }
 
 export interface ISwapRequest {

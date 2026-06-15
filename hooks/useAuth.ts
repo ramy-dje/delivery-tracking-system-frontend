@@ -1,5 +1,6 @@
 import userStore from "@/stores/userStore";
 import { IManager } from "@/types/auth";
+import { ICashier } from "@/types/cashier";
 import { ISupervisorResponse } from "@/types/supervisor";
 import { IUser } from "@/types/user";
 
@@ -24,16 +25,27 @@ export const isAuthenticated = () => {
 export const getCompanyId = () => {
   return userStore.getState().associated?.companyId;
 }
+
+interface HasBranchId {
+  branchId?: string | { _id: string };
+}
+
+interface HasAssignedBranchId {
+  assignedBranchId?: string | { _id: string };
+}
+
 export const getBranchId = (): string | undefined => {
   const associated = userStore.getState().associated;
 
-  if (!associated || !("branchId" in associated)) {
-    return undefined;
-  }
+  if (!associated) return undefined;
 
-  return typeof associated.branchId === "string"
-    ? associated.branchId
-    : associated.branchId?._id;
+  const branch =
+    (associated as HasBranchId).branchId ??
+    (associated as HasAssignedBranchId).assignedBranchId;
+
+  return typeof branch === "string"
+    ? branch
+    : branch?._id;
 };
 
 export const getNodeId = () => {
@@ -48,7 +60,7 @@ export const setProfile = (user: IUser) => {
   userStore.getState().setProfile(user);
 };
 
-export const login = (user: IUser, access_token: string, associated?: IManager | ISupervisorResponse | null) => {
+export const login = (user: IUser, access_token: string, associated?: IManager | ISupervisorResponse | ICashier | null) => {
   userStore.getState().login(user, access_token, associated);
 };
 

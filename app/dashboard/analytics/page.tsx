@@ -12,7 +12,7 @@ export default function DashboardAnalyticsPage() {
     return <ManagerAnalyticsDashboard />;
   }
 
-  if (role === "CACHIER") {
+  if (role === "CASHIER") {
     return <ReceptionistDashboard />;
   }
 

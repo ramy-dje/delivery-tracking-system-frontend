@@ -31,11 +31,11 @@ export interface ITariffResponse {
     };
 }
 
-export type DeliveryType = "stopdesk" | "domicile";
+export type DeliveryType = "home" | "branch_pickup";
 
-export const DELIVERY_TYPE_VALUES: DeliveryType[] = ["stopdesk", "domicile"];
+export const DELIVERY_TYPE_VALUES: DeliveryType[] = ["home", "branch_pickup"];
 
 export const DELIVERY_TYPE_MAP: Record<DeliveryType, string> = {
-    stopdesk: "Stopdesk",
-    domicile: "Domicile"
+    home: "Home",
+    branch_pickup: "Branch Pickup"
 };

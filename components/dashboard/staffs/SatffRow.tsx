@@ -56,11 +56,11 @@ const StaffRow = ({
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0 transition-transform duration-150 group-hover:scale-[1.06]"
                     style={{ background: m.bg, border: `1px solid ${m.border}`, color: m.color }}
                 >
-                    {getInitials(staff.fullName)}
+                    {getInitials(staff.firstName + " " + staff.lastName)}
                 </div>
                 <div className="min-w-0">
                     <div className="text-[14px] font-semibold text-slate-100 truncate leading-tight">
-                        {staff.fullName}
+                        {staff.firstName} {staff.lastName}
                     </div>
                     <div className="mt-1">
                         <RoleBadge role={staff.role} />

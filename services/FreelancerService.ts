@@ -5,6 +5,7 @@ export const listFreelancers = async (
   branchId: string
 ): Promise<{ success: boolean; data: IFreelancerResponse[] }> => {
   const res = await api.get(`/supervisor/branches/${branchId}/freelancers`);
+  console.log("List Freelancers Response:", res.data);
   return res.data;
 };
 

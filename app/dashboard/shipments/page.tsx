@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { IPaginatedResponse } from "@/types/paginate";
-import { getNodeId, getUserRole } from "@/hooks/useAuth";
+import { getBranchId, getNodeId, getUserRole } from "@/hooks/useAuth";
 import { showToast } from "nextjs-toast-notify";
 import Pagination from "@/components/commons/Pagination";
 import { Plus, Search, X } from "lucide-react";
@@ -37,7 +37,7 @@ interface DashboardStats {
 }
 
 export default function ShipmentsPage() {
-    const hubId = getNodeId() ?? "";
+    const hubId = getBranchId();
     const userRole = getUserRole();
     const isFreelancer = userRole === ROLES.MERCHANT;
 
@@ -59,7 +59,7 @@ export default function ShipmentsPage() {
     const [cancelReason, setCancelReason] = useState("");
     const [cancelLoading, setCancelLoading] = useState(false);
     const [mode, setMode] = useState<'merchant' | 'receptionist'>(() => {
-        if (userRole === ROLES.RECEPTIONIST || userRole === ROLES.MANAGER) return 'receptionist';
+        if (userRole === ROLES.CASHIER || userRole === ROLES.MANAGER || userRole === ROLES.SUPERVISOR) return 'receptionist';
         if (userRole === ROLES.MERCHANT) return 'merchant';
         return 'merchant';
     });
@@ -135,11 +135,21 @@ export default function ShipmentsPage() {
             const filter: IShipmentFilter = {
                 pageNumber: page,
                 pageSize: PAGE_SIZE,
-                search,
+                // search,
                 status: statusFilter || undefined,
             };
-            const data = await listShipments(filter);
-            setPagination(data);
+            const { data } = await listShipments(filter);
+            const paginationData: IPaginatedResponse<IPackage> = {
+                items: data.packages ?? [],
+                pageNumber: data.pagination?.page ?? page,
+                pageSize: data.pagination?.limit ?? PAGE_SIZE,
+                totalCount: data.pagination?.total ?? 0,
+                totalPages: data.pagination?.pages ?? 1,
+                hasNextPage: data.pagination?.hasMore ?? false,
+                hasPreviousPage: data.pagination?.hasPrevPage ?? false,
+            };
+            console.log("API response for listShipments:", paginationData);
+            setPagination(paginationData);
             setStats({ pending: 0, inTransit: 0, delivered: 0, failed: 0 });
         } catch (e: any) {
             const err = parseApiError(e);
@@ -157,16 +167,36 @@ export default function ShipmentsPage() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    const handleCreateSubmit = async (payload: ICreatePackageBody) => {
+    const handleCreateSubmit = async (
+        payload: ICreatePackageBody
+    ) => {
+        if (!hubId) {
+            showToast.error(
+                "Hub ID is missing. Cannot create shipment."
+            );
+            return;
+        }
+
         setCreateLoading(true);
+
         try {
             await createShipment(hubId, payload);
-            showToast.success("Shipment created successfully");
+
+            showToast.success(
+                "Shipment created successfully"
+            );
+
             await fetchShipments();
+
             setCreateOpen(false);
         } catch (err: any) {
-            var error = parseApiError(err);
-            showToast.error(error.message || "Failed to create shipment");
+            const error = parseApiError(err);
+            console.log("Create Shipment Error:", error);
+
+            showToast.error(
+                error.message ||
+                "Failed to create shipment"
+            );
         } finally {
             setCreateLoading(false);
         }
@@ -189,13 +219,17 @@ export default function ShipmentsPage() {
     };
 
     const handleCancelShipment = async () => {
+        if (!hubId) {
+            showToast.error("Hub ID is missing. Cannot cancel shipment.");
+            return;
+        }
         if (!selectedShipment) return;
         setCancelLoading(true);
         try {
             if (isFreelancer) {
-                await cancelFreelancerPackage(selectedShipment._id, cancelReason || undefined);
+                await cancelFreelancerPackage(selectedShipment.id, cancelReason || undefined);
             } else {
-                await cancelShipment(hubId, selectedShipment._id);
+                await cancelShipment(hubId, selectedShipment.id);
             }
             showToast.success("Shipment cancelled successfully");
             setCancelOpen(false);
@@ -215,7 +249,7 @@ export default function ShipmentsPage() {
     };
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.RECEPTIONIST, ROLES.MANAGER,ROLES.SUPERVISOR]} fallbackPath="/unauthorized">
+        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.CASHIER, ROLES.MANAGER,ROLES.SUPERVISOR]} fallbackPath="/unauthorized">
             <div className="flex flex-col min-h-0 gap-3 h-full">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
@@ -233,7 +267,7 @@ export default function ShipmentsPage() {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {userRole === ROLES.RECEPTIONIST && (
+                        {userRole === ROLES.CASHIER && (
                             <ActionBtn onClick={() => openCreateModal("receptionist")} variant="primary" size="action" label="New Shipment" title="Create new shipment">
                                 <Plus className="w-4 h-4" />
                             </ActionBtn>

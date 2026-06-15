@@ -42,15 +42,7 @@ export default function FreelancersPage() {
         setError(null);
         try {
             const res = await listFreelancers(branchId);
-            const items: IFreelancerResponse[] = (res.data ?? []).map((f: any) => ({
-                id: f._id ?? f.id,
-                fullName: f.userId ? `${f.userId.firstName} ${f.userId.lastName}` : f.fullName ?? "",
-                email: f.userId?.email ?? f.email ?? "",
-                phoneNumber: f.userId?.phone ?? f.phoneNumber,
-                role: "Freelancer",
-                isActive: f.status === "active",
-            }));
-            setFreelancers(items);
+            setFreelancers(res.data);
         } catch (e: any) {
             const err = parseApiError(e);
             setError(err.message ?? "Failed to fetch freelancers");
@@ -62,10 +54,10 @@ export default function FreelancersPage() {
     useEffect(() => { fetchFreelancers(); }, [fetchFreelancers]);
 
     const filtered = freelancers.filter((f) =>
-        !search || f.fullName.toLowerCase().includes(search.toLowerCase()) || f.email.toLowerCase().includes(search.toLowerCase())
+        !search || f.userId?.firstName.toLowerCase().includes(search.toLowerCase()) || f.userId?.email.toLowerCase().includes(search.toLowerCase())
     );
 
-    const activeCount = freelancers.filter((f) => f.isActive !== false).length;
+    const activeCount = freelancers.filter((f) => f.userId?.status === "active").length;
 
     // ── CRUD ─────────────────────────────────────────────────────────────────
 
@@ -89,7 +81,7 @@ export default function FreelancersPage() {
         if (!editTarget || !branchId) return;
         setEditLoading(true);
         try {
-            await updateFreelancer(branchId, editTarget.id, data);
+            await updateFreelancer(branchId, editTarget._id, data);
             showToast.success("Freelancer updated successfully");
             setEditOpen(false);
             setEditTarget(null);
@@ -106,8 +98,8 @@ export default function FreelancersPage() {
         if (!selected || !branchId) return;
         setToggleLoading(true);
         try {
-            await toggleBlockFreelancer(branchId, selected.id);
-            showToast.success(`Freelancer ${selected.isActive ? "blocked" : "unblocked"}`);
+            await toggleBlockFreelancer(branchId, selected._id);
+            showToast.success(`Freelancer ${selected.status !== "active" ? "blocked" : "unblocked"}`);
             setConfirmOpen(false);
             setSelected(null);
             fetchFreelancers();
@@ -122,7 +114,7 @@ export default function FreelancersPage() {
     // ── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN]}>
+        <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.CASHIER]}>
             <div className="flex flex-col gap-3 h-full">
 
                 {/* Header */}
@@ -206,10 +198,10 @@ export default function FreelancersPage() {
 
                 {confirmOpen && selected && (
                     <ConfirmDialog
-                        title={`${selected.isActive ? "Block" : "Unblock"} Freelancer`}
-                        message={`${selected.isActive ? "Block" : "Unblock"} "${selected.fullName}"? They will ${selected.isActive ? "no longer" : "be able to"} access the system.`}
+                        title={`${selected.status !== "active" ? "Block" : "Unblock"} Freelancer`}
+                        message={`${selected.status !== "active" ? "Block" : "Unblock"} "${selected.userId?.firstName} ${selected.userId?.lastName}"? They will ${selected.status !== "active" ? "no longer" : "be able to"} access the system.`}
                         confirmLabel="Confirm"
-                        danger={selected.isActive}
+                        danger={selected.status !== "active"}
                         loading={toggleLoading}
                         onConfirm={handleToggleBlock}
                         onCancel={() => { setConfirmOpen(false); setSelected(null); }}

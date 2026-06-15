@@ -99,9 +99,9 @@ export async function getPackageHistory(branchId: string, packageId: string): Pr
 
 export async function listShipments(
     filter: IShipmentFilter,
-): Promise<IPaginatedResponse<IPackage>> {
-    const { data } = await api.get<IPackageListResponse>(`${SUPERVISOR_BASE}/packages`, { params: filter });
-    return data.data;
+) {
+    const res = await api.get(`${SUPERVISOR_BASE}/packages`, { params: filter });
+    return res.data;
 }
 
 export async function getShipmentsByBranch(
@@ -200,4 +200,5 @@ export async function trackPublicPackage(trackingNumber: string): Promise<any> {
         }
         throw error;
     }
-}
+}
+
