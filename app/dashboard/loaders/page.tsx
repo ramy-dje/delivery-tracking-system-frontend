@@ -20,6 +20,7 @@ import CreateLoaderModal from "@/components/dashboard/loaders/CreateLoaderModal"
 import EditLoaderModal from "@/components/dashboard/loaders/EditLoaderModal";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import { getBranchId } from "@/hooks/useAuth";
+import Pagination from "@/components/commons/Pagination";
 
 export default function LoadersPage() {
 
@@ -28,6 +29,10 @@ export default function LoadersPage() {
     const [loaders, setLoaders] = useState<ILoader[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [search, setSearch] = useState("");
     const [editTarget, setEditTarget] = useState<ILoader | null>(null);
@@ -47,16 +52,17 @@ export default function LoadersPage() {
         setLoading(true);
         setError(null);
         try {
-            const params: Record<string, any> = {};
-            if (search) params.search = search;
-            const res = await getBranchLoaders(branchId, params);
+            const res = await getBranchLoaders(branchId, { pageNumber, pageSize, search });
             setLoaders(res.data);
+            setPageNumber(res.pagination.pageNumber)
+            setPageSize(res.pagination.pageSize)
+            setTotalPages(res.pagination.totalPages)
         } catch (e: any) {
             setError(e?.message ?? "Failed to load loaders");
         } finally {
             setLoading(false);
         }
-    }, [search, branchId]);
+    }, [search, branchId, pageNumber, pageSize]);
 
     useEffect(() => {
         fetchLoaders();
@@ -287,6 +293,16 @@ export default function LoadersPage() {
                     </div>
                 )}
             </div>
+
+            {totalPages > 1 && (
+                <Pagination
+                    pageNumber={pageNumber}
+                    totalPages={totalPages}
+                    hasNext={pageNumber < totalPages}
+                    hasPrev={pageNumber > 1}
+                    onChange={(p) => setPageNumber(p)}
+                />
+            )}
 
             {/* ── Modals ────────────────────────────────────────────────── */}
             {modalOpen && (

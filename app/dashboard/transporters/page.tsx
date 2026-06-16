@@ -15,6 +15,7 @@ import { createTransporter, listTransporters, toggleBlockTransporter, updateTran
 import TransporterList from "@/components/dashboard/transporters/TransporterList";
 import CreateTransporterModal from "@/components/dashboard/transporters/CreateTransporterModal";
 import EditTransporterModal from "@/components/dashboard/transporters/EditTransporterModal";
+import Pagination from "@/components/commons/Pagination";
 
 export default function TransportersPage() {
     const companyId = getCompanyId() ?? "";
@@ -23,6 +24,10 @@ export default function TransportersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
@@ -42,15 +47,18 @@ export default function TransportersPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await listTransporters(companyId);
+            const res = await listTransporters(companyId, { pageNumber, pageSize });
             setTransporters(res.data ?? []);
+            setPageNumber(res.pagination?.pageNumber || pageNumber);
+            setPageSize(res.pagination?.pageSize || pageSize);
+            setTotalPages(res.pagination?.totalPages || totalPages);
         } catch (e: any) {
             const err = parseApiError(e);
             setError(err.message ?? "Failed to fetch transporters");
         } finally {
             setLoading(false);
         }
-    }, [companyId]);
+    }, [companyId, pageNumber, pageSize]);
 
     useEffect(() => { fetchTransporters(); }, [fetchTransporters]);
 
@@ -181,6 +189,16 @@ export default function TransportersPage() {
                     onEdit={(t) => { setEditTarget(t); setEditOpen(true); }}
                     onToggleStatus={(t) => { setSelected(t); setConfirmOpen(true); }}
                 />
+
+                {totalPages > 1 && (
+                    <Pagination
+                        pageNumber={pageNumber}
+                        totalPages={totalPages}
+                        hasNext={pageNumber < totalPages}
+                        hasPrev={pageNumber > 1}
+                        onChange={(p) => setPageNumber(p)}
+                    />
+                )}
 
                 {/* Modals */}
                 <CreateTransporterModal

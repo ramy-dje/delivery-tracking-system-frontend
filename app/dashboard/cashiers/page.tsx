@@ -11,7 +11,7 @@ import {
 import { ICashier, ICreateCashierBody, IUpdateCashierBody } from "@/types/cashier";
 import { showToast } from "nextjs-toast-notify";
 import EmptyState from "@/components/commons/EmptyState";
-import { Users, Plus, Search, X, Trash2, Trash, Lock, Unlock, Edit } from "lucide-react";
+import { Users, Plus, Search, X, Trash, Lock, Unlock, Edit } from "lucide-react";
 import StatCard from "@/components/commons/StatCard";
 import { SkeletonList } from "@/components/commons/Skeleton";
 import ErrorBaner from "@/components/commons/ErrorBaner";
@@ -21,15 +21,18 @@ import EditCashierModal from "@/components/dashboard/cashiers/EditCashierModal";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { getBranchId } from "@/hooks/useAuth";
+import Pagination from "@/components/commons/Pagination";
 
 export default function CashiersPage() {
-    // Assuming supervisor is assigned to a branch in their context or we fetch it
-    // Wait, the API requires branchId. Let's assume we extract it from user profile if supervisor
     const branchId = getBranchId();
 
     const [cashiers, setCashiers] = useState<ICashier[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [search, setSearch] = useState("");
 
@@ -49,16 +52,17 @@ export default function CashiersPage() {
         setLoading(true);
         setError(null);
         try {
-            const params: Record<string, any> = {};
-            if (search) params.search = search;
-            const res = await getBranchCashiers(branchId, params);
-            setCashiers(res.data);
+            const res = await getBranchCashiers(branchId, { pageNumber, pageSize, search });
+            setCashiers(res.data); // Duplicate the data to simulate more cashiers
+            setTotalPages(res.pagination.totalPages)
+            setPageNumber(res.pagination.pageNumber)
+            setPageSize(res.pagination.pageSize)
         } catch (e: any) {
             setError(e?.message ?? "Failed to load cashiers");
         } finally {
             setLoading(false);
         }
-    }, [search, branchId]);
+    }, [search, branchId, pageNumber, pageSize]);
 
     useEffect(() => {
         fetchCashiers();
@@ -298,6 +302,16 @@ export default function CashiersPage() {
                     </div >
                 )}
             </div >
+
+            {totalPages > 1 && (
+                <Pagination
+                    pageNumber={pageNumber}
+                    totalPages={totalPages}
+                    hasNext={pageNumber < totalPages}
+                    hasPrev={pageNumber > 1}
+                    onChange={(p) => setPageNumber(p)}
+                />
+            )}
 
             {/* ── Modals ────────────────────────────────────────────────── */}
             {

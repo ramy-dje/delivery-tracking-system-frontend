@@ -23,7 +23,7 @@ export async function updateLoader(
 export async function getBranchLoaders(
     branchId: string,
     params?: any,
-): Promise<{ success: boolean; count: number; data: ILoader[] }> {
+): Promise<{ success: boolean; count: number; data: ILoader[]; pagination: { pageNumber: number; pageSize: number; totalPages: number } }> {
     const { data } = await api.get(`${SUPERVISOR_BASE}/branches/${branchId}/loaders`, { params });
     return data;
 }

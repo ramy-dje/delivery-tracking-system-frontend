@@ -2,9 +2,10 @@ import api from "@/lib/api";
 import { ICreateTransporter, ITransporterResponse } from "@/types/transporter";
 
 export const listTransporters = async (
-  companyId: string
-): Promise<{ success: boolean; data: ITransporterResponse[] }> => {
-  const res = await api.get(`/manager/companies/${companyId}/transporters`);
+  companyId: string,
+  filters?: { pageNumber?: number; pageSize?: number }
+): Promise<{ success: boolean; data: ITransporterResponse[]; pagination?: { pageNumber: number; pageSize: number; totalPages: number } }> => {
+  const res = await api.get(`/manager/companies/${companyId}/transporters`, { params: filters });
   const mappedData = res.data.data.map((t: any) => ({
     id: t._id,
     fullName: `${t.userId?.firstName || ""} ${t.userId?.lastName || ""}`.trim(),

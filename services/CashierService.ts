@@ -23,7 +23,7 @@ export async function updateCashier(
 export async function getBranchCashiers(
     branchId: string,
     params?: any,
-): Promise<{ success: boolean; count: number; data: ICashier[] }> {
+): Promise<{ success: boolean; count: number; data: ICashier[], pagination: { pageNumber: number; pageSize: number; totalPages: number } }> {
     const { data } = await api.get(`${SUPERVISOR_BASE}/branches/${branchId}/cashiers`, { params });
     return data;
 }

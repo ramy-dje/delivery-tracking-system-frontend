@@ -16,10 +16,10 @@ import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { getCompanyId } from "@/hooks/useAuth";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export default function VehiclesPage() {
-    const companyId = getCompanyId(); // ← replace with your actual companyId source
+    const companyId = getCompanyId();
 
     const [listResponse, setListResponse] = useState<IVehicleListResponse | null>(null);
     const vehicles: IVehicleResponse[] = listResponse?.data ?? [];

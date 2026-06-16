@@ -27,7 +27,6 @@ import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import SwapShipmentModal from "@/components/dashboard/shipments/SwapShipmentModal";
 import { handleBatchPrint } from "@/utils/printHelper";
 
-const PAGE_SIZE = 10;
 
 interface DashboardStats {
     pending: number;
@@ -41,8 +40,11 @@ export default function ShipmentsPage() {
     const userRole = getUserRole();
     const isFreelancer = userRole === ROLES.MERCHANT;
 
-    const [pagination, setPagination] = useState<IPaginatedResponse<IPackage> | null>(null);
-    const shipments = pagination?.items ?? [];
+    const [shipments, setShipments] = useState<IPackage[]>([]);
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,6 @@ export default function ShipmentsPage() {
     const [deliveryTypeFilter, setDeliveryTypeFilter] = useState<"" | "home" | "branch_pickup">("");
     const [sortBy, setSortBy] = useState<"createdAt" | "totalPrice" | "status">("createdAt");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-    const [page, setPage] = useState(1);
 
     const [createOpen, setCreateOpen] = useState(false);
     const [swapOpen, setSwapOpen] = useState(false);
@@ -87,23 +88,15 @@ export default function ShipmentsPage() {
                 search: search || undefined,
                 sortBy,
                 sortOrder,
-                page,
-                limit: PAGE_SIZE,
+                page: pageNumber,
+                limit: pageSize,
             });
 
-            // Map to IPaginatedResponse shape
-            const paginationData: IPaginatedResponse<IPackage> = {
-                items: res.data ?? [],
-                pageNumber: res.pagination?.page ?? page,
-                pageSize: PAGE_SIZE,
-                totalCount: res.pagination?.total ?? 0,
-                totalPages: res.pagination?.totalPages ?? 1,
-                hasNextPage: res.pagination?.hasNextPage ?? false,
-                hasPreviousPage: res.pagination?.hasPrevPage ?? false,
-            };
-            setPagination(paginationData);
+            setShipments(res.data ?? []);
+            setPageNumber(res.pagination?.page ?? pageNumber);
+            setPageSize(res.pagination?.limit ?? pageSize);
+            setTotalPages(res.pagination?.pages ?? 1)
 
-            // Populate stats from summary
             const byStatus = res.summary?.byStatus ?? {};
             setStats({
                 pending: (byStatus.pending ?? 0) + (byStatus.accepted ?? 0),
@@ -124,7 +117,7 @@ export default function ShipmentsPage() {
         } finally {
             setLoading(false);
         }
-    }, [statusFilter, deliveryTypeFilter, search, sortBy, sortOrder, page]);
+    }, [statusFilter, deliveryTypeFilter, search, sortBy, sortOrder, pageNumber, pageSize]);
 
     // ── Supervisor/Receptionist fetch ─────────────────────────────────────────
     const fetchSupervisorShipments = useCallback(async () => {
@@ -133,23 +126,17 @@ export default function ShipmentsPage() {
         setError(null);
         try {
             const filter: IShipmentFilter = {
-                pageNumber: page,
-                pageSize: PAGE_SIZE,
-                // search,
+                pageNumber,
+                pageSize,
                 status: statusFilter || undefined,
             };
-            const { data } = await listShipments(filter);
-            const paginationData: IPaginatedResponse<IPackage> = {
-                items: data.packages ?? [],
-                pageNumber: data.pagination?.page ?? page,
-                pageSize: data.pagination?.limit ?? PAGE_SIZE,
-                totalCount: data.pagination?.total ?? 0,
-                totalPages: data.pagination?.pages ?? 1,
-                hasNextPage: data.pagination?.hasMore ?? false,
-                hasPreviousPage: data.pagination?.hasPrevPage ?? false,
-            };
-            console.log("API response for listShipments:", paginationData);
-            setPagination(paginationData);
+            console.log("Fetching shipments with filter:", filter);
+            const res = await listShipments(filter);
+            console.log("Fetched shipments:", res);
+            setShipments(res.data.packages ?? []);
+            setPageNumber(res.data.pagination?.page ?? pageNumber);
+            setPageSize(res.data.pagination?.limit ?? pageSize);
+            setTotalPages(res.data.pagination?.pages ?? 1)
             setStats({ pending: 0, inTransit: 0, delivered: 0, failed: 0 });
         } catch (e: any) {
             const err = parseApiError(e);
@@ -157,7 +144,7 @@ export default function ShipmentsPage() {
         } finally {
             setLoading(false);
         }
-    }, [hubId, search, statusFilter, page]);
+    }, [hubId, search, statusFilter, pageNumber, pageSize]);
 
     const fetchShipments = isFreelancer ? fetchFreelancerShipments : fetchSupervisorShipments;
 
@@ -249,7 +236,7 @@ export default function ShipmentsPage() {
     };
 
     return (
-        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.CASHIER, ROLES.MANAGER,ROLES.SUPERVISOR]} fallbackPath="/unauthorized">
+        <RoleGuard allowedRoles={[ROLES.MERCHANT, ROLES.CASHIER, ROLES.MANAGER, ROLES.SUPERVISOR]} fallbackPath="/unauthorized">
             <div className="flex flex-col min-h-0 gap-3 h-full">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
@@ -310,11 +297,11 @@ export default function ShipmentsPage() {
                             type="text"
                             placeholder="Search tracking code, name, or phone…"
                             value={search}
-                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                            onChange={(e) => { setSearch(e.target.value); setPageNumber(1); }}
                             className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
                         />
                         {search && (
-                            <button onClick={() => { setSearch(""); setPage(1); }} className="text-slate-700 hover:text-slate-500">
+                            <button onClick={() => { setSearch(""); setPageNumber(1); }} className="text-slate-700 hover:text-slate-500">
                                 <X size={13} />
                             </button>
                         )}
@@ -326,7 +313,7 @@ export default function ShipmentsPage() {
                         value={statusFilter ? String(statusFilter) : ""}
                         onChange={(value) => {
                             setStatusFilter(value ? (value as unknown as PackageStatus) : "");
-                            setPage(1);
+                            setPageNumber(1);
                         }}
                         placeholder="All Statuses"
                         options={[
@@ -345,7 +332,7 @@ export default function ShipmentsPage() {
                             value={deliveryTypeFilter}
                             onChange={(value) => {
                                 setDeliveryTypeFilter(value as "" | "home" | "branch_pickup");
-                                setPage(1);
+                                setPageNumber(1);
                             }}
                             placeholder="All Types"
                             options={[
@@ -389,13 +376,13 @@ export default function ShipmentsPage() {
                 />
 
                 {/* Pagination */}
-                {pagination && pagination.totalPages > 1 && (
+                {totalPages > 1 && (
                     <Pagination
-                        pageNumber={pagination.pageNumber}
-                        totalPages={pagination.totalPages}
-                        hasNext={pagination.hasNextPage}
-                        hasPrev={pagination.hasPreviousPage}
-                        onChange={(p) => setPage(p)}
+                        pageNumber={pageNumber}
+                        totalPages={totalPages}
+                        hasNext={totalPages > pageNumber}
+                        hasPrev={pageNumber > 1}
+                        onChange={(p) => setPageNumber(p)}
                     />
                 )}
 
