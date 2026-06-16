@@ -3,9 +3,11 @@
 
 import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDashboard";
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
+import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import LoaderDashboard from "@/components/dashboard/LoaderDashboard";
 import { ROLES } from "@/lib/roles";
 import userStore from "@/stores/userStore";
+import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
 
 
 
@@ -17,6 +19,10 @@ export default function DashboardPage() {
   console.log("User role:", role);
 
   if (role === "MANAGER") return <ManagerOverviewDashboard />;
+  if (role === "CACHIER") return <ReceptionistDashboard />;
+  if (role === "ADMIN") return <AdminDashboard />;
+  if (role === "SUPERVISOR") return <SupervisorDashboard />;
+
   if (role === "CASHIER") return <ReceptionistDashboard />;
   if (role === "LOADER" || role === "SORTER") return <LoaderDashboard />;
   if (role === "SUPERVISOR") return <SupervisorDashboard />;

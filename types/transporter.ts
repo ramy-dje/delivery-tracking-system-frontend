@@ -4,6 +4,7 @@ export interface ICreateTransporter {
   email: string;
   password: string;
   phone: string;
+  currentVehicleId?: string;
 }
 
 export interface ITransporterResponse {
@@ -14,4 +15,5 @@ export interface ITransporterResponse {
   role: string;
   isActive: boolean;
   isOnline?: boolean;
+  currentVehicleId?: string;
 }

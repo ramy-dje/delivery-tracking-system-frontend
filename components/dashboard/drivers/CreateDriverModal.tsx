@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Mail, Phone, User, Lock, Truck } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import { ICreateDelivererPayload } from "@/types/driver";
+import EntityPicker from "@/components/commons/EntityPicker";
+import { getCompanyVehicles } from "@/services/VehicleService";
+import userStore from "@/stores/userStore";
+import { IVehicleResponse } from "@/types/vehicle";
 
 // ─── Validation ───────────────────────────────────────────────────────────
 
@@ -52,11 +56,13 @@ export default function CreateDriverModal({
     onSubmit,
     loading,
 }: CreateDriverModalProps) {
+    const { user, associated } = userStore();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phone, setPhone] = useState("");
+    const [currentVehicleId, setCurrentVehicleId] = useState<string | null>(null);
     const [showPw, setShowPw] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState(false);
@@ -84,6 +90,7 @@ export default function CreateDriverModal({
             email: email.trim(),
             password,
             phone: phone.trim(),
+            ...(currentVehicleId && { currentVehicleId }),
         });
     };
 
@@ -165,6 +172,28 @@ export default function CreateDriverModal({
                             error={errors.phone}
                         />
                     </div>
+
+                    {/* Vehicle */}
+                    <EntityPicker<IVehicleResponse>
+                        label="Assigned Vehicle (Optional)"
+                        placeholder="Select a vehicle"
+                        value={currentVehicleId}
+                        onChange={(id) => setCurrentVehicleId(id)}
+                        fetchData={async () => {
+                            const companyId = user?.companyId || associated?.companyId;
+                            if (!companyId) return [];
+                            try {
+                                const res = await getCompanyVehicles(companyId as string, { limit: 100 });
+                                return res?.data || [];
+                            } catch (error) {
+                                console.error("Error fetching vehicles:", error);
+                                return [];
+                            }
+                        }}
+                        getId={(v) => v._id}
+                        getLabel={(v) => `${v.registrationNumber} - ${v.brand || ''} ${v.modelName || ''}`.trim()}
+                        getSubLabel={(v) => v.type.replace('_', ' ')}
+                    />
 
                     {/* Password */}
                     <InputField

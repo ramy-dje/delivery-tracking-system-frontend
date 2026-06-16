@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import userStore from "@/stores/userStore";
 import { ROLES } from "@/lib/roles";
@@ -26,7 +26,7 @@ const NAV_GROUPS = [
                 icon: (
                     <FileLineChartIcon size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.MANAGER],
             },
             {
                 path: "/dashboard/performance",
@@ -34,7 +34,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Award size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER],
+                allowed: [ROLES.MANAGER],
             },
             {
                 path: "/dashboard/branches",
@@ -106,7 +106,7 @@ const NAV_GROUPS = [
                 icon: (
                     <User size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN],
+                allowed: [ROLES.SUPERVISOR],
             },
             {
                 path: "/dashboard/shipments",
@@ -146,7 +146,15 @@ const NAV_GROUPS = [
                 icon: (
                     <Building2 size={14} />
                 ),
-                allowed: [ROLES.MANAGER, ROLES.ADMIN],
+                allowed: [ROLES.MANAGER],
+            },
+            {
+                path: "/dashboard/companies",
+                label: "Companies",
+                icon: (
+                    <Building2 size={14} />
+                ),
+                allowed: [ROLES.ADMIN],
             },
         ],
     }, {
@@ -170,6 +178,7 @@ const NAV_GROUPS = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { user, logout } = userStore();
     const role = user?.role ?? "";
     const [collapsed, setCollapsed] = useState(false);
@@ -377,7 +386,10 @@ export default function Sidebar() {
             {/* Sign out */}
             <div className="p-3 border-t border-white/5">
                 <button
-                    onClick={() => logout()}
+                    onClick={() => {
+                        logout();
+                        router.push("/");
+                    }}
                     title={collapsed ? "Sign out" : undefined}
                     className={`
                         w-full rounded-lg flex items-center gap-2 text-slate-600 hover:text-amber-300

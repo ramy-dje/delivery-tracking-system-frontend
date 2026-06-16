@@ -97,6 +97,7 @@ export interface ICreateDelivererPayload {
   firstName: string;
   lastName: string;
   documents?: IDelivererDocuments;
+  currentVehicleId?: string;
 }
 
 export interface IUpdateDelivererPayload {
@@ -106,4 +107,5 @@ export interface IUpdateDelivererPayload {
   lastName?: string;
   documents?: IDelivererDocuments;
   availabilityStatus?: AvailabilityStatus;
+  currentVehicleId?: string;
 }

@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { Mail, Phone, User } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import { IDelivererResponse, IUpdateDelivererPayload } from "@/types/driver";
+import EntityPicker from "@/components/commons/EntityPicker";
+import { getCompanyVehicles } from "@/services/VehicleService";
+import userStore from "@/stores/userStore";
+import { IVehicleResponse } from "@/types/vehicle";
 
 interface FormErrors {
   firstName?: string;
@@ -33,10 +37,12 @@ interface EditDriverModalProps {
 }
 
 export default function EditDriverModal({ isOpen, driver, onClose, onSubmit, loading }: EditDriverModalProps) {
+  const { user, associated } = userStore();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [currentVehicleId, setCurrentVehicleId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
 
@@ -46,6 +52,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSubmit, loa
       setLastName(driver.userId?.lastName ?? "");
       setEmail(driver.userId?.email ?? "");
       setPhone(driver.userId?.phone ?? "");
+      setCurrentVehicleId(driver.currentVehicleId ?? null);
       setErrors({});
       setTouched(false);
     }
@@ -66,6 +73,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSubmit, loa
       lastName: lastName.trim(),
       email: email.trim(),
       phone: phone.trim(),
+      currentVehicleId: currentVehicleId ?? undefined,
     });
   };
 
@@ -124,6 +132,27 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSubmit, loa
             <InputField label="Phone Number" type="tel" placeholder="+213 5XX XXX XXX" icon={Phone}
               value={phone} onChange={(e) => { setPhone(e.target.value); revalidate(); }} error={errors.phone} />
           </div>
+
+          <EntityPicker<IVehicleResponse>
+            label="Assigned Vehicle (Optional)"
+            placeholder="Select a vehicle"
+            value={currentVehicleId}
+            onChange={(id) => setCurrentVehicleId(id)}
+            fetchData={async () => {
+                const companyId = user?.companyId || associated?.companyId;
+                if (!companyId) return [];
+                try {
+                    const res = await getCompanyVehicles(companyId as string, { limit: 100 });
+                    return res?.data || [];
+                } catch (error) {
+                    console.error("Error fetching vehicles:", error);
+                    return [];
+                }
+            }}
+            getId={(v) => v._id}
+            getLabel={(v) => `${v.registrationNumber} - ${v.brand || ''} ${v.modelName || ''}`.trim()}
+            getSubLabel={(v) => v.type.replace('_', ' ')}
+          />
         </div>
 
         {/* Footer */}

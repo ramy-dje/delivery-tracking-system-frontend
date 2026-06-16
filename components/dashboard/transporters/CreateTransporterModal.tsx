@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Mail, Phone, User, Lock, Truck } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import { ICreateTransporter } from "@/types/transporter";
+import EntityPicker from "@/components/commons/EntityPicker";
+import { getCompanyVehicles } from "@/services/VehicleService";
+import userStore from "@/stores/userStore";
+import { IVehicleResponse } from "@/types/vehicle";
 
 interface FormErrors {
   firstName?: string;
@@ -35,11 +39,13 @@ interface CreateTransporterModalProps {
 }
 
 export default function CreateTransporterModal({ isOpen, onClose, onSubmit, loading }: CreateTransporterModalProps) {
+  const { user, associated } = userStore();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [currentVehicleId, setCurrentVehicleId] = useState<string | null>(null);
   const [showPw, setShowPw] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
@@ -54,7 +60,14 @@ export default function CreateTransporterModal({ isOpen, onClose, onSubmit, load
     const errs = validate({ firstName, lastName, email, password, phoneNumber });
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    await onSubmit({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), password, phone: phoneNumber.trim() });
+    await onSubmit({ 
+      firstName: firstName.trim(), 
+      lastName: lastName.trim(), 
+      email: email.trim(), 
+      password, 
+      phone: phoneNumber.trim(),
+      ...(currentVehicleId && { currentVehicleId })
+    });
   };
 
   const handleClose = () => {
@@ -119,6 +132,27 @@ export default function CreateTransporterModal({ isOpen, onClose, onSubmit, load
               {showPw ? "Hide" : "Show"} password
             </button>
           </div>
+
+          <EntityPicker<IVehicleResponse>
+            label="Assigned Vehicle (Optional)"
+            placeholder="Select a vehicle"
+            value={currentVehicleId}
+            onChange={(id) => setCurrentVehicleId(id)}
+            fetchData={async () => {
+                const companyId = user?.companyId || associated?.companyId;
+                if (!companyId) return [];
+                try {
+                    const res = await getCompanyVehicles(companyId as string, { limit: 100 });
+                    return res?.data || [];
+                } catch (error) {
+                    console.error("Error fetching vehicles:", error);
+                    return [];
+                }
+            }}
+            getId={(v) => v._id}
+            getLabel={(v) => `${v.registrationNumber} - ${v.brand || ''} ${v.modelName || ''}`.trim()}
+            getSubLabel={(v) => v.type.replace('_', ' ')}
+          />
         </div>
 
         {/* Footer */}
