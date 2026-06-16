@@ -9,6 +9,8 @@ import userStore from "@/stores/userStore";
 
 
 
+import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
+
 export default function DashboardPage() {
   const { user } = userStore();
   const role = user?.role?.toUpperCase();
@@ -17,6 +19,7 @@ export default function DashboardPage() {
   if (role === "MANAGER") return <ManagerOverviewDashboard />;
   if (role === "CASHIER") return <ReceptionistDashboard />;
   if (role === "LOADER" || role === "SORTER") return <LoaderDashboard />;
+  if (role === "SUPERVISOR") return <SupervisorDashboard />;
 
   return (
     <div className="flex items-center justify-center h-64">

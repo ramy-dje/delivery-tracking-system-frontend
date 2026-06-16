@@ -11,6 +11,8 @@ import { listTransporters } from "@/services/TransporterService";
 import { listFreelancers } from "@/services/FreelancerService";
 import { getCompanyVehicles } from "@/services/VehicleService";
 import { ISupervisorResponse } from "@/types/supervisor";
+import { useSocket } from "@/hooks/useSocket";
+import SupervisorQrModal from "./supervisors/SupervisorQrModal";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
@@ -273,6 +275,10 @@ export default function SupervisorDashboard() {
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
 
+    // QR Modal state for incoming socket events
+    const [qrModalData, setQrModalData] = useState<any | null>(null);
+    const { socket, connected } = useSocket();
+
     const load = useCallback(async (isRefresh = false) => {
         if (!branchId || !companyId) {
             setError("Branch or company information not available.");
@@ -351,6 +357,29 @@ export default function SupervisorDashboard() {
     }, [branchId, companyId]);
 
     useEffect(() => { load(); }, [load]);
+
+    // Socket listeners for QR events
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleStartRouteQr = (payload: any) => {
+            console.log("[Socket] Received supervisor:show_start_route_qr", payload);
+            setQrModalData({ type: "start_route", ...payload });
+        };
+
+        const handleStopQr = (payload: any) => {
+            console.log("[Socket] Received supervisor:show_stop_qr", payload);
+            setQrModalData({ type: "stop_verification", ...payload });
+        };
+
+        socket.on("supervisor:show_start_route_qr", handleStartRouteQr);
+        socket.on("supervisor:show_stop_qr", handleStopQr);
+
+        return () => {
+            socket.off("supervisor:show_start_route_qr", handleStartRouteQr);
+            socket.off("supervisor:show_stop_qr", handleStopQr);
+        };
+    }, [socket]);
 
     if (loading) return <LoadingSkeleton />;
 
@@ -438,23 +467,51 @@ export default function SupervisorDashboard() {
                                 <Icons.Branch />
                                 {branchName ?? "Your Branch"}
                             </span>
-                            · Branch operational overview
+                            ·
+                            <span
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px]"
+                                style={{ background: connected ? C.greenDim : C.redDim, color: connected ? C.green : C.red, border: `1px solid ${connected ? C.green : C.red}30` }}
+                            >
+                                <StatusDot color={connected ? C.green : C.red} />
+                                {connected ? "Socket Connected" : "Socket Disconnected"}
+                            </span>
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => load(true)}
-                        disabled={refreshing}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all self-start"
-                        style={{
-                            background: C.card,
-                            border: `1px solid ${C.border}`,
-                            color: "#475569",
-                        }}
-                    >
-                        <div className={refreshing ? "animate-spin" : ""}><Icons.Refresh /></div>
-                        {refreshing ? "Refreshing…" : "Refresh"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setQrModalData({
+                                type: "stop_verification",
+                                message: "TEST MODAL - Transporter arrived at stop.",
+                                routeNumber: "RT-TEST-123",
+                                routeType: "hub_to_hub",
+                                transporterId: "60d5ecb8b392d7",
+                                packageCount: 5,
+                                qrImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHQAAAB0CAYAAABUmhYnAAAAAklEQVR4AewaftIAAALzSURBVO3BQQ7CQAwEwT1S8P9/c24QkZDWnZlV1x1+rXV/7/fH+P7XWuvf1vps2DqB11qfDVsnsP6nTwS0gq4TBNITaARdJwS0gq4TBJIT6ARBJwj02rB1gt4btk4QSE+gEwS9NmydoBO0TmA9gU7QOoF0gtYJekugEwS9J2ydoBO0ThDoHYFO0AmC3hO2TuA9gdYJpOvXWp8NWydonaD3hK0TBNIT6ARBd0wQaAVdJwgkJ9AJAukJdIIg0AmCTtA6QaAVBEGgEwSBIJCeQCcIOkEQCALpCXSCoBMEgSAIdIIgCASCQCcIAkEgPYFOEASCoBMEgSAIdIIgEAQCQSAIdIIgEAQ6QRAIgp4bAukJdIIgCASCQCcIAkEgEIRO0AmCQBDoBEEgCHqTINCeQCcIAkGgEwSBIBAE0hPoBEEgCASCQCcIgkAQ9CZBoBMEnSAIBIHeEgjSE+gEQSAIdIIgEAQCQSAIdIIgEAQCQSAIdIIgEAQ9NwR6S6ATBIEg0AmCQBAIAukJdIIgEAQ6QRAIgkAQOEFvEnSCQBAIdIIgEARBoBMEgSDQCYJAEAgCnSAIBAH/v9b6bNg6QSA9gU4Q6L1h6wTtBO0JdIKg94StE/SeQCcIAp0g6ARBoD2BThB0gt4TtE4gSA+0J9AJgqB1gnYCOkHQXkAnCAL1QHsCnSBoJ6ATBIHeE+gEgeQE2hPoBEHQThAEng1bJ/A9gfQE2hPoBEHQOoFOEOgE2hPoBIEgPQFBoD2BThAE7QR0gqC9gE4QBNIT2AnoBEHQe8LWCXwnoBNIT6A9gU4QBO0EQSB4NmydwPcEOoH0BNoT6ARBELQT0AmC9gI6QRAI0hPYCegEQeA7gfQEQSCQnkA7AZ0gCHxPIC0JtBPQCYLAswGdgE4QSA/0nEAnCALfE7Qn0AmCTtA6gfQEviMItCfQCYL2AjpBEAQ6QRAEugHp17Z12rJ0lwAAAABJRU5ErkJggg=="
+                            })}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all self-start"
+                            style={{
+                                background: "rgba(59, 130, 246, 0.1)",
+                                border: `1px solid rgba(59, 130, 246, 0.2)`,
+                                color: "#3b82f6",
+                            }}
+                        >
+                            Test QR Modal
+                        </button>
+                        <button
+                            onClick={() => load(true)}
+                            disabled={refreshing}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all self-start"
+                            style={{
+                                background: C.card,
+                                border: `1px solid ${C.border}`,
+                                color: "#475569",
+                            }}
+                        >
+                            <div className={refreshing ? "animate-spin" : ""}><Icons.Refresh /></div>
+                            {refreshing ? "Refreshing…" : "Refresh"}
+                        </button>
+                    </div>
                 </div>
 
                 {/* ── KPI Row ────────────────────────────────────────────────────── */}
@@ -925,6 +982,12 @@ export default function SupervisorDashboard() {
                 )}
 
             </div>
+
+            {/* QR Modal for start/stop route events from transporter */}
+            <SupervisorQrModal
+                data={qrModalData}
+                onClose={() => setQrModalData(null)}
+            />
         </div>
     );
 }
