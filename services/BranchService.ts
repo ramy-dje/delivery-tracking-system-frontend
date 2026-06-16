@@ -15,16 +15,18 @@ export interface IBranchFilter {
     status?: string;
     city?: string;
     search?: string;
+    pageNumber?: number;
+    pageSize?: number;
 }
 
 export const listBranches = async (
     params?: IBranchFilter,
-): Promise<IBranchResponse[]> => {
+): Promise<{ data: IBranchResponse[]; pagination: any }> => {
     const companyId = getCompanyId();
     if (!companyId) throw new Error("No company id");
     const res = await api.get(base(companyId), { params });
     // Backend returns { success, count, data: [...] }
-    return res.data.data;
+    return res.data;
 };
 
 // ── Get single branch ────────────────────────────────────────────────────────

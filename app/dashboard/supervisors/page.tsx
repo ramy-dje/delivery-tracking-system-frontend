@@ -6,7 +6,6 @@ import {
     getSupervisors,
     createSupervisor,
     toggleSupervisorStatus,
-    getCompanyBranches,
 } from "@/services/SupervisorService";
 
 import {
@@ -27,6 +26,7 @@ import SupervisorList from "@/components/dashboard/supervisors/SupervisorList";
 import CreateSupervisorModal from "@/components/dashboard/supervisors/CreateSupervisorModal";
 import SupervisorDetailModal from "@/components/dashboard/supervisors/SupervisorDetailModal";
 import { parseApiError } from "@/utils/apiErrorHandler";
+import Pagination from "@/components/commons/Pagination";
 
 export default function SupervisorsPage() {
     const companyId = getCompanyId() ?? "";
@@ -39,6 +39,11 @@ export default function SupervisorsPage() {
     const [error, setError] = useState<string | null>(null);
 
     const [search, setSearch] = useState("");
+
+    // pagination 
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [modalOpen, setModalOpen] = useState(false);
 
@@ -59,8 +64,11 @@ export default function SupervisorsPage() {
         setError(null);
 
         try {
-            const res = await getSupervisors(companyId);
-            setSupervisors(res.data ?? []);
+            const res = await getSupervisors(companyId, { search, pageNumber, pageSize });
+            setSupervisors(res.data);
+            setTotalPages(res.pagination.totalPages);
+            setPageNumber(res.pagination.pageNumber);
+            setPageSize(res.pagination.pageSize);
         } catch (e: any) {
             const msg = e?.message ?? "Failed to load supervisors";
             setError(msg);
@@ -68,7 +76,7 @@ export default function SupervisorsPage() {
         } finally {
             setLoading(false);
         }
-    }, [companyId]);
+    }, [companyId, pageNumber, pageSize, totalPages]);
 
     useEffect(() => {
         fetchSupervisors();
@@ -136,24 +144,10 @@ export default function SupervisorsPage() {
         setDetailTarget({ supervisorId, branchId });
     };
 
-    const filtered = supervisors.filter((s) => {
-        const q = search.toLowerCase();
-
-        const user = typeof s.userId === "object" ? s.userId : null;
-
-        const fullName = user
-            ? `${user.firstName} ${user.lastName}`.toLowerCase()
-            : "";
-
-        const email = user?.email?.toLowerCase() ?? "";
-
-        return !q || fullName.includes(q) || email.includes(q);
-    });
-
     const activeCount = supervisors.filter((s) => s.isActive).length;
 
     return (
-        <div className="flex flex-col gap-3 h-full">
+        <div className="flex flex-col gap-3 h-full min-h-0">
 
             <div className="flex items-start justify-between gap-4 pt-1">
                 <div>
@@ -216,12 +210,22 @@ export default function SupervisorsPage() {
             </div>
 
             <SupervisorList
-                supervisors={filtered}
+                supervisors={supervisors}
                 loading={loading}
                 onToggleStatus={handleToggleClick}
                 onViewDetail={handleViewDetail}
                 onAddClick={() => setModalOpen(true)}
             />
+
+            {totalPages > 1 && (
+                <Pagination
+                    pageNumber={pageNumber}
+                    totalPages={totalPages}
+                    hasNext={pageNumber < totalPages}
+                    hasPrev={pageNumber > 1}
+                    onChange={(p) => setPageNumber(p)}
+                />
+            )}
 
             {modalOpen && (
                 <CreateSupervisorModal

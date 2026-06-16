@@ -13,12 +13,17 @@ import { ICompany } from "@/types/company";
 import { getAllCompanies, toggleBlockCompany } from "@/services/CompanyService";
 import CompanyList from "@/components/dashboard/company/CompanyList";
 import CompanyDetailModal from "@/components/dashboard/company/CompanyDetailModal";
+import Pagination from "@/components/commons/Pagination";
 
 export default function CompaniesPage() {
     const [companies, setCompanies] = useState<ICompany[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(6)
+    const [totalPages, setTotalPages] = useState(0)
 
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<ICompany | null>(null);
@@ -33,27 +38,24 @@ export default function CompaniesPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await getAllCompanies();
+            const res = await getAllCompanies({ pageNumber, pageSize, search });
             setCompanies(res.data || []);
+            console.log("Fetched companies:", res.pagination);
+            setTotalPages(res.pagination.totalPages || 0)
+            setPageNumber(res.pagination.pageNumber || 1)
+            setPageSize(res.pagination.pageSize || 0)
         } catch (e: any) {
             const err = parseApiError(e);
             setError(err.message ?? "Failed to load companies");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [pageNumber, pageSize, search]);
 
     useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
 
-    const filtered = companies.filter((c) =>
-        !search ||
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.email?.toLowerCase().includes(search.toLowerCase())
-    );
-
     const activeCount = companies.filter((c) => c.status === "active").length;
     const suspendedCount = companies.filter((c) => c.status === "suspended").length;
-    const pendingCount = companies.filter((c) => c.status === "pending").length;
 
     // ── Toggle block ─────────────────────────────────────────────────────────
 
@@ -80,7 +82,7 @@ export default function CompaniesPage() {
 
     return (
         <RoleGuard allowedRoles={[ROLES.ADMIN]}>
-            <div className="flex flex-col gap-3 h-full">
+            <div className="flex flex-col gap-3 h-full min-h-0 flex-1 overflow-hidden">
 
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
@@ -136,18 +138,27 @@ export default function CompaniesPage() {
                         )}
                     </div>
                     <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
-                        {filtered.length} compan{filtered.length !== 1 ? "ies" : "y"}
+                        {companies.length} compan{companies.length !== 1 ? "ies" : "y"}
                     </span>
                 </div>
 
                 {/* List */}
                 <CompanyList
-                    companies={filtered}
+                    companies={companies}
                     loading={loading}
                     onViewDetail={(c) => { setSelectedCompany(c); setDetailOpen(true); }}
                     onToggleBlock={(c) => { setBlockTarget(c); setConfirmOpen(true); }}
                 />
 
+                {totalPages > 1 && (
+                    <Pagination
+                        pageNumber={pageNumber}
+                        totalPages={totalPages}
+                        hasNext={pageNumber < totalPages}
+                        hasPrev={pageNumber > 1}
+                        onChange={(p) => setPageNumber(p)}
+                    />
+                )}
                 {/* Detail modal — read-only for admin (no onSave) */}
                 {detailOpen && selectedCompany && (
                     <CompanyDetailModal

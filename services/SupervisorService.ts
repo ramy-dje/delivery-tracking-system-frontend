@@ -8,6 +8,7 @@ import {
   IGetSupervisorsResponse,
   ISingleSupervisorResponse,
   IToggleSupervisorResponse,
+  ISupervisorFilter,
 } from "@/types/supervisor";
 
 export const createSupervisor = async (
@@ -28,10 +29,12 @@ export const createSupervisor = async (
 // --------------------------------------------------
 
 export const getSupervisors = async (
-  companyId: string
+  companyId: string,
+  filters?: ISupervisorFilter
 ): Promise<IGetSupervisorsResponse> => {
   const response = await api.get<IGetSupervisorsResponse>(
-    `/manager/companies/${companyId}/supervisors`
+    `/manager/companies/${companyId}/supervisors`,
+    { params: filters }
   );
 
   return response.data;

@@ -7,10 +7,31 @@ export interface ICreateFreelancer {
 }
 
 export interface IFreelancerResponse {
-  businessType: string;
-  companyId: string;
-  createdAt: string;
-  defaultOriginBranchId: {
+  _id: string;
+
+  userId: {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    role: string;
+    status: string;
+    imageUrl: {
+      public_id: string | null;
+      url: string | null;
+    };
+  };
+
+  companyId: {
+    _id: string;
+    name?: string;
+    email?: string;
+    status?: string;
+    businessType?: string;
+  };
+
+  defaultOriginBranchId?: {
     _id: string;
     name: string;
     code: string;
@@ -23,8 +44,11 @@ export interface IFreelancerResponse {
     };
     status: string;
   };
-  lastActiveAt: string;
+
+  businessType: string;
+  status: string;
   preferredDeliveryType: string;
+
   statistics: {
     totalPackagesSent: number;
     packagesInTransit: number;
@@ -32,21 +56,18 @@ export interface IFreelancerResponse {
     packagesFailed: number;
     packagesCancelled: number;
   };
-  status: string;
+
+  lastActiveAt: string;
+  createdAt: string;
   updatedAt: string;
-  userId: {
-    email: string;
-    firstName: string;
-    imageUrl: {
-      public_id: string | null;
-      url: string | null;
-    };
-    lastName: string;
-    phone: string;
-    role: string;
-    status: string;
-    _id: string;
-  };
-  _id: string;
   __v: number;
+}
+
+export interface IFreelancerFilter {
+  search?: string;
+  companyId?: string;
+  status?: string;
+  businessType?: string;
+  pageNumber?: number;
+  pageSize?: number;
 }

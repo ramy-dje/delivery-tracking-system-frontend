@@ -25,18 +25,16 @@ export default function DeliveryFeeList({
 }: DeliveryFeeListProps) {
     const tableStyle: React.CSSProperties = {
         background: "#060a10",
-        height: "100%",
         border: "1px solid rgba(255,255,255,0.05)",
         borderRadius: 14,
-        overflow: "hidden",
         boxShadow: "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)",
     };
 
-    if (loading) return <div style={tableStyle}><SkeletonList rows={5} /></div>;
+    if (loading) return <div className="flex-1" style={tableStyle}><SkeletonList rows={5} /></div>;
 
     if (fees.length === 0) {
         return (
-            <div className="flex justify-center items-center" style={tableStyle}>
+            <div className="flex-1 flex justify-center items-center" style={tableStyle}>
                 <EmptyState
                     title="No Tariffs set yet"
                     description="Define your first tariff by selecting wilaya pairs and entering their prices."
@@ -50,7 +48,7 @@ export default function DeliveryFeeList({
     }
 
     return (
-        <div style={tableStyle}>
+        <div className="flex-1 overflow-auto" style={tableStyle}>
             <div
                 className="hidden md:grid md:grid-cols-[1fr_200px_200px_140px] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}

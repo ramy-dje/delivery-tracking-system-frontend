@@ -6,7 +6,7 @@ export const createDriver = async (branchId: string, data: ICreateDelivererPaylo
     return res.data.data;
 }
 
-export const listDrivers = async (branchId: string, params?: { search?: string, isActive?: boolean, availabilityStatus?: string, verificationStatus?: string }): Promise<{ count: number, data: IDelivererResponse[] }> => {
+export const listDrivers = async (branchId: string, params?: { pageSize?: number, pageNumber?: number, search?: string, isActive?: boolean, availabilityStatus?: string, verificationStatus?: string }): Promise<{ count: number, data: IDelivererResponse[], pagination: { pageSize: number, pageNumber: number, totalPages: number } }> => {
     const res = await api.get(`/supervisor/branches/${branchId}/deliverers`, { params });
     return res.data;
 }

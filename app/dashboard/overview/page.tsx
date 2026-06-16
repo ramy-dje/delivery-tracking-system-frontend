@@ -5,7 +5,6 @@ import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDash
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import LoaderDashboard from "@/components/dashboard/LoaderDashboard";
-import { ROLES } from "@/lib/roles";
 import userStore from "@/stores/userStore";
 import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
 

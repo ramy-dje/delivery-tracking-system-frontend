@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, User, Lock, Truck } from "lucide-react";
+import { Mail, Phone, User, Lock, Truck, X } from "lucide-react";
 import InputField from "@/components/commons/InputField";
 import { ICreateTransporter } from "@/types/transporter";
 import EntityPicker from "@/components/commons/EntityPicker";
@@ -26,7 +26,7 @@ function validate(f: { firstName: string; lastName: string; email: string; passw
   if (!f.email.trim()) e.email = "Required";
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = "Invalid email";
   if (!f.password) e.password = "Required";
-  else if (f.password.length < 8) e.password = "Min 8 characters";
+  else if (f.password.length < 6) e.password = "Min 6 characters";
   if (!f.phoneNumber.trim()) e.phoneNumber = "Required";
   return e;
 }
@@ -60,11 +60,11 @@ export default function CreateTransporterModal({ isOpen, onClose, onSubmit, load
     const errs = validate({ firstName, lastName, email, password, phoneNumber });
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    await onSubmit({ 
-      firstName: firstName.trim(), 
-      lastName: lastName.trim(), 
-      email: email.trim(), 
-      password, 
+    await onSubmit({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      password,
       phone: phoneNumber.trim(),
       ...(currentVehicleId && { currentVehicleId })
     });
@@ -104,7 +104,7 @@ export default function CreateTransporterModal({ isOpen, onClose, onSubmit, load
             </div>
           </div>
           <button onClick={handleClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-slate-400 hover:bg-white/5 transition-all">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+            <X size={15} />
           </button>
         </div>
 
@@ -139,15 +139,15 @@ export default function CreateTransporterModal({ isOpen, onClose, onSubmit, load
             value={currentVehicleId}
             onChange={(id) => setCurrentVehicleId(id)}
             fetchData={async () => {
-                const companyId = user?.companyId || associated?.companyId;
-                if (!companyId) return [];
-                try {
-                    const res = await getCompanyVehicles(companyId as string, { limit: 100 });
-                    return res?.data || [];
-                } catch (error) {
-                    console.error("Error fetching vehicles:", error);
-                    return [];
-                }
+              const companyId = user?.companyId || associated?.companyId;
+              if (!companyId) return [];
+              try {
+                const res = await getCompanyVehicles(companyId as string, { limit: 100 });
+                return res?.data || [];
+              } catch (error) {
+                console.error("Error fetching vehicles:", error);
+                return [];
+              }
             }}
             getId={(v) => v._id}
             getLabel={(v) => `${v.registrationNumber} - ${v.brand || ''} ${v.modelName || ''}`.trim()}

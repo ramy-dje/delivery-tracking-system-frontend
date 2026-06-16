@@ -16,6 +16,7 @@ import ErrorBaner from "@/components/commons/ErrorBaner";
 import DriverDetailModal from "@/components/dashboard/drivers/DriverDetailModal";
 import EditDriverModal from "@/components/dashboard/drivers/EditDriverModal";
 import { parseApiError } from "@/utils/apiErrorHandler";
+import Pagination from "@/components/commons/Pagination";
 
 export default function DriversPage() {
     const branchId = getBranchId() ?? "";
@@ -24,6 +25,11 @@ export default function DriversPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
@@ -51,8 +57,11 @@ export default function DriversPage() {
         }
         setError(null);
         try {
-            const res = await listDrivers(branchId, { search: search || undefined });
+            const res = await listDrivers(branchId, { pageSize, pageNumber, search: search || undefined });
             setDrivers(res.data);
+            setTotalPages(res.pagination.totalPages);
+            setPageSize(res.pagination.pageSize);
+            setPageNumber(res.pagination.pageNumber);
         } catch (e: any) {
             const error = parseApiError(e);
             const msg = error.message ?? "Failed to fetch drivers";
@@ -60,7 +69,7 @@ export default function DriversPage() {
         } finally {
             setLoading(false);
         }
-    }, [branchId, search]);
+    }, [branchId, search, pageSize, pageNumber]);
 
     useEffect(() => {
         const delay = setTimeout(() => {
@@ -131,7 +140,7 @@ export default function DriversPage() {
 
     return (
         <RoleGuard allowedRoles={[ROLES.SUPERVISOR]}>
-            <div className="flex flex-col gap-3 h-full">
+            <div className="flex flex-col gap-3 h-full min-h-0">
 
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
@@ -202,6 +211,16 @@ export default function DriversPage() {
                     onToggleStatus={(s) => { setSelectedDriver(s); setConfirmOpen(true); }}
                 />
 
+                {totalPages > 1 && (
+                    <Pagination
+                        pageNumber={pageNumber}
+                        totalPages={totalPages}
+                        hasNext={pageNumber < totalPages}
+                        hasPrev={pageNumber > 1}
+                        onChange={(p) => setPageNumber(p)}
+                    />
+                )}
+
                 {/* Modals */}
                 <CreateDriverModal
                     isOpen={createOpen}
@@ -223,7 +242,7 @@ export default function DriversPage() {
                         title={`${selectedDriver.isActive ? "Suspend" : "Activate"} Deliverer`}
                         message={`${selectedDriver.isActive ? "Suspend" : "Activate"} "${selectedDriver.userId.firstName} ${selectedDriver.userId.lastName}"? They will ${selectedDriver.isActive ? "no longer" : "be able to"} access the system.`}
                         confirmLabel="Confirm"
-                        danger={selectedDriver.isActive} 
+                        danger={selectedDriver.isActive}
                         loading={activationStatusLoading}
                         onConfirm={handleConfirmToggleActivation}
                         onCancel={() => { setConfirmOpen(false); setSelectedDriver(null); }}

@@ -22,7 +22,7 @@ function validate(f: { firstName: string; lastName: string; email: string; passw
   if (!f.email.trim()) e.email = "Required";
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = "Invalid email";
   if (!f.password) e.password = "Required";
-  else if (f.password.length < 8) e.password = "Min 8 characters";
+  else if (f.password.length < 6) e.password = "Min 6 characters";
   if (!f.phone.trim()) e.phone = "Required";
   return e;
 }

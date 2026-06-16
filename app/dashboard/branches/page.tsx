@@ -24,6 +24,7 @@ import { SkeletonList } from "@/components/commons/Skeleton";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import ActionBtn from "@/components/commons/ActionButton";
 import { parseApiError } from "@/utils/apiErrorHandler";
+import Pagination from "@/components/commons/Pagination";
 
 // Status options that match the backend BranchStatus type
 type StatusFilter = "" | "active" | "inactive" | "maintenance" | "pending";
@@ -37,6 +38,11 @@ export default function BranchesPage() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
     const [cityFilter, setCityFilter] = useState("");
+
+    // pagination 
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
 
     // Modals
     const [modalOpen, setModalOpen] = useState(false);
@@ -54,8 +60,14 @@ export default function BranchesPage() {
             if (search) params.search = search;
             if (statusFilter) params.status = statusFilter;
             if (cityFilter) params.city = cityFilter;
+            params.pageNumber = pageNumber;
+            params.pageSize = pageSize;
+
             const res = await listBranches(params);
-            setBranches(res);
+            setBranches(res.data);
+            setTotalPages(res.pagination.totalPages);
+            setPageNumber(res.pagination.pageNumber);
+            setPageSize(res.pagination.pageSize);
         } catch (e: any) {
             const error = parseApiError(e);
             console.log("Failed to fetch branches:", error);
@@ -63,7 +75,7 @@ export default function BranchesPage() {
         } finally {
             setLoading(false);
         }
-    }, [search, statusFilter, cityFilter]);
+    }, [search, statusFilter, cityFilter, pageNumber, pageSize]);
 
     useEffect(() => {
         fetchBranches();
@@ -299,6 +311,16 @@ export default function BranchesPage() {
                     </div>
                 )}
             </div>
+
+            {totalPages > 1 && (
+                <Pagination
+                    pageNumber={pageNumber}
+                    totalPages={totalPages}
+                    hasNext={pageNumber < totalPages}
+                    hasPrev={pageNumber > 1}
+                    onChange={(p) => setPageNumber(p)}
+                />
+            )}
 
             {/* ── Modals ───────────────────────────────────────────────────── */}
             {modalOpen && (

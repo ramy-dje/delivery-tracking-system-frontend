@@ -1,6 +1,6 @@
 "use client";
 
-import { IPaginatedResponse } from "@/types/paginate";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
     pageNumber: number;
@@ -11,8 +11,6 @@ interface PaginationProps {
 }
 
 export default function Pagination({ pageNumber, totalPages, hasNext, hasPrev, onChange }: PaginationProps) {
-
-
     if (totalPages <= 1) return null;
 
     const generatePages = () => {
@@ -41,67 +39,64 @@ export default function Pagination({ pageNumber, totalPages, hasNext, hasPrev, o
     const pages = generatePages();
 
     return (
-        <div className="flex items-center justify-between">
-            {/* Info */}
-            <span className="text-[11px] text-slate-600 tabular-nums">
-                Page <span className="text-slate-300">{pageNumber}</span> of{" "}
-                <span className="text-slate-400">{totalPages}</span>
-            </span>
+        // Glassmorphic container to group the pagination bar
+        <div className="flex items-center justify-between px-4 py-2.5 mt-4 rounded-xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
 
-            {/* Controls */}
-            <div className="flex items-center gap-1.5">
-                {/* Prev */}
+            {/* Info Section (Hidden on mobile to save space) */}
+            <div className="hidden sm:flex items-center gap-2 text-[12px]">
+                <span className="text-slate-500 font-medium uppercase tracking-wider">Page</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10">
+                    <span className="text-white font-bold tabular-nums">{pageNumber}</span>
+                    <span className="text-slate-600">/</span>
+                    <span className="text-slate-400 font-medium tabular-nums">{totalPages}</span>
+                </div>
+            </div>
+
+            {/* Controls Section */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
+
+                {/* Prev Button */}
                 <button
                     disabled={!hasPrev}
                     onClick={() => onChange(pageNumber - 1)}
-                    className="px-3 py-1.5 rounded-lg text-[12px] border transition-all
-                        border-white/6 text-slate-500
-                        hover:border-white/15 hover:text-slate-300
-                        disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 transition-all duration-200
+                        hover:bg-white/5 hover:text-white active:scale-95
+                        disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-400 disabled:active:scale-100"
                 >
-                    ←
+                    <ChevronLeft size={16} strokeWidth={2} />
                 </button>
 
-                {/* Pages */}
-                {pages.map((p, i) =>
-                    p === "..." ? (
-                        <span key={i} className="px-2 text-slate-600 text-[12px]">
-                            ...
-                        </span>
-                    ) : (
-                        <button
-                            key={p}
-                            onClick={() => onChange(p)}
-                            className="w-8 h-8 rounded-lg text-[12px] font-medium transition-all"
-                            style={
-                                p === pageNumber
-                                    ? {
-                                        background: "rgba(251,191,36,0.12)",
-                                        border: "1px solid rgba(251,191,36,0.25)",
-                                        color: "#fbbf24",
-                                        boxShadow: "0 0 10px rgba(251,191,36,0.15)",
-                                    }
-                                    : {
-                                        border: "1px solid rgba(255,255,255,0.06)",
-                                        color: "#64748b",
-                                    }
-                            }
-                        >
-                            {p}
-                        </button>
-                    )
-                )}
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                    {pages.map((p, i) =>
+                        p === "..." ? (
+                            <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-slate-600 text-[11px] font-bold tracking-widest select-none">
+                                •••
+                            </span>
+                        ) : (
+                            <button
+                                key={p}
+                                onClick={() => onChange(p)}
+                                className={`w-8 h-8 rounded-lg text-[12px] font-semibold transition-all duration-200 active:scale-95 border ${p === pageNumber
+                                    ? "bg-gradient-to-b from-amber-400/20 to-amber-500/10 border-amber-400/40 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.15)]"
+                                    : "border-transparent text-slate-400 hover:bg-white/5 hover:text-white hover:border-white/5"
+                                    }`}
+                            >
+                                {p}
+                            </button>
+                        )
+                    )}
+                </div>
 
-                {/* Next */}
+                {/* Next Button */}
                 <button
                     disabled={!hasNext}
                     onClick={() => onChange(pageNumber + 1)}
-                    className="px-3 py-1.5 rounded-lg text-[12px] border transition-all
-                        border-white/6 text-slate-500
-                        hover:border-white/15 hover:text-slate-300
-                        disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 transition-all duration-200
+                        hover:bg-white/5 hover:text-white active:scale-95
+                        disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-400 disabled:active:scale-100"
                 >
-                    →
+                    <ChevronRight size={16} strokeWidth={2} />
                 </button>
             </div>
         </div>

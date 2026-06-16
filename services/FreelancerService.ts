@@ -1,11 +1,19 @@
 import api from "@/lib/api";
-import { ICreateFreelancer, IFreelancerResponse } from "@/types/freelancer";
+import { ICreateFreelancer, IFreelancerFilter, IFreelancerResponse } from "@/types/freelancer";
 
 export const listFreelancers = async (
-  branchId: string
-): Promise<{ success: boolean; data: IFreelancerResponse[] }> => {
-  const res = await api.get(`/supervisor/branches/${branchId}/freelancers`);
-  console.log("List Freelancers Response:", res.data);
+  branchId: string,
+  params?: IFreelancerFilter
+): Promise<{ success: boolean; pagination?: any; data: IFreelancerResponse[] }> => {
+  const res = await api.get(`/supervisor/branches/${branchId}/freelancers`, { params });
+  return res.data;
+};
+
+export const listAllFreelancers = async (params?: IFreelancerFilter): Promise<{ success: boolean; pagination?: any; data: IFreelancerResponse[] }> => {
+  const res = await api.get(`/freelancer`, {
+    params,
+  });
+
   return res.data;
 };
 

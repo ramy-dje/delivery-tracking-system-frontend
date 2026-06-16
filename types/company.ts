@@ -46,6 +46,13 @@ export interface ICompanyResponse {
   accessToken: string;
 }
 
+export interface IMyCompanyFilter {
+  pageNumber?: number;
+  pageSize?: number;
+  search?: string;
+  status?: CompanyStatus;
+}
+
 export interface ICreateCompanyInput {
   name: string;
   businessType: CompanyBusinessType;

@@ -4,25 +4,38 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { showToast } from "nextjs-toast-notify";
 import { ROLES } from "@/lib/roles";
-import { getBranchId } from "@/hooks/useAuth";
+import { getBranchId, getCompanyId, getUserRole } from "@/hooks/useAuth";
 import RoleGuard from "@/lib/RoleGuard";
 import StatCard from "@/components/commons/StatCard";
 import ConfirmDialog from "@/components/commons/ConfirmDialog";
 import ErrorBaner from "@/components/commons/ErrorBaner";
 import { parseApiError } from "@/utils/apiErrorHandler";
 import { ICreateFreelancer, IFreelancerResponse } from "@/types/freelancer";
-import { createFreelancer, listFreelancers, toggleBlockFreelancer, updateFreelancer } from "@/services/FreelancerService";
+import { createFreelancer, listAllFreelancers, listFreelancers, toggleBlockFreelancer, updateFreelancer } from "@/services/FreelancerService";
 import FreelancerList from "@/components/dashboard/freelancers/FreelancerList";
 import CreateFreelancerModal from "@/components/dashboard/freelancers/CreateFreelancerModal";
 import EditFreelancerModal from "@/components/dashboard/freelancers/EditFreelancerModal";
+import EntityPicker from "@/components/commons/EntityPicker";
+import { getAllCompanies } from "@/services/CompanyService";
+import Pagination from "@/components/commons/Pagination";
 
 export default function FreelancersPage() {
     const branchId = getBranchId() ?? "";
+    const userRole = getUserRole();
+    const isAdmin = userRole === ROLES.ADMIN;
+    const isManager = userRole === ROLES.MANAGER;
 
     const [freelancers, setFreelancers] = useState<IFreelancerResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
+
     const [search, setSearch] = useState("");
+    const [companyId, setCompanyId] = useState<string>("");
+    const [status, setStatus] = useState<string>("");
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
@@ -41,15 +54,43 @@ export default function FreelancersPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await listFreelancers(branchId);
+            var res;
+            if (isAdmin) {
+                res = await listAllFreelancers({
+                    search: search || undefined,
+                    companyId: companyId || undefined,
+                    status: status || undefined,
+                    pageNumber,
+                    pageSize,
+                });
+            } else if (isManager) {
+                res = await listAllFreelancers({
+                    companyId: getCompanyId(),
+                    pageNumber,
+                    pageSize,
+                    status
+                });
+            }
+            else {
+                res = await listFreelancers(branchId, {
+                    search: search || undefined,
+                    status: status || undefined,
+                    pageNumber,
+                    pageSize,
+                });
+            }
             setFreelancers(res.data);
+            setTotalPages(res.pagination?.totalPages ?? 1);
+            setPageNumber(res.pagination?.pageNumber ?? 1);
+            setPageSize(res.pagination?.pageSize ?? 10);
+
         } catch (e: any) {
             const err = parseApiError(e);
             setError(err.message ?? "Failed to fetch freelancers");
         } finally {
             setLoading(false);
         }
-    }, [branchId]);
+    }, [branchId, isAdmin, search, companyId, status, pageNumber, pageSize]);
 
     useEffect(() => { fetchFreelancers(); }, [fetchFreelancers]);
 
@@ -115,7 +156,7 @@ export default function FreelancersPage() {
 
     return (
         <RoleGuard allowedRoles={[ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.CASHIER]}>
-            <div className="flex flex-col gap-3 h-full">
+            <div className="flex flex-col gap-3 h-full min-h-0">
 
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 pt-1">
@@ -128,14 +169,14 @@ export default function FreelancersPage() {
                             Manage freelance delivery agents assigned to this branch.
                         </p>
                     </div>
-                    <button
+                    {!isAdmin && !isManager && <button
                         onClick={() => setCreateOpen(true)}
                         className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95"
                         style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 16px rgba(251,191,36,0.2)" }}
                     >
                         <Plus size={13} />
                         New Freelancer
-                    </button>
+                    </button>}
                 </div>
 
                 {/* Stats */}
@@ -147,29 +188,66 @@ export default function FreelancersPage() {
 
                 {error && <ErrorBaner error={error} setError={setError} />}
 
-                {/* Search */}
+                {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3">
+
                     <div
                         className="flex items-center gap-2 flex-1 min-w-48 px-3 py-2 rounded-lg"
-                        style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}
+                        style={{
+                            background: "rgba(255,255,255,0.025)",
+                            border: "1px solid rgba(255,255,255,0.07)",
+                        }}
                     >
                         <Search size={13} className="text-slate-700 shrink-0" />
+
                         <input
                             type="text"
-                            placeholder="Search by name or email…"
+                            placeholder="Search by name, email or phone…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
                         />
+
                         {search && (
-                            <button onClick={() => setSearch("")} className="text-slate-700 hover:text-slate-500">
+                            <button
+                                onClick={() => setSearch("")}
+                                className="text-slate-700 hover:text-slate-500"
+                            >
                                 <X size={13} />
                             </button>
                         )}
                     </div>
-                    <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
-                        {filtered.length} freelancer{filtered.length !== 1 ? "s" : ""}
-                    </span>
+
+                    {isAdmin && (
+                        <div className="w-60">
+                            <EntityPicker<any>
+                                placeholder="Select company"
+                                value={companyId}
+                                onChange={(id) => setCompanyId(id as string)}
+                                fetchData={async () => {
+                                    try {
+                                        const res = await getAllCompanies();
+                                        return res?.data || [];
+                                    } catch (error) {
+                                        console.error("Error fetching companies:", error);
+                                        return [];
+                                    }
+                                }}
+                                getId={(c) => c._id}
+                                getLabel={(c) => c.name}
+                            />
+                        </div>
+                    )}
+
+                    <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="px-3 py-2 rounded-lg  focus:outline-none text-[12px] bg-black/20 text-white border border-white/10"
+                    >
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
                 </div>
 
                 <FreelancerList
@@ -179,6 +257,16 @@ export default function FreelancersPage() {
                     onEdit={(f) => { setEditTarget(f); setEditOpen(true); }}
                     onToggleStatus={(f) => { setSelected(f); setConfirmOpen(true); }}
                 />
+
+                {totalPages > 1 && (
+                    <Pagination
+                        pageNumber={pageNumber}
+                        totalPages={totalPages}
+                        hasNext={pageNumber < totalPages}
+                        hasPrev={pageNumber > 1}
+                        onChange={(p) => setPageNumber(p)}
+                    />
+                )}
 
                 {/* Modals */}
                 <CreateFreelancerModal

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { listBranches } from "@/services/BranchService";
-import { IBranchResponse, NodeType } from "@/types/branch";
+import { IBranchResponse } from "@/types/branch";
 
 // ─── Type icons / colors ─────────────────────────────────────────────────
 
@@ -56,8 +56,8 @@ export default function LogisticsNodePicker({
         (async () => {
             setLoading(true);
             try {
-                const res = await listBranches({ pageSize: 100 });
-                setNodes(res.items ?? res ?? []);
+                const res = await listBranches({ pageSize: 100, pageNumber: 1 });
+                setNodes(res.data ?? []);
             } catch {
                 // silently fail
             } finally {

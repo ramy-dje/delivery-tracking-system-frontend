@@ -24,10 +24,9 @@ export interface ITariffResponse {
     success: boolean;
     pagination: {
         total: number;
-        page: number;
-        limit: number;
-        pages: number;
-        hasMore: boolean;
+        pageNumber: number;
+        pageSize: number;
+        totalPages: number;
     };
 }
 

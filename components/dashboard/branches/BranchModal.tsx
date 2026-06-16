@@ -135,7 +135,7 @@ const BranchModal: React.FC<BranchModalProps> = ({
 
     // ── Parent hub fetcher ──────────────────────────────────────────────────
     const fetchParentNodes = useCallback(async (): Promise<IBranchResponse[]> => {
-        const branches = await listBranches();
+        const branches = (await listBranches()).data;
         return branches.filter((b) =>
             parentTypesFor(branchType).includes(b.branchType)
         );
@@ -157,9 +157,7 @@ const BranchModal: React.FC<BranchModalProps> = ({
 
     // ── Served branches fetcher ─────────────────────────────────────────────
     const fetchServableBranches = useCallback(async (): Promise<IBranchResponse[]> => {
-        const branches = await listBranches({
-            search: branchSearch || undefined,
-        });
+        const branches = (await listBranches({ search: branchSearch || undefined })).data;
         return branches.filter((b) => b.branchType === "local_branch");
     }, [branchSearch]);
 

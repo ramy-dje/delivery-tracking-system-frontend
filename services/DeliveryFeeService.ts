@@ -1,7 +1,7 @@
 import api from "@/lib/api";
 import { IUpsertTariffPayload, ITariffResponse, ITariffEntry } from "@/types/deliveryFee";
 
-export const getDeliveryFees = async (filter?: { search?: string; page?: number; limit?: number }): Promise<ITariffResponse> => {
+export const getDeliveryFees = async (filter?: { search?: string; pageNumber?: number; pageSize?: number }): Promise<ITariffResponse> => {
     const res = await api.get("/tariffs", { params: filter });
     console.log("Fetched delivery fees: ", res.data);
     return res.data; // The API wraps the response in data: { data: ... }

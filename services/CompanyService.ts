@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { ICreateCompanyInput, ICompanyResponse, ICompany, IUpdateCompanyInput, IMyCompanyResponse } from "@/types/company";
+import { ICreateCompanyInput, ICompanyResponse, ICompany, IUpdateCompanyInput, IMyCompanyResponse, IMyCompanyFilter } from "@/types/company";
 
 export const createCompany = async (data: ICreateCompanyInput): Promise<ICompanyResponse> => {
   const response = await api.post<ICompanyResponse>("/manager/companies", data);
@@ -11,8 +11,8 @@ export const getMyCompany = async (): Promise<IMyCompanyResponse> => {
   return res.data;
 };
 
-export const getAllCompanies = async (): Promise<any> => {
-  const res = await api.get<any>("/manager/companies");
+export const getAllCompanies = async (filter?: IMyCompanyFilter): Promise<any> => {
+  const res = await api.get<any>("/manager/companies", { params: filter });
   return res.data;
 };
 

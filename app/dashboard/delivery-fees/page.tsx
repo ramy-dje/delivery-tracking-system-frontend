@@ -13,17 +13,19 @@ import EditDeliveryFeeModal from "@/components/dashboard/delivery-fees/EditDeliv
 import DeliveryFeeList from "@/components/dashboard/delivery-fees/DeliveryFeeList";
 import ActionBtn from "@/components/commons/ActionButton";
 
-const PAGE_SIZE = 10;
 
 export default function DeliveryFeesPage() {
     const [fees, setFees] = useState<ITariffEntry[]>([]);
     const [totalCount, setTotalCount] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-    const [page, setPage] = useState(1);
+
+    // pagination 
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize, setPageSize] = useState(8)
+    const [totalPages, setTotalPages] = useState(1)
 
     // Create
     const [createOpen, setCreateOpen] = useState(false);
@@ -46,13 +48,15 @@ export default function DeliveryFeesPage() {
         setError(null);
         try {
             const res = await getDeliveryFees({
-                page,
-                limit: PAGE_SIZE,
-                search: search || undefined
+                pageNumber,
+                pageSize,
+                search
             });
             setFees(res.tariffs);
             setTotalCount(res.pagination.total);
-            setTotalPages(res.pagination.pages);
+            setTotalPages(res.pagination.totalPages);
+            setPageNumber(res.pagination.pageNumber);
+            setPageSize(res.pagination.pageSize);
         } catch (e: any) {
             const msg = e?.message ?? "Failed to load delivery fees";
             setError(msg);
@@ -60,7 +64,7 @@ export default function DeliveryFeesPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search]);
+    }, [pageNumber, search, pageSize]);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -186,11 +190,11 @@ export default function DeliveryFeesPage() {
                         type="text"
                         placeholder="Search by wilaya name…"
                         value={search}
-                        onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                        onChange={(e) => { setSearch(e.target.value); setPageNumber(1) }}
                         className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
                     />
                     {search && (
-                        <button onClick={() => { setSearch(""); setPage(1) }} className="text-slate-700 hover:text-slate-500">
+                        <button onClick={() => { setSearch(""); setPageNumber(1) }} className="text-slate-700 hover:text-slate-500">
                             <X size={13} />
                         </button>
                     )}
@@ -212,11 +216,11 @@ export default function DeliveryFeesPage() {
             {/* Pagination */}
             {totalPages > 1 && (
                 <Pagination
-                    pageNumber={page}
+                    pageNumber={pageNumber}
                     totalPages={totalPages}
-                    hasNext={page < totalPages}
-                    hasPrev={page > 1}
-                    onChange={(p) => setPage(p)}
+                    hasNext={pageNumber < totalPages}
+                    hasPrev={pageNumber > 1}
+                    onChange={(p) => setPageNumber(p)}
                 />
             )}
 

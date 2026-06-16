@@ -3,20 +3,25 @@
 
 import ManagerOverviewDashboard from "@/components/dashboard/ManagerOverviewDashboard";
 import ReceptionistDashboard from "@/components/dashboard/ReceptionistDashboard";
-import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
-import { ROLES } from "@/lib/roles";
+import AdminDashboard from "@/components/dashboard/AdminDashboard";
+import LoaderDashboard from "@/components/dashboard/LoaderDashboard";
 import userStore from "@/stores/userStore";
+import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
 
-/**
- * Adjust the strings below to match your ROLES constants exactly.
- */
+
+
 export default function DashboardPage() {
     const { user } = userStore();
     const role = user?.role?.toUpperCase();
+    console.log("User role:", role);
 
-
-    if (role === ROLES.MANAGER) return <ManagerOverviewDashboard />;
+    if (role === "MANAGER") return <ManagerOverviewDashboard />;
     if (role === "CASHIER") return <ReceptionistDashboard />;
+    if (role === "ADMIN") return <AdminDashboard />;
+    if (role === "SUPERVISOR") return <SupervisorDashboard />;
+
+    if (role === "CASHIER") return <ReceptionistDashboard />;
+    if (role === "LOADER" || role === "SORTER") return <LoaderDashboard />;
 
     return (
         <div className="flex items-center justify-center h-64">

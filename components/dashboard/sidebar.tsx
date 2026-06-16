@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import userStore from "@/stores/userStore";
 import { ROLES } from "@/lib/roles";
-import { Award, Bell, Building2, DollarSign, Droplet, FileLineChartIcon, KeySquare, LayoutDashboard, Package, PenLine, Truck, User, UserCog } from "lucide-react";
+import { ArrowLeft, Award, Bell, Building2, ChevronLeft, ChevronRight, DollarSign, Droplet, FileLineChartIcon, KeySquare, LayoutDashboard, Package, PenLine, Truck, User, UserCog } from "lucide-react";
 import Image from "next/image";
 
 const NAV_GROUPS = [
@@ -122,7 +122,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Truck size={14} />
                 ),
-                allowed: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.SORTER],
+                allowed: [ROLES.SUPERVISOR, ROLES.SORTER],
             },
             {
                 path: "/dashboard/transporters",
@@ -208,7 +208,7 @@ export default function Sidebar() {
                 style={{ background: "radial-gradient(circle, rgba(251,191,36,0.06) 0%, transparent 70%)" }} />
 
             {/* Logo + collapse toggle */}
-            <div className="flex items-center justify-between px-4 py-5 border-b border-white/5 shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
                 {!collapsed && (
                     <div className="flex items-center gap-2.5">
                         <Link href="/" className="flex items-center gap-2 group">
@@ -243,9 +243,7 @@ export default function Sidebar() {
                         className="p-1 rounded text-slate-600 hover:text-slate-400 transition-colors"
                         aria-label="Collapse sidebar"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <ChevronLeft size={20} />
                     </button>
                 )}
                 {collapsed && (
@@ -264,15 +262,13 @@ export default function Sidebar() {
                     className="flex items-center justify-center py-3 text-slate-600 hover:text-amber-400 transition-colors border-b border-white/5"
                     aria-label="Expand sidebar"
                 >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
+                    <ChevronRight size={20} />
                 </button>
             )}
 
             {/* User pill */}
             {!collapsed && (
-                <div className="mx-3 my-3 px-3 py-2.5 rounded-xl border border-white/6 flex items-center gap-2.5"
+                <div className="mx-3 my-2 px-3 rounded-xl border border-white/6 flex items-center gap-2.5"
                     style={{ background: "rgba(255,255,255,0.02)" }}>
                     {imageUrl ? (
                         <div className="flex justify-center py-3 border-b border-white/5">
@@ -301,6 +297,7 @@ export default function Sidebar() {
                     </div>
                 </div>
             )}
+
             {collapsed && (
                 imageUrl ? (
                     <div className="flex justify-center py-3 border-b border-white/5">

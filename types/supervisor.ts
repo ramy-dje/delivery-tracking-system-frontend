@@ -72,6 +72,15 @@ export interface ISupervisorResponse {
     updatedAt: string;
 }
 
+export interface ISupervisorFilter {
+    search?: string;
+    isActive?: boolean;
+    companyId?: string;
+    branchId?: string;
+    pageNumber?: number;
+    pageSize?: number;
+}
+
 export interface ISupervisorDetail extends ISupervisorResponse {
     workSchedule: Record<WeekDay, IWorkScheduleDay>;
 
@@ -123,6 +132,11 @@ export interface IGetSupervisorsResponse {
     success: boolean;
     count: number;
     data: ISupervisorResponse[];
+    pagination: {
+        pageSize: number;
+        pageNumber: number;
+        totalPages: number;
+    };
 }
 
 export interface ISingleSupervisorResponse {

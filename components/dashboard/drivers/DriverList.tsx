@@ -18,10 +18,10 @@ interface DriverListProps {
 export default function DriverList({ drivers, loading, onAddClick, onViewDetail, onEdit, onToggleStatus }: DriverListProps) {
     const tableStyle: React.CSSProperties = {
         background: "#060a10",
-        height: "100%",
         border: "1px solid rgba(255,255,255,0.05)",
         borderRadius: 14,
-        overflow: "hidden",
+        flex: 1,
+        overflow: "auto",
         boxShadow: "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)",
     };
 

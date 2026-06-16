@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getCompanyBranches } from "@/services/SupervisorService";
 import { getCompanyId } from "@/hooks/useAuth";
 import { ICreateSupervisorRequest, SupervisorPermission } from "@/types/supervisor";
+import { Plus } from "lucide-react";
 
 // ─── All available permissions ────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ function validate(f: {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))
         e.email = "Invalid email address";
     if (!f.password) e.password = "Password is required";
-    else if (f.password.length < 8) e.password = "Must be at least 8 characters";
+    else if (f.password.length < 6) e.password = "Must be at least 8 characters";
     if (!f.phone.trim()) e.phone = "Phone number is required";
     if (!f.branchId.trim()) e.branchId = "Branch is required";
     return e;
@@ -170,6 +171,8 @@ export default function CreateSupervisorModal({
 
     const _currentValidation = validate({ firstName, lastName, email, password, phone, branchId });
     const isFormValid = Object.keys(_currentValidation).length === 0;
+    console.log("Current form errors:", _currentValidation);
+
 
     const togglePermission = (perm: SupervisorPermission) => {
         setSelectedPermissions((prev) =>
@@ -465,9 +468,7 @@ export default function CreateSupervisorModal({
                                 </>
                             ) : (
                                 <>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                    </svg>
+                                    <Plus size={14} />
                                     Create Supervisor
                                 </>
                             )}

@@ -14,21 +14,14 @@ interface CompanyListProps {
     onToggleBlock?: (company: ICompany) => void;
 }
 
-const tableStyle: React.CSSProperties = {
-    background: "#060a10",
-    height: "100%",
-    border: "1px solid rgba(255,255,255,0.05)",
-    borderRadius: 14,
-    overflow: "hidden",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)",
-};
+
 
 export default function CompanyList({ companies, loading, onAddClick, onViewDetail, onToggleBlock }: CompanyListProps) {
-    if (loading) return <div style={tableStyle}><SkeletonList rows={3} /></div>;
+    if (loading) return <div className="flex-1 min-h-0 overflow-y-auto bg-background-surface border-white/5 rounded-xl"><SkeletonList rows={3} /></div>;
 
     if (companies.length === 0) {
         return (
-            <div className="flex justify-center items-center" style={tableStyle}>
+            <div className="flex justify-center items-center flex-1 min-h-0 overflow-y-auto bg-background-surface border-white/5 rounded-xl">
                 <EmptyState
                     title="No Company yet"
                     description="Create your company to start managing branches and shipments."
@@ -42,7 +35,7 @@ export default function CompanyList({ companies, loading, onAddClick, onViewDeta
     }
 
     return (
-        <div style={tableStyle}>
+        <div className="flex-1 min-h-0 overflow-y-auto bg-background-surface border-white/5 rounded-xl" >
             <div
                 className="hidden md:grid grid-cols-[200px_110px_120px_1fr_auto] gap-4 px-5 py-2.5 border-b border-white/5"
                 style={{ background: "rgba(255,255,255,0.015)" }}
