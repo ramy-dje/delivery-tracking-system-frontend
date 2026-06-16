@@ -106,7 +106,7 @@ const NAV_GROUPS = [
                 icon: (
                     <User size={14} />
                 ),
-                allowed: [ROLES.SUPERVISOR],
+                allowed: [ROLES.MANAGER, ROLES.SUPERVISOR, ROLES.ADMIN, ROLES.CASHIER],
             },
             {
                 path: "/dashboard/shipments",
