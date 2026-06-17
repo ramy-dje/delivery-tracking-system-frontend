@@ -8,6 +8,8 @@ import InputField from "@/components/commons/InputField";
 import PasswordStrength from "@/components/commons/PasswordStrength";
 import { registerUser } from "@/services/AuthService";
 import ActionBtn from "@/components/commons/ActionButton";
+import { showToast } from "nextjs-toast-notify";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -29,7 +31,7 @@ export default function RegisterPage() {
 
     const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [2, -2]), { stiffness: 150, damping: 20 });
     const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-2, 2]), { stiffness: 150, damping: 20 });
-
+    const router = useRouter();
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!cardRef.current) return;
         const rect = cardRef.current.getBoundingClientRect();
@@ -63,54 +65,16 @@ export default function RegisterPage() {
             const data = await registerUser(formData);
             console.log("Register Data : ", data)
             setIsLoading(false);
-            setIsSuccess(true);
+            showToast.success("Please activate your account !")
+            router.push("/")
         } catch (error) {
             console.log("Error : ", error)
             setIsLoading(false);
-
+            showToast.error("Failed to register user")
         }
 
 
     };
-
-    if (isSuccess) {
-        return (
-            <div className="min-h-screen bg-background-main flex items-center justify-center p-4 relative overflow-hidden">
-                {/* Background Grid */}
-                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="text-center space-y-6 relative z-10"
-                >
-                    <div className="w-20 h-20 mx-auto bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/30">
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.2, type: "spring" }}
-                            className="text-green-400"
-                        >
-                            <Check />
-                        </motion.div>
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-white mb-2">Welcome Aboard</h2>
-                        <p className="text-slate-400">Your account has been created successfully.</p>
-                    </div>
-                    <Link href="/dashboard">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-colors"
-                        >
-                            Go to Dashboard
-                        </motion.button>
-                    </Link>
-                </motion.div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-background-main flex items-center justify-center p-4 md:p-8 relative overflow-hidden selection:bg-amber-500/30">

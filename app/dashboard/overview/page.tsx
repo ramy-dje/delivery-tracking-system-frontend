@@ -9,9 +9,6 @@ import userStore from "@/stores/userStore";
 import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
 
 
-
-import SupervisorDashboard from "@/components/dashboard/SupervisorDashboard";
-
 export default function DashboardPage() {
   const { user } = userStore();
   const role = user?.role?.toUpperCase();

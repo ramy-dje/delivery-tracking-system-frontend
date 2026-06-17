@@ -63,8 +63,13 @@ export default function LoginPage() {
             console.log("Login response:", data);
 
             login(data.user, data.accessToken, data.associated);
+        
             setTimeout(() => {
-                router.push("/dashboard");
+                if(data.user.role === "client"){
+                    router.push("/");
+                }else{
+                    router.push("/dashboard");
+                }
             }, 3000);
         } catch (err) {
             const error = parseApiError(err)

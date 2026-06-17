@@ -110,7 +110,11 @@ export default function ActivationPage({
             setIsSuccess(true);
             showToast.success("Account activated successfully! Redirecting to dashboard...");
             setTimeout(() => {
-                router.push("/dashboard");
+                if(data.user.role === "client"){
+                    router.push("/");
+                }else{
+                    router.push("/dashboard");
+                }
             }, 2000);
         } catch (err: any) {
             const error = parseApiError(err);
