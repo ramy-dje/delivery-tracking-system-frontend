@@ -1,5 +1,6 @@
 import api from "@/lib/api";
 import { ILoader, ICreateLoaderBody, IUpdateLoaderBody } from "@/types/loader";
+import { IManifestsResponse } from "@/types/manifest";
 
 const SUPERVISOR_BASE = "/supervisor";
 
@@ -94,6 +95,11 @@ export async function loaderGetPackagesToManifestGrouped(): Promise<any> {
     return data;
 }
 
+export async function listManifests(params?: any): Promise<IManifestsResponse> {
+    const { data } = await api.get(`${LOADER_BASE}/manifests`, { params });
+    return data;
+}
+
 // Origin Branch Operations
 export async function loaderScanIn(manifestId: string, trackingNumber: string): Promise<any> {
     const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/scan-in`, { trackingNumber });
@@ -105,14 +111,33 @@ export async function loaderRemovePackage(manifestId: string, packageId: string)
     return data;
 }
 
-export async function loaderSealManifest(manifestId: string): Promise<any> {
-    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/seal`);
+export async function loaderSealManifest(
+    manifestId: string,
+    sealNumber: string,
+    notes?: string,
+): Promise<any> {
+    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/seal`, {
+        sealNumber,
+        notes,
+    });
     return data;
 }
 
-export async function loaderLoadOnTruck(manifestId: string): Promise<any> {
-    const { data } = await api.post(`${LOADER_BASE}/manifests/${manifestId}/load-on-truck`);
-    return data;
+// In LoaderService.ts
+export async function loaderLoadOnTruck(
+    manifestId: string,
+    data: {
+        transporterUserId: string;
+        vehicleId?: string;
+        estimatedArrival?: string;
+        notes?: string;
+    }
+): Promise<any> {
+    const { data: responseData } = await api.post(
+        `${LOADER_BASE}/manifests/${manifestId}/load-on-truck`,
+        data
+    );
+    return responseData;
 }
 
 export async function loaderDepartManifest(manifestId: string): Promise<any> {

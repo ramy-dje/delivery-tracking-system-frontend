@@ -98,18 +98,14 @@ export async function getPackageHistory(branchId: string, packageId: string): Pr
 }
 
 export async function listShipments(
+    branchId: string,
     filter: IShipmentFilter,
 ) {
-    const res = await api.get(`${SUPERVISOR_BASE}/packages`, { params: filter });
+    const res = await api.get(`${SUPERVISOR_BASE}/branches/${branchId}/packages`, { params: filter });
+    console.log("listShipments response:", res.data)
     return res.data;
 }
 
-export async function getShipmentsByBranch(
-    branchId: string,
-    filter: IShipmentFilter,
-): Promise<IPaginatedResponse<IPackage>> {
-    return listShipments({ ...filter, originBranchId: branchId });
-}
 
 export async function createShipment(
     branchId: string,
@@ -150,8 +146,8 @@ export async function cancelShipment(branchId: string, packageId: string): Promi
     return data;
 }
 
-export async function markDroppedAtBranch(branchId: string, packagesIds: string[]): Promise<any> {
-    const { data } = await api.patch(`${SUPERVISOR_BASE}/branches/${branchId}/packages/drop`, { packagesIds });
+export async function markDroppedAtBranch(trackingCode: string): Promise<any> {
+    const { data } = await api.post(`cashier/claim-package`, { trackingNumber: trackingCode });
     return data;
 }
 

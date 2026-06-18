@@ -25,7 +25,7 @@ export const listBranches = async (
     const companyId = getCompanyId();
     if (!companyId) throw new Error("No company id");
     const res = await api.get(base(companyId), { params });
-    // Backend returns { success, count, data: [...] }
+    console.log("listBranches response:", res.data);
     return res.data;
 };
 

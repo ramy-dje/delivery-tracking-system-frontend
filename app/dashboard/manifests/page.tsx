@@ -1,29 +1,82 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { loaderCreateManifest, loaderGetPackagesToManifestGrouped } from "@/services/LoaderService";
-import { Search, Plus, Truck, AlertCircle, Loader2, MapPin, Package } from "lucide-react";
+import {
+  listManifests,
+  loaderCreateManifest,
+  loaderGetPackagesToManifestGrouped,
+} from "@/services/LoaderService";
+import {
+  Search,
+  Plus,
+  Loader2,
+  MapPin,
+  Package,
+  X,
+  FileText,
+  ArrowRight,
+} from "lucide-react";
 import userStore from "@/stores/userStore";
+import StatCard from "@/components/commons/StatCard";
+import ErrorBaner from "@/components/commons/ErrorBaner";
+import { showToast } from "nextjs-toast-notify";
+import { parseApiError } from "@/utils/apiErrorHandler";
+import Pagination from "@/components/commons/Pagination";
+import { IManifest } from "@/types/manifest";
+import ManifestList from "@/components/dashboard/manifests/ManifestList";
+import CreateManifestModal from "@/components/dashboard/manifests/CreateManifestModal";
 
 export default function ManifestsPage() {
   const router = useRouter();
   const { user } = userStore();
-  const [manifestIdSearch, setManifestIdSearch] = useState("");
-  
-  // Create Manifest State
-  const [isCreating, setIsCreating] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
+
+  // ── List State ─────────────────────────────────────────────────────────
+  const [manifests, setManifests] = useState<IManifest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [destBranch, setDestBranch] = useState("");
-  const [vehicleId, setVehicleId] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // ── Create State ───────────────────────────────────────────────────────
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [prefillBranchId, setPrefillBranchId] = useState<string | undefined>();
+
+  // ── Search/Navigate State ──────────────────────────────────────────────
+  const [manifestIdSearch, setManifestIdSearch] = useState("");
+
+  // ── Grouped Packages ───────────────────────────────────────────────────
   const [groupedPackages, setGroupedPackages] = useState<any[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
 
-  useEffect(() => {
-    fetchGroupedPackages();
-  }, []);
+  // ── Fetch Manifests ────────────────────────────────────────────────────
+  const fetchManifests = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await listManifests({ pageSize, pageNumber, search: search || undefined });
+      if (res.success) {
+        setManifests(res.data);
+        setTotalPages(res.pagination.totalPages);
+      }
+    } catch (e: any) {
+      const err = parseApiError(e);
+      setError(err.message ?? "Failed to fetch manifests");
+    } finally {
+      setLoading(false);
+    }
+  }, [pageNumber, pageSize, search]);
 
+  useEffect(() => {
+    const delay = setTimeout(() => fetchManifests(), 400);
+    return () => clearTimeout(delay);
+  }, [fetchManifests]);
+
+  // ── Fetch Grouped Packages ─────────────────────────────────────────────
   const fetchGroupedPackages = async () => {
     try {
       setLoadingGroups(true);
@@ -32,12 +85,21 @@ export default function ManifestsPage() {
         setGroupedPackages(res.data?.destinations || []);
       }
     } catch (err) {
-      console.error(err);
+      console.log(err);
     } finally {
       setLoadingGroups(false);
     }
   };
 
+  useEffect(() => {
+    fetchGroupedPackages();
+  }, []);
+
+  // ── Stats ──────────────────────────────────────────────────────────────
+  const inTransitCount = manifests.filter((m) => m.status === "in_transit").length;
+  const totalCount = manifests.length;
+
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (manifestIdSearch.trim()) {
@@ -45,180 +107,254 @@ export default function ManifestsPage() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!destBranch) {
-      setError("Destination branch is required.");
-      return;
-    }
-    
+  const handleCreate = async (data: {
+    destinationBranchId: string;
+    vehicleId?: string;
+    driverId?: string;
+    plannedDeparture?: string;
+  }) => {
+    setCreateLoading(true);
     try {
-      setCreateLoading(true);
-      setError(null);
-      
-      const res = await loaderCreateManifest({
-        destinationBranchId: destBranch,
-        vehicleId: vehicleId || undefined
-      });
-      
+      const res = await loaderCreateManifest(data);
       if (res.success && (res.data?.manifestId || res.data?._id)) {
+        showToast.success("Manifest created successfully");
+        setCreateOpen(false);
+        setPrefillBranchId(undefined);
         router.push(`/dashboard/manifests/${res.data.manifestId || res.data._id}`);
       } else {
-        setError("Failed to create manifest.");
+        showToast.error("Failed to create manifest.");
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err.message || "An error occurred.");
+    } catch (e: any) {
+      const err = parseApiError(e);
+      showToast.error(err.message ?? "An error occurred.");
     } finally {
       setCreateLoading(false);
     }
   };
 
+  const openCreateForBranch = (branchId: string) => {
+    setPrefillBranchId(branchId);
+    setCreateOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-3 h-full min-h-0">
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 pt-1">
         <div>
-          <h1 className="text-2xl font-bold text-white">Manifest Operations</h1>
-          <p className="text-slate-400 text-sm mt-1">Create or manage delivery manifests.</p>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div
+              className="w-1 h-6 rounded-full"
+              style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b66)" }}
+            />
+            <h1 className="text-[22px] font-bold text-white tracking-tight">Manifests</h1>
+          </div>
+          <p className="text-[13px] text-slate-500 ml-3.5 pl-0.5">
+            Create and manage delivery manifests.
+          </p>
         </div>
         <button
-          onClick={() => setIsCreating(!isCreating)}
-          className="bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-amber-500/20"
+          onClick={() => { setPrefillBranchId(undefined); setCreateOpen(true); }}
+          className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold text-background-main transition-all hover:opacity-90 active:scale-95"
+          style={{
+            background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+            boxShadow: "0 4px 16px rgba(251,191,36,0.2)",
+          }}
         >
-          <Plus size={18} />
+          <Plus size={13} />
           New Manifest
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Search Existing Manifest */}
-        <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
-              <Search size={20} />
-            </div>
-            <h2 className="text-lg font-bold text-white">Find Manifest</h2>
-          </div>
-          
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Manifest ID / Barcode</label>
-              <input
-                type="text"
-                autoFocus
-                placeholder="Scan or enter Manifest ID"
-                value={manifestIdSearch}
-                onChange={(e) => setManifestIdSearch(e.target.value)}
-                className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 font-mono"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!manifestIdSearch.trim()}
-              className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50"
-            >
-              Open Manifest
-            </button>
-          </form>
-        </div>
-
-        {/* Create New Manifest Form */}
-        {isCreating && (
-          <div className="bg-[#0d1117] border border-amber-500/20 rounded-2xl p-6 relative overflow-hidden animate-in slide-in-from-right-4">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                <Truck size={20} />
-              </div>
-              <h2 className="text-lg font-bold text-white">Create New Manifest</h2>
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg flex items-center gap-2 mb-4 text-sm">
-                <AlertCircle size={16} />
-                <p>{error}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Destination Branch ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 64abc123..."
-                  value={destBranch}
-                  onChange={(e) => setDestBranch(e.target.value)}
-                  className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Vehicle ID (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. V-1002"
-                  value={vehicleId}
-                  onChange={(e) => setVehicleId(e.target.value)}
-                  className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={createLoading}
-                className="w-full bg-amber-500 text-slate-900 font-bold py-3 rounded-xl hover:bg-amber-400 transition-colors flex items-center justify-center gap-2"
-              >
-                {createLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create & Start Scanning"}
-              </button>
-            </form>
-          </div>
-        )}
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard label="Total" value={totalCount} accent="#94a3b8" />
+        <StatCard label="In Transit" value={inTransitCount} accent="#fbbf24" />
       </div>
 
-      {/* Packages Awaiting Manifest List */}
-      <div className="mt-8 space-y-4">
-        <h2 className="text-xl font-bold text-white mb-4">Packages Awaiting Manifest</h2>
+      {error && <ErrorBaner error={error} setError={setError} />}
+
+      {/* Filters row */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Free-text search */}
+        <div
+          className="flex items-center gap-2 flex-1 min-w-48 px-3 py-2 rounded-lg"
+          style={{
+            background: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <Search size={13} className="text-slate-700 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search manifests…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none flex-1 min-w-0"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="text-slate-700 hover:text-slate-500">
+              <X size={13} />
+            </button>
+          )}
+        </div>
+
+        {/* Quick jump by ID */}
+        <form onSubmit={handleSearch} className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <FileText size={13} className="text-slate-700 shrink-0" />
+            <input
+              type="text"
+              placeholder="Jump to Manifest ID…"
+              value={manifestIdSearch}
+              onChange={(e) => setManifestIdSearch(e.target.value)}
+              className="bg-transparent text-[12.5px] text-white placeholder:text-slate-700 focus:outline-none w-44 font-mono"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!manifestIdSearch.trim()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12.5px] font-semibold text-slate-300 border border-white/[0.07] hover:border-white/13 transition-all disabled:opacity-40"
+          >
+            <ArrowRight size={13} />
+            Open
+          </button>
+        </form>
+
+        <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
+          {manifests.length} manifest{manifests.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Manifest List */}
+      <ManifestList
+        manifests={manifests}
+        loading={loading}
+        onAddClick={() => { setPrefillBranchId(undefined); setCreateOpen(true); }}
+        onView={(id) => router.push(`/dashboard/manifests/${id}`)}
+      />
+
+      {totalPages > 1 && (
+        <Pagination
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+          hasNext={pageNumber < totalPages}
+          hasPrev={pageNumber > 1}
+          onChange={(p) => setPageNumber(p)}
+        />
+      )}
+
+      {/* Packages Awaiting Manifest */}
+      <div className="mt-2 space-y-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0"
+            style={{
+              background: "rgba(251,191,36,0.1)",
+              border: "1px solid rgba(251,191,36,0.15)",
+            }}
+          >
+            <Package size={10} style={{ color: "#fbbf24" }} />
+          </div>
+          <span className="text-[9.5px] font-bold uppercase tracking-[0.14em] text-slate-400 whitespace-nowrap">
+            Packages Awaiting Manifest
+          </span>
+          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+        </div>
+
         {loadingGroups ? (
-          <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+          <div
+            className="flex justify-center items-center py-8 rounded-xl"
+            style={{ background: "#060a10", border: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
           </div>
         ) : groupedPackages.length === 0 ? (
-          <div className="bg-[#0d1117] border border-white/5 rounded-2xl p-8 text-center text-slate-500">
-            <Package className="w-10 h-10 mx-auto mb-3 opacity-20" />
-            <p>No packages waiting to be manifested at your branch right now.</p>
+          <div
+            className="flex flex-col items-center justify-center py-10 rounded-xl text-center"
+            style={{ background: "#060a10", border: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <Package className="w-8 h-8 mb-2 text-slate-700" />
+            <p className="text-[12px] text-slate-600">No packages waiting to be manifested.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {groupedPackages.map((group: any) => (
-              <div key={group.branchId} className="bg-[#0d1117] border border-white/10 rounded-xl p-5 hover:border-amber-500/50 transition-colors">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="text-slate-400" size={16} />
-                    <span className="font-bold text-white">{group.branchName || group.branchId}</span>
+              <div
+                key={group.branchId}
+                className="group rounded-xl p-4 transition-all hover:border-amber-500/30"
+                style={{
+                  background: "#060a10",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+                }}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        background: "rgba(251,191,36,0.1)",
+                        border: "1px solid rgba(251,191,36,0.15)",
+                      }}
+                    >
+                      <MapPin size={13} style={{ color: "#fbbf24" }} />
+                    </div>
+                    <span className="text-[13px] font-semibold text-slate-100 truncate">
+                      {group.branchName || group.branchId}
+                    </span>
                   </div>
-                  <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-1 rounded font-bold">
-                    {group.packageCount} Pkgs
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded ml-2 shrink-0"
+                    style={{
+                      background: "rgba(251,191,36,0.1)",
+                      color: "#fbbf24",
+                      border: "1px solid rgba(251,191,36,0.15)",
+                    }}
+                  >
+                    {group.packageCount} pkgs
                   </span>
                 </div>
-                <div className="text-sm text-slate-400 mb-4">
-                  <span className="font-medium">Total Weight:</span> {group.totalWeight}kg
+
+                <div className="text-[11.5px] text-slate-500 mb-3">
+                  Total weight:{" "}
+                  <span className="text-slate-400 font-medium">{group.totalWeight} kg</span>
                 </div>
+
                 <button
-                  onClick={() => {
-                    setDestBranch(group.branchId);
-                    setIsCreating(true);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  onClick={() => openCreateForBranch(group.branchId)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12px] font-semibold text-slate-300 transition-all hover:text-white"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
-                  className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
                 >
-                  <Plus size={16} /> Create Manifest for this Branch
+                  <Plus size={12} />
+                  Create Manifest
                 </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Create Modal */}
+      <CreateManifestModal
+        isOpen={createOpen}
+        onClose={() => { setCreateOpen(false); setPrefillBranchId(undefined); }}
+        onSubmit={handleCreate}
+        loading={createLoading}
+        prefillDestinationBranchId={prefillBranchId}
+      />
     </div>
   );
 }

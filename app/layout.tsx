@@ -7,22 +7,22 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'WaselGo',
+  description: 'WaselGo is a delivery tracking system that allows users to track their packages in real-time. With WaselGo, you can easily monitor the status of your deliveries and receive notifications when your package is on its way or has been delivered.',
   generator: 'v0.app',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/logo/logodark .png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/logo/logodark .png',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/logo/logodark .png',
+        type: 'image/png',
       },
     ],
     apple: '/apple-icon.png',

@@ -201,13 +201,14 @@ export default function Sidebar() {
                 transition-all duration-300 ease-in-out
                 ${collapsed ? "w-16" : "w-55"}
                 relative overflow-hidden shrink-0
+                h-full max-h-screen
             `}
         >
             {/* Ambient glow */}
             <div className="pointer-events-none absolute bottom-0 left-0 w-48 h-48 rounded-full"
                 style={{ background: "radial-gradient(circle, rgba(251,191,36,0.06) 0%, transparent 70%)" }} />
 
-            {/* Logo + collapse toggle */}
+            {/* Logo + collapse toggle - Fixed header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
                 {!collapsed && (
                     <div className="flex items-center gap-2.5">
@@ -259,19 +260,19 @@ export default function Sidebar() {
             {collapsed && (
                 <button
                     onClick={() => setCollapsed(false)}
-                    className="flex items-center justify-center py-3 text-slate-600 hover:text-amber-400 transition-colors border-b border-white/5"
+                    className="flex items-center justify-center py-3 text-slate-600 hover:text-amber-400 transition-colors border-b border-white/5 shrink-0"
                     aria-label="Expand sidebar"
                 >
                     <ChevronRight size={20} />
                 </button>
             )}
 
-            {/* User pill */}
+            {/* User pill - Fixed header */}
             {!collapsed && (
-                <div className="mx-3 my-2 px-3 rounded-xl border border-white/6 flex items-center gap-2.5"
+                <div className="mx-3 my-2 px-3 rounded-xl border border-white/6 flex items-center gap-2.5 shrink-0"
                     style={{ background: "rgba(255,255,255,0.02)" }}>
                     {imageUrl ? (
-                        <div className="flex justify-center py-3 border-b border-white/5">
+                        <div className="flex justify-center py-3">
                             <img
                                 src={imageUrl}
                                 alt="User"
@@ -279,7 +280,7 @@ export default function Sidebar() {
                             />
                         </div>
                     ) : (
-                        <div className="flex justify-center py-3 border-b border-white/5">
+                        <div className="flex justify-center py-3">
                             <div
                                 className="w-10 h-10 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
                                 style={{
@@ -300,7 +301,7 @@ export default function Sidebar() {
 
             {collapsed && (
                 imageUrl ? (
-                    <div className="flex justify-center py-3 border-b border-white/5">
+                    <div className="flex justify-center py-3 border-b border-white/5 shrink-0">
                         <img
                             src={imageUrl}
                             alt="User"
@@ -308,7 +309,7 @@ export default function Sidebar() {
                         />
                     </div>
                 ) : (
-                    <div className="flex justify-center py-3 border-b border-white/5">
+                    <div className="flex justify-center py-3 border-b border-white/5 shrink-0">
                         <div
                             className="w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-semibold text-amber-400"
                             style={{
@@ -322,8 +323,8 @@ export default function Sidebar() {
                 )
             )}
 
-            {/* Nav groups */}
-            <nav className="flex-1 px-2 py-2 flex flex-col gap-1 overflow-y-auto">
+            {/* Nav groups - Scrollable area */}
+            <nav className="flex-1 px-2 py-2 flex flex-col gap-1 overflow-y-auto min-h-0">
                 {NAV_GROUPS.map((group) => {
                     const visibleRoutes = group.routes.filter(
                         (r) => !r.allowed || r.allowed.includes(role as any)
@@ -331,7 +332,7 @@ export default function Sidebar() {
                     if (visibleRoutes.length === 0) return null;
 
                     return (
-                        <div key={group.label}>
+                        <div key={group.label} className="flex flex-col gap-0.5">
                             {!collapsed && (
                                 <div className="text-[9px] tracking-widest uppercase text-slate-700 font-semibold px-2 py-2 mt-1">
                                     {group.label}
@@ -348,7 +349,7 @@ export default function Sidebar() {
                                         aria-current={isActive ? "page" : undefined}
                                         title={collapsed ? r.label : undefined}
                                         className={`
-                                            flex items-center gap-2.5 mb-1 rounded-lg transition-all duration-150
+                                            flex items-center gap-2.5 mb-0.5 rounded-lg transition-all duration-150
                                             ${collapsed ? "justify-center px-0 py-2.5" : "px-2.5 py-2"}
                                             ${isActive
                                                 ? "text-amber-300"
@@ -380,8 +381,8 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            {/* Sign out */}
-            <div className="p-3 border-t border-white/5">
+            {/* Sign out - Fixed footer */}
+            <div className="p-3 border-t border-white/5 shrink-0">
                 <button
                     onClick={() => {
                         logout();

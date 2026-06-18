@@ -8,6 +8,7 @@ export const listTransporters = async (
   const res = await api.get(`/manager/companies/${companyId}/transporters`, { params: filters });
   const mappedData = res.data.data.map((t: any) => ({
     id: t._id,
+    userId: t.userId?._id || "",
     fullName: `${t.userId?.firstName || ""} ${t.userId?.lastName || ""}`.trim(),
     email: t.userId?.email || "",
     phone: t.userId?.phone || "",

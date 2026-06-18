@@ -42,12 +42,13 @@ export default function BranchDropScannerPage() {
         try {
             setLoading(true);
 
-            await markDroppedAtBranch(getBranchId() ?? "", [id]);
+            await markDroppedAtBranch(trackingCode);
 
             setLastScanned(id);
             showToast.success("Shipment marked as dropped at branch");
         } catch (err: any) {
             const error = parseApiError(err);
+            console.error("Failed to mark shipment as dropped at branch:", error);
             showToast.error(error.message || "Failed to mark shipment");
         } finally {
             setLoading(false);
@@ -91,7 +92,7 @@ export default function BranchDropScannerPage() {
             allowedRoles={[ROLES.CASHIER, ROLES.MANAGER]}
             fallbackPath="/unauthorized"
         >
-            <div className="min-h-screen bg-slate-950 p-6">
+            <div className="h-full p-6 overflow-hidden">
                 <div className="max-w-3xl mx-auto space-y-6">
 
                     {/* HEADER */}

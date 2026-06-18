@@ -129,14 +129,18 @@ export default function ShipmentsPage() {
                 pageNumber,
                 pageSize,
                 status: statusFilter || undefined,
+                deliveryType: deliveryTypeFilter || undefined,
+                search: search || undefined,
+                sortBy,
+                sortOrder,
             };
             console.log("Fetching shipments with filter:", filter);
-            const res = await listShipments(filter);
-            console.log("Fetched shipments:", res);
-            setShipments(res.data.packages ?? []);
-            setPageNumber(res.data.pagination?.page ?? pageNumber);
-            setPageSize(res.data.pagination?.limit ?? pageSize);
-            setTotalPages(res.data.pagination?.pages ?? 1)
+            const data = await listShipments(hubId, filter);
+            console.log("Fetched shipments:", data);
+            setShipments(data.data ?? []);
+            setPageNumber(data.pagination?.pageNumber ?? pageNumber);
+            setPageSize(data.pagination?.pageSize ?? pageSize);
+            setTotalPages(data.pagination?.totalPages ?? 1)
             setStats({ pending: 0, inTransit: 0, delivered: 0, failed: 0 });
         } catch (e: any) {
             const err = parseApiError(e);
@@ -144,7 +148,7 @@ export default function ShipmentsPage() {
         } finally {
             setLoading(false);
         }
-    }, [hubId, search, statusFilter, pageNumber, pageSize]);
+    }, [hubId, search, statusFilter, pageNumber, pageSize, sortBy, sortOrder, deliveryTypeFilter]);
 
     const fetchShipments = isFreelancer ? fetchFreelancerShipments : fetchSupervisorShipments;
 
@@ -214,9 +218,9 @@ export default function ShipmentsPage() {
         setCancelLoading(true);
         try {
             if (isFreelancer) {
-                await cancelFreelancerPackage(selectedShipment.id, cancelReason || undefined);
+                await cancelFreelancerPackage(selectedShipment._id, cancelReason || undefined);
             } else {
-                await cancelShipment(hubId, selectedShipment.id);
+                await cancelShipment(hubId, selectedShipment._id);
             }
             showToast.success("Shipment cancelled successfully");
             setCancelOpen(false);
@@ -326,7 +330,7 @@ export default function ShipmentsPage() {
                     />
 
                     {/* Delivery type filter — freelancer only */}
-                    {isFreelancer && (
+                    {(
                         <SelectField
                             label=""
                             value={deliveryTypeFilter}
@@ -344,7 +348,7 @@ export default function ShipmentsPage() {
                     )}
 
                     {/* Sort — freelancer only */}
-                    {isFreelancer && (
+                    {(
                         <SelectField
                             label=""
                             value={sortBy}
@@ -356,10 +360,17 @@ export default function ShipmentsPage() {
                             ]}
                         />
                     )}
-
-                    <span className="text-[11px] text-slate-700 ml-auto hidden sm:block tabular-nums">
-                        {shipments.length} shipment{shipments.length !== 1 ? "s" : ""}
-                    </span>
+                    {(
+                        <SelectField
+                            label=""
+                            value={sortOrder}
+                            onChange={(value) => setSortOrder(value as 'asc' | 'desc')}
+                            options={[
+                                { value: "asc", label: "Sort: Ascending" },
+                                { value: "desc", label: "Sort: Descending" },
+                            ]}
+                        />
+                    )}
                 </div>
 
                 {/* Shipment List */}

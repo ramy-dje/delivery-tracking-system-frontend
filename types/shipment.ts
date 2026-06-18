@@ -127,7 +127,7 @@ export interface IPackageHistory {
 }
 
 export interface IPackage {
-  id: string;
+  _id: string;
   trackingNumber: string;
   companyId: string | any;
 
@@ -270,6 +270,9 @@ export interface IShipmentFilter extends IBaseFilter {
   hasIssues?: boolean;
   startDate?: string;
   endDate?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 
   companyId?: string;
   clientId?: string;

@@ -73,7 +73,7 @@ export default function ShipmentRow({
                     <input
                         type="checkbox"
                         checked={selected}
-                        onChange={(e) => onSelect(shipment.id, e.target.checked)}
+                        onChange={(e) => onSelect(shipment._id, e.target.checked)}
                         className="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer"
                         aria-label={`Select shipment ${shipment.trackingNumber}`}
                     />
@@ -83,7 +83,7 @@ export default function ShipmentRow({
             {/* Tracking Code */}
             <div className="flex items-center gap-2 min-w-0">
                 <Link
-                    href={`/dashboard/shipments/${shipment.id}`}
+                    href={`/dashboard/shipments/${shipment._id}`}
                     className={`w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0 transition-transform duration-150 group-hover:scale-[1.06] ${isAlert ? "bg-red-500/20" : "bg-blue-500/20"
                         }`}
                 >
@@ -132,7 +132,7 @@ export default function ShipmentRow({
                 >
                     {shipment.deliveryType.replace('_', ' ')}
                 </span>
-                <span className="text-[10px] text-slate-500 truncate text-center max-w-[120px]">
+                <span className="text-[10px] text-slate-500 truncate text-center max-w-30">
                     <MapPin className="inline w-3 h-3 mr-1" />
                     {shipment.destination.city}, {shipment.destination.state}
                 </span>
