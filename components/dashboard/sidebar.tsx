@@ -122,7 +122,7 @@ const NAV_GROUPS = [
                 icon: (
                     <Truck size={14} />
                 ),
-                allowed: [ROLES.SUPERVISOR, ROLES.SORTER],
+                allowed: [ROLES.SORTER],
             },
             {
                 path: "/dashboard/transporters",
